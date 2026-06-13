@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M01 · L06 — Read It Back: get &amp; query</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-false{color:#ff8f7a}.c-num{color:#ffd479}.c-meth{color:#ffd479;font-weight:700}
+
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-false,pre .c-num,pre .c-meth,pre .c-flag{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="top reveal">
+  <div class="eyebrow">Milestone 01 <span class="dot">/</span> Foundations &amp; Connect <span class="dot">/</span> Lesson 06</div>
+  <h1>Read It Back:<br><em>get</em> &amp; <em>query</em></h1>
+  <p class="sub">Two ways to pull data out of the org — one record by its GUID, or a filtered list of many.</p>
+  <div class="livechip"><span class="led"></span> target&nbsp; <b>agent-cloud</b> &nbsp;·&nbsp; orgexample.crm.dynamics.com</div>
+  <div class="rule"></div>
+  <div class="why"><b>Why now.</b> In L05 you wrote a record and read it straight back from the create response. But most of the time the record already exists and you need to <em>find</em> it — to verify a change landed, to grab a GUID for the next command, to check what's there before you mutate. Reading is the half of the job you'll do most; these two verbs cover nearly all of it.</div>
+</header>
+
+<p class="lead reveal">Today's win: retrieve <em>one</em> contact by its GUID, then <em>list</em> contacts with a filter — and read both shapes (<code>$entity</code> vs a <code>value</code> array) fluently.</p>
+
+<section class="reveal">
+<h2><span class="n">01</span> Two shapes of read</h2>
+
+<p>Reading splits by whether you already know the record's GUID:</p>
+<dl class="ginfo">
+  <dt>entity&nbsp;get</dt><dd><strong>By identity.</strong> You have the GUID → one specific record. Returns a single object (an OData <code>$entity</code>).</dd>
+  <dt>query&nbsp;odata</dt><dd><strong>By criteria.</strong> You have a filter → zero-or-more matching records. Returns an array under <code>value</code>, plus <code>meta.count</code>.</dd>
+</dl>
+<p>Both are <code>GET</code> requests to the same Web API you've been hitting all along — read-only, safe to run as often as you like.<sup><a href="#r-query">query</a></sup></p>
+</section>
+
+<section class="reveal">
+<h2><span class="n">02</span> <code>entity get</code> — one record by GUID</h2>
+
+<pre class="term"><span class="tag">agent-cloud · exit 0</span><code>crm <span class="c-flag">--json</span> entity get contacts a1b2c3d4-1111-2222-3333-00155d467b91 <span class="c-flag">--select</span> fullname,jobtitle,emailaddress1
+
+<span class="c-punc">{</span>
+  <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+  <span class="c-key">"data"</span><span class="c-punc">:</span> <span class="c-punc">{</span>
+    <span class="c-key">"@odata.context"</span><span class="c-punc">:</span> <span class="c-str">"https://orgexample.crm.dynamics.com/api/data/v9.2/$metadata#contacts(...)/$entity"</span><span class="c-punc">,</span>
+    <span class="c-key">"@odata.etag"</span><span class="c-punc">:</span> <span class="c-str">"W/\"2503282\""</span><span class="c-punc">,</span>
+    <span class="c-key">"fullname"</span><span class="c-punc">:</span> <span class="c-str">"Sara Mitchell"</span><span class="c-punc">,</span>
+    <span class="c-key">"emailaddress1"</span><span class="c-punc">:</span> <span class="c-str">"sara.mitchell@example.com"</span><span class="c-punc">,</span>
+    <span class="c-key">"jobtitle"</span><span class="c-punc">:</span> <span class="c-str">"Sales Manager"</span><span class="c-punc">,</span>
+    <span class="c-key">"contactid"</span><span class="c-punc">:</span> <span class="c-guid">"a1b2c3d4-1111-2222-3333-00155d467b91"</span>
+  <span class="c-punc">}</span>
+<span class="c-punc">}</span></code></pre>
+
+<p>Two things to notice:</p>
+<ul class="tight">
+  <li><strong><code>--select</code> is not optional politeness — it's discipline.</strong> Omit it and you get <em>every</em> column on the entity (dozens, mostly empty). Always name the fields you need.<sup><a href="#r-query">query</a></sup></li>
+  <li><strong><code>@odata.etag</code></strong> (<code>W/"2503282"</code>) is the row's version tag. Remember L04's <code>If-Match: *</code> on an update? That header is how the server detects whether the row changed under you; the etag is the value it compares. You're seeing the two halves of optimistic concurrency.<sup><a href="#r-update">update</a></sup></li>
+</ul>
+</section>
+
+<section class="reveal">
+<h2><span class="n">03</span> <code>query odata</code> — find many</h2>
+
+<p>When you don't have a GUID, you describe what you want. The three workhorse options: <code>--select</code> (which columns), <code>--filter</code> (which rows, in OData syntax), <code>--top</code> (how many):</p>
+
+<pre class="term"><span class="tag">agent-cloud · exit 0</span><code>crm <span class="c-flag">--json</span> query odata contacts <span class="c-flag">--filter</span> <span class="c-str">"jobtitle eq 'IT Director'"</span> <span class="c-flag">--select</span> fullname,jobtitle <span class="c-flag">--top</span> 5
+
+<span class="c-punc">{</span>
+  <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+  <span class="c-key">"data"</span><span class="c-punc">:</span> <span class="c-punc">{</span>
+    <span class="c-key">"@odata.context"</span><span class="c-punc">:</span> <span class="c-str">"...#contacts(fullname,jobtitle)"</span><span class="c-punc">,</span>
+    <span class="c-key">"value"</span><span class="c-punc">:</span> <span class="c-punc">[</span>
+      <span class="c-punc">{</span> <span class="c-key">"fullname"</span><span class="c-punc">:</span> <span class="c-str">"James Okafor"</span><span class="c-punc">,</span> <span class="c-key">"jobtitle"</span><span class="c-punc">:</span> <span class="c-str">"IT Director"</span><span class="c-punc">,</span>
+        <span class="c-key">"contactid"</span><span class="c-punc">:</span> <span class="c-guid">"b2c3d4e5-2222-3333-4444-00155d467b92"</span> <span class="c-punc">}</span>
+    <span class="c-punc">]</span>
+  <span class="c-punc">},</span>
+  <span class="c-key">"meta"</span><span class="c-punc">:</span> <span class="c-punc">{</span> <span class="c-key">"entity_set"</span><span class="c-punc">:</span> <span class="c-str">"contacts"</span><span class="c-punc">,</span> <span class="c-key">"count"</span><span class="c-punc">:</span> <span class="c-num">1</span> <span class="c-punc">}</span>
+<span class="c-punc">}</span></code></pre>
+
+<p>Results are always an <strong>array under <code>value</code></strong> — even one match, even zero (an empty list, still <code>ok:true</code>). <code>meta.count</code> tells you how many came back. Common <code>--filter</code> operators: <code>eq</code>, <code>ne</code>, <code>gt</code>/<code>lt</code>, <code>contains(name,'x')</code>, joined with <code>and</code>/<code>or</code>.<sup><a href="#r-query">query</a></sup></p>
+
+<div class="callout tip"><span class="ic">✓</span><div><b>This is your verification tool.</b> After any write, a quick <code>query odata … --filter</code> proves the change is really in the org — the live confirmation that closes the safe-write loop from L04/L05.</div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">04</span> <code>query count</code> — and a real gotcha</h2>
+
+<p>To count rows without pulling them, there's <code>query count</code>. But it has <em>two</em> sharp edges, both worth meeting on safe ground now:</p>
+
+<pre class="term"><span class="tag">exit 1 · validation</span><code>crm <span class="c-flag">--json</span> query count contacts          <span class="c-comment"># ← the SET name</span>
+<span class="c-punc">{</span> <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-false">false</span><span class="c-punc">,</span> <span class="c-key">"error"</span><span class="c-punc">:</span> <span class="c-str">"Entity contacts was not found in the CRM system"</span><span class="c-punc">,</span>
+  <span class="c-key">"meta"</span><span class="c-punc">:</span> <span class="c-punc">{</span> <span class="c-key">"status"</span><span class="c-punc">:</span> <span class="c-num">400</span><span class="c-punc">,</span> <span class="c-key">"category"</span><span class="c-punc">:</span> <span class="c-str">"validation"</span> <span class="c-punc">} }</span></code></pre>
+
+<pre class="term"><span class="tag">exit 0</span><code>crm <span class="c-flag">--json</span> query count contact           <span class="c-comment"># ← the LOGICAL name (singular)</span>
+<span class="c-punc">{</span> <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span> <span class="c-key">"data"</span><span class="c-punc">:</span> <span class="c-punc">{</span> <span class="c-key">"entity"</span><span class="c-punc">:</span> <span class="c-str">"contact"</span><span class="c-punc">,</span> <span class="c-key">"count"</span><span class="c-punc">:</span> <span class="c-num">0</span> <span class="c-punc">} }</span></code></pre>
+
+<div class="callout warn"><span class="ic">!</span><div><b>Two edges:</b> (1) <code>count</code> wants the <strong>logical name</strong> <code>contact</code>, not the entity-set name <code>contacts</code> that <code>get</code>/<code>query odata</code> use — mixing them up gives the 400 above. (2) The count comes from <code>RetrieveTotalRecordCount</code>, which is <strong>cached and approximate</strong> — note it returned <code>0</code> even though the list in §3 found rows. Trust it for scale, never for exactness; for an exact filtered count, run the query.<sup><a href="#r-skill">skill</a></sup></div></div>
+
+<p>The set-name-vs-logical-name split (<code>contacts</code> the set, <code>contact</code> the entity) runs through the whole platform — you'll meet it again in metadata. Filing it away now saves confusion later.</p>
+</section>
+
+<section class="reveal">
+<h2><span class="n">05</span> Do it yourself <span class="pill">~3 min</span></h2>
+
+<p>All read-only. Grab a real GUID from the first command and feed it to the second:</p>
+
+<pre><code><span class="c-comment"># 1 · list a few contacts — copy any contactid from the output</span>
+crm <span class="c-flag">--json</span> query odata contacts <span class="c-flag">--top</span> 3 <span class="c-flag">--select</span> fullname,jobtitle
+
+<span class="c-comment"># 2 · get that one record by its GUID</span>
+crm <span class="c-flag">--json</span> entity get contacts &lt;paste-contactid&gt; <span class="c-flag">--select</span> fullname,jobtitle,emailaddress1
+
+<span class="c-comment"># 3 · filter — change the title to one you saw in step 1</span>
+crm <span class="c-flag">--json</span> query odata contacts <span class="c-flag">--filter</span> <span class="c-str">"jobtitle eq 'Sales Manager'"</span> <span class="c-flag">--select</span> fullname</code></pre>
+
+<p>Then answer, from your own output:</p>
+<ol class="steps">
+  <li>In step 1, where do the records live — under <code>data.value</code> or directly under <code>data</code>? In step 2, which is it?</li>
+  <li>What does <code>meta.count</code> say in step 3, and does it match the array length?</li>
+  <li>Run <code>crm --json query count contacts</code> — what exit code and error? Now fix it. (One word changes.)</li>
+</ol>
+</section>
+
+<section class="reveal">
+<h2><span class="n">06</span> Check yourself</h2>
+<div class="quiz" id="quiz">
+  <p class="qh">Four questions, instant feedback</p>
+  <p class="qhs">tap an answer — no penalty for a wrong first try</p>
+
+  <div class="q" data-correct="1">
+    <div class="stem">1 · You have a contact's GUID and want just that one record. Which verb, and what shape comes back?</div>
+    <button class="opt"><span class="mk">A</span> <code>query odata</code> — a single object under <code>data</code></button>
+    <button class="opt"><span class="mk">B</span> <code>entity get</code> — a single object (<code>$entity</code>) under <code>data</code></button>
+    <button class="opt"><span class="mk">C</span> <code>entity get</code> — an array under <code>data.value</code></button>
+    <button class="opt"><span class="mk">D</span> <code>query count</code> — just a number</button>
+    <div class="fb ok">Correct. By-GUID retrieval is <code>entity get</code>, and it returns one object (an OData <code>$entity</code>) directly under <code>data</code> — no <code>value</code> array. Arrays are what <em>queries</em> return.</div>
+    <div class="fb no">Not quite. By a known GUID you use <code>entity get</code>, and it returns a single object under <code>data</code> (the <code>$entity</code> shape) — not an array. The <code>value</code> array is what <code>query odata</code> returns.</div>
+  </div>
+
+  <div class="q" data-correct="2">
+    <div class="stem">2 · <code>crm --json query count contacts</code> returns <code>ok:false</code>, <code>status:400</code>, <code>category:"validation"</code>. The fix?</div>
+    <button class="opt"><span class="mk">A</span> Add <code>--top 1</code></button>
+    <button class="opt"><span class="mk">B</span> Re-run it — the error is transient</button>
+    <button class="opt"><span class="mk">C</span> Use the logical name: <code>query count contact</code></button>
+    <button class="opt"><span class="mk">D</span> Switch to the on-prem org</button>
+    <div class="fb ok">Correct. <code>count</code> takes the <em>logical</em> name (<code>contact</code>), not the entity-set name (<code>contacts</code>) that <code>get</code> and <code>query odata</code> use. <code>category:"validation"</code> with <code>retryable:false</code> told you re-running won't help — it's a malformed argument, fix it.</div>
+    <div class="fb no">No. <code>category:"validation"</code> / <code>retryable:false</code> means re-running is pointless and it's not about <code>--top</code> or the org. <code>count</code> wants the <em>logical</em> name <code>contact</code>, not the set name <code>contacts</code>.</div>
+  </div>
+
+  <div class="q" data-correct="0">
+    <div class="stem">3 · A <code>query odata</code> with a filter returns <code>"value": []</code> and <code>meta.count: 0</code>, with <code>ok:true</code>, exit 0. What happened?</div>
+    <button class="opt"><span class="mk">A</span> The query succeeded; no rows matched the filter</button>
+    <button class="opt"><span class="mk">B</span> The query failed — empty results mean an error</button>
+    <button class="opt"><span class="mk">C</span> The entity doesn't exist</button>
+    <button class="opt"><span class="mk">D</span> You forgot <code>--select</code></button>
+    <div class="fb ok">Correct. Zero matches is a perfectly successful query — <code>ok:true</code>, exit 0, an empty <code>value</code> array. "No rows match" is an <em>answer</em>, not a failure. (Contrast a real failure: <code>ok:false</code> + non-zero exit.)</div>
+    <div class="fb no">Not quite. <code>ok:true</code> + exit 0 means success — the query ran fine and simply found nothing. An empty <code>value</code> array is a valid result, not an error.</div>
+  </div>
+
+  <div class="q" data-correct="3">
+    <div class="stem">4 · Why prefer <code>RetrieveTotalRecordCount</code> (<code>query count</code>) for "roughly how many?" but a filtered <code>query odata</code> for "exactly how many match X?"</div>
+    <button class="opt"><span class="mk">A</span> <code>count</code> is slower but always exact</button>
+    <button class="opt"><span class="mk">B</span> They're identical; pick either</button>
+    <button class="opt"><span class="mk">C</span> <code>query odata</code> can't be filtered</button>
+    <button class="opt"><span class="mk">D</span> <code>count</code> is cached/approximate and unfiltered; <code>query odata --filter</code> is exact and live</button>
+    <div class="fb ok">Correct. <code>query count</code> reads a cached total for the whole entity — fast, but approximate (it can lag, even read 0). For an exact, filtered count you run the query itself and read <code>meta.count</code> off the live result.</div>
+    <div class="fb no">Re-read §4. <code>count</code> is the <em>cached, approximate, unfiltered</em> total — fast but not exact. For an exact filtered number, run <code>query odata --filter</code> and read <code>meta.count</code>.</div>
+  </div>
+
+  <div class="score" id="score"></div>
+</div>
+</section>
+
+<div class="ask reveal">
+  <b>Stuck or curious?</b> I'm your teacher for this — ask me anything in the chat. Good follow-ups right now:
+  <ul class="tight" style="margin-bottom:0">
+    <li>"How do I pull related records — a contact's parent account — in one call with <code>$expand</code>?"</li>
+    <li>"When would I reach for <code>query fetchxml</code> instead of <code>query odata</code>?"</li>
+    <li>"How do I page past the first 5000 rows?"</li>
+  </ul>
+</div>
+
+<div class="next reveal">
+  <span class="pill t">next up</span>
+  <h2>Lesson 07 — the command surface: navigating <code>crm</code> yourself</h2>
+  <p style="margin:0">You've used <code>profile</code>, <code>connection</code>, <code>entity</code>, <code>query</code>. Next: <code>--help</code> and <code>crm describe</code> — so you can find <em>any</em> group, verb, or flag on your own, without asking me. The skill that makes you self-sufficient. Just say <strong>"next lesson"</strong>.</p>
+</div>
+
+<footer class="reveal">
+  <p><strong>Sources</strong> — grounded in, not guessed from:</p>
+  <ol class="refs">
+    <li id="r-query"><a href="https://learn.microsoft.com/power-apps/developer/data-platform/webapi/query/overview">Query data using the Web API</a> &amp; <a href="https://learn.microsoft.com/power-apps/developer/data-platform/webapi/retrieve-entity-using-web-api">Retrieve a row</a> — Microsoft Learn. <code>$select</code>/<code>$filter</code>/<code>$top</code> and the <code>value</code>-array vs <code>$entity</code> shapes.</li>
+    <li id="r-update"><a href="https://learn.microsoft.com/power-apps/developer/data-platform/webapi/perform-conditional-operations-using-web-api">Conditional operations (ETags &amp; If-Match)</a> — Microsoft Learn. What <code>@odata.etag</code> is for.</li>
+    <li id="r-skill"><strong>crm agent skill</strong> — <code>~/.claude/skills/crm/reference/records.md</code> &amp; <code>SKILL.md</code> (<code>query count</code> via <code>RetrieveTotalRecordCount</code>, cached; entity-set vs logical name). Mirrored on the <a href="https://crm-cli-docs.pages.dev/">crm docs site</a>.</li>
+  </ol>
+  <p class="ft">M01 · L06 · lessons/0006-read-it-back-get-and-query.html · live output captured from agent-cloud on 2026-06-13 (host shown as the example env)</p>
+</footer>
+
+</div>
+
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 1, "name": "Foundations & Connect"},
+  "lesson": 6,
+  "title": "Read It Back: get & query",
+  "slug": "read-it-back-get-and-query",
+  "topics": ["entity-get","query-odata","filter"],
+  "summary": "Retrieve one record by GUID and list many by filter — the two read shapes.",
+  "order": 6,
+  "status": "published" }
+</script>
+</body>
+</html>

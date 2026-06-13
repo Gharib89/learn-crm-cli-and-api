@@ -35,7 +35,35 @@ Profiles are the prerequisite to connecting, so within M01:
   `set-password`/`rm`; auth-scheme inference; secret storage). `lessons/0001-install-configure-profiles.html`
 - **L02** — the **WhoAmI handshake** (confirm which live org answers + identity).
   `lessons/0002-the-whoami-handshake.html`
-- **L03** (next) — the `{ok, data, meta}` envelope + exit codes 0/1/2.
+- **L03** — the `{ok, data, meta}` envelope + exit codes 0/1/2 (operational failure vs
+  usage error; `meta` diagnostic fields). `lessons/0003-the-envelope-and-exit-codes.html`
+- **L04** — `--dry-run`: previewing a write before it lands ("no writes, not no traffic";
+  read `method`/`url`/`body`; pairs with `--validate`). `lessons/0004-dry-run-preview-the-write.html`
+- **L05** — first real write: full safe-write loop (validate+dry-run → create → get →
+  delete). Live create→get→delete round-trip captured on agent-cloud, then deleted (org
+  left clean). `lessons/0005-your-first-real-write.html`
+- **L06** — read it back: `entity get` (by GUID) + `query odata` (`--select`/`--filter`/
+  `--top`) + `query count` (logical-name + cached gotcha). `lessons/0006-read-it-back-get-and-query.html`
+- **L07** — the command surface: `--help` (3 levels) + `crm describe`; group/verb/flag tree.
+  Closes M01. `lessons/0007-the-command-surface.html`
+
+**✅ M01 COMPLETE — 7 lessons** (locked + batched 2026-06-13). Spine: profiles → whoami →
+envelope → dry-run → create → read → discover. (Update/delete shown in passing — L04 PATCH
+preview, L05 delete, L07 help — not their own lessons; revisit as M01.5 if user wants
+dedicated CRUD-write drills.)
+
+## Live-CLI gotchas caught while authoring (v3.9.1)
+
+- **`--validate` is a per-verb flag, NOT global.** `crm --json --validate --dry-run entity
+  create …` → exit-2 "No such option". Correct: `… entity create … --data '…' --validate`.
+  L04 was written with the wrong position from the skill doc and **corrected** after live
+  test. Lesson: verb-specific flags go after the verb (reinforces L07). Always live-verify
+  flag position, don't trust doc prose alone.
+- **`query count` wants the logical name** (`contact`), not the set (`contacts`) — and is
+  cached/approximate (read 0 while rows existed). Captured into L06.
+- **Permission:** authoring real writes needs a user-side grant — auto-mode classifier
+  denies both the live non-dry-run write AND the agent self-writing a `Bash(crm:*)` allow
+  rule. User created `.claude/settings.local.json` themselves (via `! …`); then writes ran.
 
 Rationale: a saved profile is just config; teach how to create/manage it before the
 command that proves it works. (User correction — mechanic before confirmation.)
