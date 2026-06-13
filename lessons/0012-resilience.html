@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M11 · L05 — Resilience</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-cmd{color:#5fe3bd;font-weight:500}.c-flag{color:#ffd479}
+  .c-grp{color:#8cc0ff;font-weight:600}.c-verb{color:#a7e6a0;font-weight:600}.c-num{color:#f6c177}
+
+  /* mermaid diagram figures */
+  .fig{margin:24px 0;background:var(--card);border:1px solid var(--line2);border-radius:14px;
+    padding:20px 18px 12px;box-shadow:var(--shadow);break-inside:avoid}
+  .fig.wide{width:min(1160px,94vw);margin-left:50%;transform:translateX(-50%);max-width:94vw}
+  .fig .mermaid{display:flex;justify-content:center;font-family:"Roboto Mono",monospace;
+    min-height:48px;visibility:hidden}
+  .fig .mermaid[data-processed]{visibility:visible}
+  .fig svg{max-width:100%;height:auto}
+  .fig figcaption{font-family:"Roboto Mono",monospace;font-size:12px;color:var(--ink-mute);
+    text-align:center;margin-top:12px;letter-spacing:.02em;line-height:1.5}
+  .fig figcaption b{color:var(--ink-soft);font-weight:600}
+
+  table.map{width:100%;border-collapse:collapse;margin:14px 0;font-size:14.5px;
+    background:var(--card);border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.map th,table.map td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line)}
+  table.map th{font-family:"Roboto Mono",monospace;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink-mute);font-weight:600;background:#f7f1e6}
+  table.map tr:last-child td{border-bottom:none}
+  table.map td code{font-size:.82em}
+  table.map .y{color:var(--teal-deep);font-weight:600}
+  table.map .no{color:var(--bad);font-weight:600}
+
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-cmd,pre .c-flag,pre .c-grp,pre .c-verb,pre .c-num{color:#111}
+    .fig{box-shadow:none;border:1px solid #bbb;background:#fff;break-inside:avoid}
+    .fig.wide{width:100%;margin-left:0;transform:none;max-width:100%}
+    .fig .mermaid{visibility:visible}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="top reveal">
+  <div class="eyebrow">Milestone 11 <span class="dot">/</span> Under the Hood <span class="dot">/</span> Lesson 05</div>
+  <h1>Resilience</h1>
+  <p class="sub">The loop wrapped around that one HTTP line: when crm retries, how long it waits, when it refuses — and the one verb it will never retry for you.</p>
+  <div class="livechip"><span class="led"></span> source&nbsp; <b>github.com/Gharib89/crm</b> &nbsp;·&nbsp; @ main</div>
+  <div class="rule"></div>
+  <div class="why"><b>Why now.</b> L04 drew the transport as one box. Inside it, <code>D365Backend.request()</code> isn't a single call — it's a <em>loop</em>. Knowing what that loop retries (and what it deliberately won't) is the difference between "crm hung for a minute then failed" and "crm backed off five times on a 429, then surfaced a <code>throttled</code> error — expected." It's also the last piece of the M01 error categories: <em>where</em> <code>retryable</code> is decided.</div>
+</header>
+
+<p class="lead reveal">Today's win: read <code>request()</code>'s retry loop and predict, for any failure, whether crm retries, how long it sleeps, and why a failed <code>POST</code> is treated differently from a failed <code>GET</code>.</p>
+
+<section class="reveal">
+<h2><span class="n">01</span> The loop, not the call</h2>
+
+<p>Every verb you've met — <code>get</code>, <code>post</code>, <code>patch</code>, <code>delete</code> — funnels into one method, <code>D365Backend.request()</code>, and its body is a <code>while True</code>. Send, inspect, maybe sleep, send again:<sup><a href="#r-req">request</a></sup></p>
+
+<figure class="fig">
+  <div class="mermaid">
+flowchart TD
+  A(["request(method, url)"]):::ext --> B["send via requests session"]:::spine
+  B --> C{"retryable?<br/>429 · idempotent 5xx ·<br/>transport ConnErr/Timeout"}:::dec
+  C -->|no| OK["parse &amp; return<br/>non-2xx → raise D365Error"]:::ok
+  C -->|yes| D{"attempt &lt; 5 ?"}:::dec
+  D -->|no| ERR["raise D365Error"]:::bad
+  D -->|yes| W["sleep: Retry-After if sent,<br/>else min(2^attempt · 1s, 60s),<br/>then full jitter"]:::amber
+  W --> B
+  classDef ext fill:#fffdf8,stroke:#7c849a,color:#586072,stroke-dasharray:4 3;
+  classDef spine fill:#efe8fb,stroke:#6d28d9,color:#1d2128;
+  classDef dec fill:#fff3bf,stroke:#b4530a,color:#7a3807;
+  classDef ok fill:#e3f0ea,stroke:#0c7a64,color:#08533f;
+  classDef amber fill:#f8ead4,stroke:#b4530a,color:#7a3807;
+  classDef bad fill:#ffc9c9,stroke:#b3261e,color:#7c1c15;
+  </div>
+  <figcaption><b>Figure 1.</b> The retry loop in <code>request()</code>. The only paths out are <em>return</em> (success or a non-retryable response) and <em>raise</em> (retries exhausted, or a non-retryable failure).</figcaption>
+</figure>
+
+<p>Three profile knobs set the shape of the backoff (defaults shown), so a slow or flaky org can be tuned without touching code:<sup><a href="#r-cfg">config</a></sup></p>
+<pre class="term"><span class="tag">ConnectionProfile defaults</span><code>retry_max        = <span class="c-num">5</span>      <span class="c-comment"># attempts after the first send</span>
+retry_base_delay = <span class="c-num">1.0</span>    <span class="c-comment"># seconds; the "1s" in 2^attempt · 1s</span>
+retry_max_delay  = <span class="c-num">60.0</span>   <span class="c-comment"># ceiling on any single sleep</span>
+retry_jitter     = <span class="c-key">True</span>   <span class="c-comment"># sleep = random.uniform(0, computed_delay)</span></code></pre>
+
+<p>Two details worth internalising. <strong>Full jitter:</strong> the actual sleep is a random value <em>between zero and</em> the exponential target — not the target itself — so a fleet of clients retrying after the same 429 don't stampede in lockstep. <strong><code>Retry-After</code> wins:</strong> if Dataverse sends that header, crm honours it (capped at <code>retry_max_delay</code>) instead of computing its own backoff.</p>
+</section>
+
+<section class="reveal">
+<h2><span class="n">02</span> What gets retried — and the <code>POST</code> rule</h2>
+
+<p>"Retryable" isn't one rule; it's two checks — one for responses that came back, one for transport errors where nothing came back at all:<sup><a href="#r-retryable">retryable</a></sup></p>
+
+<table class="map">
+  <tr><th>Failure</th><th>GET · PATCH · PUT · DELETE</th><th>POST (create / action)</th></tr>
+  <tr><td><code>429</code> throttled</td><td class="y">retried</td><td class="no">no *</td></tr>
+  <tr><td><code>502 / 503 / 504</code></td><td class="y">retried</td><td class="no">no * (503 only, with flag)</td></tr>
+  <tr><td>ConnectionError / Timeout</td><td class="y">retried</td><td class="no">no *</td></tr>
+  <tr><td><code>SSLError</code></td><td class="no">never</td><td class="no">never</td></tr>
+  <tr><td><code>4xx</code> (400/401/403/404/412)</td><td class="no">not transient</td><td class="no">not transient</td></tr>
+</table>
+<p style="font-size:14px;color:var(--ink-mute);margin-top:-4px">* unless you pass <code>--retry-on-ambiguous</code> (or set <code>CRM_RETRY_ON_AMBIGUOUS</code>).</p>
+
+<div class="callout warn"><span class="ic">!</span><div><b>Why <code>POST</code> is special.</b> A <code>POST</code> creates a record or fires an action — it is <em>not idempotent</em>. If the response is lost (timeout, dropped connection), the write may already have <em>committed</em> on the server. Blindly re-sending could create a duplicate. So crm refuses to auto-retry a <code>POST</code> (issue #84); you opt into the re-send risk explicitly with <code>--retry-on-ambiguous</code>. <code>SSLError</code> is never retried either — a broken TLS handshake won't fix itself by waiting.</div></div>
+
+<p>One more subtlety: a <code>412</code> (<code>concurrency_conflict</code>, the failed <em>If-Match</em> ETag) is tagged <code>retryable</code> in the envelope, but the backend does <strong>not</strong> auto-retry it — retrying only helps after you <em>refetch a fresh ETag</em>, which only the caller can do.</p>
+</section>
+
+<section class="reveal">
+<h2><span class="n">03</span> Paging and <code>$batch</code>: one logical op, many requests</h2>
+
+<p>Two more transport behaviours hide behind a single call you make.</p>
+
+<h3>Paging — <code>get_collection()</code> follows <code>@odata.nextLink</code></h3>
+<p>Dataverse caps a page at (usually) 5,000 rows and hands back an <code>@odata.nextLink</code> for the rest. <code>get_collection()</code> loops that link, flattening each page's <code>value</code> array, until the server stops sending one — or until <code>max_pages</code> is hit. The next-link is an absolute URL with the query already baked in, so your <code>$filter</code>/<code>$select</code> apply only to the first GET; every subsequent page is whatever the server's link says:<sup><a href="#r-page">paging</a></sup></p>
+<pre class="term"><span class="tag">core/query.py → backend</span><code>rows = backend.get_collection(<span class="c-str">"contacts"</span>,
+    params={<span class="c-str">"$filter"</span>: <span class="c-str">"statecode eq 0"</span>},
+    max_pages=<span class="c-key">None</span>)   <span class="c-comment"># None = follow to exhaustion; 1 = single GET, no follow</span></code></pre>
+
+<h3><code>$batch</code> — many ops, one round-trip</h3>
+<p><code>backend.batch([...])</code> packs a list of operations into a single <code>POST $batch</code>. Two modes decide what happens when one op fails:<sup><a href="#r-batch">batch</a></sup></p>
+<ul class="tight">
+  <li><strong><code>transactional=True</code></strong> (default) — all ops succeed or the whole set rolls back, like a database transaction.</li>
+  <li><strong><code>continue_on_error=True</code></strong> — independent ops; a failure doesn't stop the rest. You read each <code>BatchResult</code> to see which succeeded.</li>
+  <li><strong><code>content_id</code></strong> lets a later op reference a record <em>created earlier in the same batch</em> (e.g. create an account, then a contact pointing at it) — a server-side reference, no extra round-trip.</li>
+</ul>
+<div class="callout tip"><span class="ic">✓</span><div><b>The mission link:</b> when a bulk operation behaves oddly, "was it batched? transactional or not?" is often the first question. Knowing crm has these two distinct modes tells you which knob to check — and which to mention in a bug report.</div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">04</span> Where <code>retryable</code> meets the M01 envelope</h2>
+
+<p>Back in M01 every failure carried a <code>category</code> and a <code>retryable</code> flag in <code>meta</code>. This is the function that decides them — <code>classify_d365_error(status, code, message)</code>, status-first with two special D365 codes honoured regardless of status:<sup><a href="#r-classify">classify</a></sup></p>
+
+<table class="map">
+  <tr><th>HTTP / signal</th><th>category</th><th>retryable</th><th>auto-retried by the loop?</th></tr>
+  <tr><td><code>401</code></td><td><code>auth_failed</code></td><td class="no">no</td><td class="no">no</td></tr>
+  <tr><td><code>403</code></td><td><code>forbidden</code></td><td class="no">no</td><td class="no">no</td></tr>
+  <tr><td><code>404</code> / <code>0x80040217</code></td><td><code>not_found</code></td><td class="no">no</td><td class="no">no</td></tr>
+  <tr><td><code>412</code></td><td><code>concurrency_conflict</code></td><td class="y">yes *</td><td class="no">no — refetch ETag first</td></tr>
+  <tr><td><code>429</code></td><td><code>throttled</code></td><td class="y">yes</td><td class="y">yes</td></tr>
+  <tr><td><code>5xx</code></td><td><code>server_error</code></td><td class="y">yes</td><td class="y">yes (idempotent verbs)</td></tr>
+  <tr><td><code>0x80040237</code> / dup</td><td><code>duplicate_detected</code></td><td class="no">no</td><td class="no">no</td></tr>
+  <tr><td>no status + transport prefix</td><td><code>transport_error</code></td><td class="y">yes</td><td class="y">yes (idempotent verbs)</td></tr>
+  <tr><td>everything else</td><td><code>validation</code></td><td class="no">no</td><td class="no">no</td></tr>
+</table>
+
+<p>So <code>retryable</code> in the envelope is a <em>hint</em>, not a promise the loop already acted on it: for <code>throttled</code>/<code>server_error</code> it means "the loop already tried and gave up"; for <code>concurrency_conflict</code> it means "retry is possible, but it's <em>your</em> move." Reading the flag with that distinction is the skill.</p>
+</section>
+
+<section class="reveal">
+<h2><span class="n">05</span> See the loop yourself <span class="pill">~6 min</span></h2>
+
+<p>No org needed for the first two; the third needs a connection.</p>
+<ol class="steps">
+  <li>Open <a href="https://github.com/Gharib89/crm/blob/main/crm/utils/d365_backend.py">d365_backend.py</a> and find <code>def request</code>. Locate the <code>while True:</code> and trace the two exits — the <code>return</code> on a non-retryable response and the <code>raise D365Error</code> when <code>attempt &gt;= max_retries</code>. <strong>That's Figure 1, in code.</strong></li>
+  <li>Find <code>_is_response_retryable</code>. Confirm with your eyes that the very first check short-circuits <code>POST</code> to <code>False</code> unless <code>retry_on_ambiguous</code> — the rule from §2.</li>
+  <li>With a profile connected, set <code>CRM_VERBOSE=1</code> and run a normal read. Watch stderr: when a response carries <code>x-ms-ratelimit-*</code> headers, crm logs your remaining request budget — the early-warning signs of throttling, <em>before</em> a 429.</li>
+</ol>
+<div class="callout tip"><span class="ic">✓</span><div><b>The habit this builds:</b> "did crm retry, and should it have?" becomes a checkable question. A 60-second hang on a flaky network is now legible — five backoffs on retryable transport errors — not a mystery.</div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">06</span> Check yourself</h2>
+<div class="quiz" id="quiz">
+  <p class="qh">Four questions, instant feedback</p>
+  <p class="qhs">tap an answer — no penalty for a wrong first try</p>
+
+  <div class="q" data-correct="2">
+    <div class="stem">1 · A <code>crm entity create</code> (a <code>POST</code>) times out — no response comes back. By default, what does <code>request()</code> do?</div>
+    <button class="opt"><span class="mk">A</span> Retries up to 5 times with backoff, like any other verb</button>
+    <button class="opt"><span class="mk">B</span> Retries once, then raises</button>
+    <button class="opt"><span class="mk">C</span> Does <em>not</em> retry — raises <code>D365Error</code> immediately (the write may have committed)</button>
+    <button class="opt"><span class="mk">D</span> Silently returns an empty success</button>
+    <div class="fb ok">Correct. A <code>POST</code> isn't idempotent, so a lost response might mean the record was already created. Auto-retrying risks a duplicate, so crm refuses unless you pass <code>--retry-on-ambiguous</code>.</div>
+    <div class="fb no">Re-read §2: <code>POST</code> is the exception. Because the create may have committed before the response was lost, crm will <em>not</em> auto-retry it — it raises, unless you opt in with <code>--retry-on-ambiguous</code>.</div>
+  </div>
+
+  <div class="q" data-correct="1">
+    <div class="stem">2 · With <code>retry_jitter = True</code>, how long does crm actually sleep before retry <code>attempt</code>?</div>
+    <button class="opt"><span class="mk">A</span> Exactly <code>2^attempt</code> seconds</button>
+    <button class="opt"><span class="mk">B</span> A random value between 0 and <code>min(2^attempt · base, 60)</code></button>
+    <button class="opt"><span class="mk">C</span> Always 1 second</button>
+    <button class="opt"><span class="mk">D</span> Exactly the <code>Retry-After</code> header, always</button>
+    <div class="fb ok">Correct. "Full jitter": the computed exponential value is the <em>ceiling</em>, and the real sleep is <code>random.uniform(0, that)</code> — which spreads retries so many clients don't stampede together. (If <code>Retry-After</code> is sent, it wins instead — capped at 60s.)</div>
+    <div class="fb no">It's B. Jitter means the exponential target is just the upper bound; the actual sleep is <code>random.uniform(0, target)</code>. <code>Retry-After</code> overrides that when the server sends it, but jitter itself is the random-0-to-target rule.</div>
+  </div>
+
+  <div class="q" data-correct="3">
+    <div class="stem">3 · A request fails with <code>412</code>. <code>meta</code> shows <code>category: concurrency_conflict, retryable: true</code>. Did the loop retry it?</div>
+    <button class="opt"><span class="mk">A</span> Yes — <code>retryable: true</code> means the loop already retried 5 times</button>
+    <button class="opt"><span class="mk">B</span> Yes, but only once</button>
+    <button class="opt"><span class="mk">C</span> No — <code>412</code> is a 4xx, which is never retryable in any sense</button>
+    <button class="opt"><span class="mk">D</span> No — it's "retryable" only after <em>you</em> refetch a fresh ETag; the loop can't do that</button>
+    <div class="fb ok">Correct. <code>concurrency_conflict</code> is the one category where <code>retryable: true</code> is a hint to <em>the caller</em>, not a record of the loop's action. A blind re-send would just fail the same If-Match again — you must refetch the ETag first.</div>
+    <div class="fb no">It's D. The loop does <em>not</em> auto-retry 412 (unlike 429/5xx). <code>retryable: true</code> here means "retry can work — but only after you fetch a fresh ETag," which is the caller's job.</div>
+  </div>
+
+  <div class="q" data-correct="0">
+    <div class="stem">4 · You read 12,000 contacts with one <code>crm query</code>. How many HTTP GETs likely hit Dataverse?</div>
+    <button class="opt"><span class="mk">A</span> Three — <code>get_collection</code> follows <code>@odata.nextLink</code> across ~5,000-row pages</button>
+    <button class="opt"><span class="mk">B</span> Exactly one — crm asks for all 12,000 at once</button>
+    <button class="opt"><span class="mk">C</span> 12,000 — one GET per row</button>
+    <button class="opt"><span class="mk">D</span> Zero — it reads from a local cache</button>
+    <div class="fb ok">Correct. Dataverse pages results (~5,000/page), so ~12,000 rows ≈ three GETs: the first, then two <code>@odata.nextLink</code> follows. <code>get_collection</code> flattens them into one list for you.</div>
+    <div class="fb no">It's A. Dataverse caps a page (~5,000 rows) and returns <code>@odata.nextLink</code> for the rest; <code>get_collection</code> follows it, so ~12,000 rows is roughly three GETs flattened into one result.</div>
+  </div>
+
+  <div class="score" id="score"></div>
+</div>
+</section>
+
+<div class="ask reveal">
+  <b>Stuck or curious?</b> I'm your teacher for this — ask me anything in the chat. Good follow-ups right now:
+  <ul class="tight" style="margin-bottom:0">
+    <li>"Show me the exact lines where the <code>POST</code> retry gate lives in <code>request()</code>."</li>
+    <li>"What does a real <code>$batch</code> request body look like on the wire?"</li>
+    <li>"How would I tune <code>retry_max</code> for a flaky on-prem org?"</li>
+  </ul>
+</div>
+
+<div class="next reveal">
+  <span class="pill t">milestone complete</span>
+  <h2>🎉 That closes Milestone 11 — Under the Hood</h2>
+  <p style="margin:0 0 .5em">You can now place any command on the architecture (L01, L04), follow it through auth and headers into one <code>requests</code> session (L02), tell crm's enrichment from raw Dataverse JSON (L03), and read the retry loop that wraps it all (L05). The black box is open.</p>
+  <p style="margin:0"><strong>Optional capstone — L06: from reading source to filing it.</strong> Turn this understanding into the mission skill: a precise upstream bug report that names the layer, the request, and the expected-vs-actual. <span class="live-only">Say <strong>"next lesson"</strong> if you want the capstone, or ask me to deep-dive any file from M11.</span></p>
+</div>
+
+<footer class="reveal">
+  <p><strong>Sources</strong> — read from the source, not guessed (line refs are anchors on <code>main</code> and may drift; the symbol names won't):</p>
+  <ol class="refs">
+    <li id="r-req"><a href="https://github.com/Gharib89/crm/blob/main/crm/utils/d365_backend.py">utils/d365_backend.py</a> — <code>D365Backend.request()</code>, the <code>while True</code> retry loop (the send, the response-retryable check, the transport-exception branch, the sleep).</li>
+    <li id="r-cfg"><strong>backoff config</strong> — <code>ConnectionProfile</code> fields <code>retry_max</code>=5, <code>retry_base_delay</code>=1.0, <code>retry_max_delay</code>=60.0, <code>retry_jitter</code>=True, in <code>d365_backend.py</code>.</li>
+    <li id="r-retryable"><strong>retry rules</strong> — <code>_is_response_retryable</code> (429, idempotent 5xx, the POST gate) and <code>_is_transport_retryable</code> (ConnectionError/Timeout/ChunkedEncoding; SSLError never); backoff in <code>_compute_delay</code>; header parse in <code>_parse_retry_after</code>.</li>
+    <li id="r-page"><strong>paging</strong> — <code>D365Backend.get_collection()</code> follows <code>@odata.nextLink</code>, with <code>max_pages</code>.</li>
+    <li id="r-batch"><strong>$batch</strong> — <code>D365Backend.batch()</code>: <code>transactional</code> / <code>continue_on_error</code> / <code>content_id</code> semantics.</li>
+    <li id="r-classify"><strong>error categories</strong> — <code>classify_d365_error(status, code, message)</code> → <code>(category, retryable)</code>; the M01 envelope's <code>meta.category</code> / <code>meta.retryable</code>.</li>
+  </ol>
+  <p class="ft">M11 · L05 · lessons/0012-resilience.html · retry-loop diagram via vendored mermaid · mapped from crm @ main (github.com/Gharib89/crm), 2026-06-13</p>
+</footer>
+
+</div>
+
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script src="../assets/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad:true,
+    theme:"base",
+    themeVariables:{
+      fontFamily:'"Roboto Mono", ui-monospace, monospace',
+      fontSize:"14px",
+      lineColor:"#586072",
+      primaryColor:"#fffdf8",
+      primaryTextColor:"#1d2128",
+      primaryBorderColor:"#d6cdba"
+    },
+    flowchart:{ curve:"basis", htmlLabels:true, useMaxWidth:true, padding:14 }
+  });
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 11, "name": "Under the Hood"},
+  "lesson": 5,
+  "title": "Resilience",
+  "slug": "resilience",
+  "topics": ["resilience","retry","backoff","paging","batch","errors"],
+  "summary": "Inside the transport loop — retry on 429/5xx/transport errors, exponential backoff with jitter, paging via @odata.nextLink, $batch, and why POST is never auto-retried.",
+  "order": 5,
+  "status": "published" }
+</script>
+</body>
+</html>

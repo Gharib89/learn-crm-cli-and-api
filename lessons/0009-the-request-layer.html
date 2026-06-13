@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M11 · L02 — The Request Layer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  pre.pyfile::before{content:"crm/utils/d365_backend.py";position:absolute;top:11px;left:18px;
+    font-size:11px;color:#6a7689;font-style:italic}
+  pre.pyfile{padding-top:40px}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-cmd{color:#5fe3bd;font-weight:500}.c-flag{color:#ffd479}
+  .c-grp{color:#8cc0ff;font-weight:600}.c-verb{color:#a7e6a0;font-weight:600}
+  .c-def{color:#c9a9ff;font-weight:600}.c-fn{color:#ffd479}
+
+  /* layered / branch diagram */
+  .stack{margin:20px 0;font-family:"Roboto Mono",monospace}
+  .layer{position:relative;background:var(--card);border:1px solid var(--line2);border-radius:12px;
+    padding:13px 16px;margin:0;box-shadow:var(--shadow)}
+  .layer .lname{font-size:13.5px;font-weight:700;color:var(--ink)}
+  .layer .lfile{font-size:12px;color:var(--guid);font-weight:600}
+  .layer .ldesc{font-family:"Roboto",sans-serif;font-size:14.5px;color:var(--ink-soft);margin-top:3px}
+  .layer.cmd{border-left:3px solid var(--teal)}
+  .layer.core{border-left:3px solid var(--amber)}
+  .layer.tx{border-left:3px solid var(--ink)}
+  .arrow{text-align:center;color:var(--ink-mute);font-size:15px;line-height:1;margin:6px 0;font-family:"Roboto Mono",monospace}
+  .layer .tag2{position:absolute;top:12px;right:14px;font-size:10.5px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--ink-mute);font-weight:600}
+
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+
+  table.map{width:100%;border-collapse:collapse;margin:14px 0;font-size:14.5px;
+    background:var(--card);border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.map th,table.map td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.map th{font-family:"Roboto Mono",monospace;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink-mute);font-weight:600;background:#f7f1e6}
+  table.map tr:last-child td{border-bottom:none}
+  table.map td code{font-size:.82em}
+  table.map td:first-child{font-weight:600;color:var(--ink)}
+
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre,.stack .layer{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-cmd,pre .c-flag,pre .c-grp,pre .c-verb,pre .c-def,pre .c-fn{color:#111}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="top reveal">
+  <div class="eyebrow">Milestone 11 <span class="dot">/</span> Under the Hood <span class="dot">/</span> Lesson 02</div>
+  <h1>The <em>Request</em><br>Layer</h1>
+  <p class="sub">One session, one auth adapter, four headers — how <code>D365Backend</code> turns a verb call into an authenticated HTTP request.</p>
+  <div class="livechip"><span class="led"></span> source&nbsp; <b>github.com/Gharib89/crm</b> &nbsp;·&nbsp; @ main</div>
+  <div class="rule"></div>
+  <div class="why"><b>Why now.</b> L01 placed the transport box at the bottom of the map. This is the box where M01's biggest split lives: <em>cloud</em> (OAuth, v9.2) vs <em>on-prem</em> (NTLM, v9.1). In L02 of M01 you saw that <code>crm</code> infers the auth scheme from the URL — now you'll read the code that <em>acts</em> on it. Get this layer, and "why does the same command behave differently on two orgs?" becomes a question you answer by reading one method.</div>
+</header>
+
+<p class="lead reveal">Today's win: read <code>_make_auth</code> and name, for any profile, exactly which credentials go on the wire and where the secret lives.</p>
+
+<section class="reveal">
+<h2><span class="n">01</span> One session, built once per run</h2>
+
+<p>Everything in this layer hangs off a single object: <code>D365Backend</code>. Its constructor builds one <code>requests.Session</code>, attaches the auth adapter and TLS setting, and reuses it for every call that run:<sup><a href="#r-init">init</a></sup></p>
+
+<pre class="pyfile"><code><span class="c-key">class</span> <span class="c-def">D365Backend</span>:
+    <span class="c-key">def</span> <span class="c-fn">__init__</span>(self, profile, password, ...):
+        <span class="c-comment"># requests imported here, not at module top (fast startup, issue #247)</span>
+        <span class="c-key">import</span> requests
+        self._session = requests.Session()
+        self._session.auth   = self.<span class="c-fn">_make_auth</span>(password)   <span class="c-comment"># ← the auth branch</span>
+        self._session.verify = profile.verify_ssl            <span class="c-comment"># TLS verification</span></code></pre>
+
+<p>The base URL is built from the profile in the <code>api_base</code> property — the version segment comes straight from the profile, which is why <strong>cloud reports <code>v9.2</code> and on-prem caps at <code>v9.1</code></strong> (the M01 L02 tell):<sup><a href="#r-init">init</a></sup></p>
+
+<pre class="pyfile"><code><span class="c-key">return</span> <span class="c-str">f"{self.url.rstrip('/')}/api/data/{self.api_version}/"</span>
+<span class="c-comment"># cloud  → https://orgexample.crm.dynamics.com/api/data/v9.2/</span>
+<span class="c-comment"># on-prem→ http://crm.contoso.local/Contoso/api/data/v9.1/</span></code></pre>
+</section>
+
+<section class="reveal">
+<h2><span class="n">02</span> The auth branch — one switch, three worlds</h2>
+
+<p><code>_make_auth</code> is a single switch on <code>profile.auth_scheme</code>. That one field — inferred from your URL back in M01 L02 — picks the entire credential mechanism:<sup><a href="#r-auth">auth</a></sup></p>
+
+<pre class="pyfile"><code><span class="c-key">def</span> <span class="c-fn">_make_auth</span>(self, password):
+    scheme = self.profile.auth_scheme
+    <span class="c-key">if</span> scheme == <span class="c-str">"ntlm"</span>:                 <span class="c-comment"># on-prem, Windows Integrated</span>
+        user = <span class="c-str">f"{domain}\\{username}"</span> <span class="c-key">if</span> domain <span class="c-key">else</span> username
+        <span class="c-key">return</span> <span class="c-fn">HttpNtlmAuth</span>(user, password)
+    <span class="c-key">if</span> scheme <span class="c-key">in</span> (<span class="c-str">"kerberos"</span>, <span class="c-str">"negotiate"</span>):  <span class="c-comment"># on-prem AD via SSPI</span>
+        <span class="c-key">return</span> <span class="c-fn">HttpNegotiateAuth</span>()       <span class="c-comment"># no creds in the profile</span>
+    <span class="c-key">if</span> scheme == <span class="c-str">"oauth"</span>:                <span class="c-comment"># cloud / Dataverse online</span>
+        <span class="c-key">return</span> self.<span class="c-fn">_make_oauth_auth</span>(password)
+    <span class="c-key">raise</span> <span class="c-fn">D365Error</span>(<span class="c-str">"Unknown auth_scheme ..."</span>)</code></pre>
+
+<p>Each branch returns a <code>requests</code> <em>auth adapter</em> — an object that knows how to sign every outgoing request. The session calls it automatically; the rest of <code>crm</code> never thinks about auth again.</p>
+
+<div class="callout tip"><span class="ic">✓</span><div><b>The whole cloud-vs-on-prem split is this one method.</b> No other layer branches on org type. So if auth misbehaves, this is the <em>only</em> file you read — and a profile's <code>auth_scheme</code> is the only field that steers it.</div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">03</span> NTLM vs OAuth, side by side</h2>
+
+<p>The two you'll actually meet (your <code>agent-on-prem</code> and <code>agent-cloud</code> profiles):</p>
+
+<table class="map">
+  <tr><th></th><th>NTLM &nbsp;<span style="font-weight:400;text-transform:none">(on-prem)</span></th><th>OAuth &nbsp;<span style="font-weight:400;text-transform:none">(cloud)</span></th></tr>
+  <tr><td>Adapter</td><td><code>HttpNtlmAuth</code> (<code>requests_ntlm</code>)</td><td><code>_OAuthBearerAuth</code> via <code>msal</code></td></tr>
+  <tr><td>Secret used</td><td>the user's <strong>password</strong></td><td>app-registration <strong>client secret</strong></td></tr>
+  <tr><td>Profile fields</td><td><code>username</code> + <code>domain</code></td><td><code>tenant_id</code> + <code>client_id</code></td></tr>
+  <tr><td>What's sent</td><td>NTLM handshake each connection; <code>DOMAIN\user</code> + hashed challenge</td><td><code>Authorization: Bearer &lt;token&gt;</code> header</td></tr>
+  <tr><td>Token / caching</td><td>none — re-negotiated by the transport</td><td>token cached at <code>~/.crm/msal_token_cache.json</code> (0600); AAD hit only when stale</td></tr>
+</table>
+
+<p>The OAuth side is the more involved one. <code>_make_oauth_auth</code> derives the <strong>scope</strong> from your org host and points at the public-cloud <strong>authority</strong>, then hands msal a cache:<sup><a href="#r-oauth">oauth</a></sup></p>
+
+<pre class="pyfile"><code>host      = urlparse(profile.url).netloc
+scope     = <span class="c-str">f"https://{host}/.default"</span>                 <span class="c-comment"># e.g. orgexample.crm.dynamics.com/.default</span>
+authority = <span class="c-str">f"https://login.microsoftonline.com/{tenant}"</span></code></pre>
+
+<p>Then, on <em>every</em> request, the bearer adapter asks msal for a token and stamps the header — msal serves it from cache and only round-trips to Entra ID (AAD) when none is valid:<sup><a href="#r-oauth">oauth</a></sup></p>
+
+<pre class="pyfile"><code><span class="c-key">def</span> <span class="c-fn">__call__</span>(self, request):                 <span class="c-comment"># runs per request</span>
+    result = app.<span class="c-fn">acquire_token_for_client</span>(scopes=[self._scope])
+    request.headers[<span class="c-str">"Authorization"</span>] = <span class="c-str">f"Bearer {token}"</span>
+    self.<span class="c-fn">_persist_cache</span>()                      <span class="c-key">return</span> request</code></pre>
+
+<div class="callout warn"><span class="ic">!</span><div><b>A rejected credential is operational, not transient.</b> The OAuth path does <em>no</em> automatic refresh-retry on a bad secret — it raises a <code>401</code> <code>D365Error</code> pointing you at the app registration. (That feeds the M01 L03 envelope's <code>category: auth_failed</code>.)</div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">04</span> The headers every request carries</h2>
+
+<p>Auth signs the request; a fixed set of headers makes it a <em>Web API</em> request. Each call starts from <code>DEFAULT_HEADERS</code> — the OData v4 contract:<sup><a href="#r-headers">headers</a></sup></p>
+
+<dl class="ginfo">
+  <dt>OData-Version: 4.0</dt><dd>The protocol the response must speak.</dd>
+  <dt>OData-MaxVersion: 4.0</dt><dd>The highest version the client will accept.</dd>
+  <dt>Accept: application/json</dt><dd>Give me JSON, not XML/Atom.</dd>
+  <dt>Content-Type: application/json; charset=utf-8</dt><dd>My request body (on POST/PATCH) is JSON.</dd>
+</dl>
+
+<p>Per-request headers layer <em>on top</em> of these — the <code>Prefer</code> header (annotations, page size), impersonation (<code>MSCRMCallerID</code>), and concurrency (<code>If-Match</code>). Those belong to the next two lessons; here, just see the base. Once auth + headers are set, the call fires through <code>self._session.request(...)</code> — and the retry/paging wrapper around that line is <strong>L04's</strong> story.</p>
+
+<div class="callout tip"><span class="ic">✓</span><div><b>Where annotations come from (preview):</b> the <code>Prefer: odata.include-annotations</code> header set here is exactly what makes Dataverse return human-readable values — the enrichment story is <strong>L03</strong>.</div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">05</span> Do it yourself <span class="pill">~6 min</span></h2>
+
+<p>A source-reading drill plus one read-only check. Open <code>crm/utils/d365_backend.py</code> on <a href="https://github.com/Gharib89/crm/blob/main/crm/utils/d365_backend.py">GitHub</a> (or your clone):</p>
+<ol class="steps">
+  <li>Find <code>_make_auth</code>. Trace all three branches. For your <code>agent-cloud</code> profile (<code>auth_scheme: oauth</code>), which branch runs — and which secret does it consume?</li>
+  <li>Find <code>DEFAULT_HEADERS</code> and the <code>api_base</code> property. Confirm with your own eyes why an on-prem org's URL ends in <code>/v9.1/</code> while cloud ends in <code>/v9.2/</code>.</li>
+  <li>Find where <code>Authorization: Bearer …</code> is set (<code>_OAuthBearerAuth.__call__</code>). Note that it runs <em>per request</em>, not once at startup.</li>
+  <li>Now, read-only, inspect your own profiles and predict the branch each takes:</li>
+</ol>
+<pre><code>crm <span class="c-flag">--json</span> <span class="c-grp">profile</span> <span class="c-verb">list</span>   <span class="c-comment"># read each profile's auth_scheme → which _make_auth branch?</span></code></pre>
+
+<div class="callout tip"><span class="ic">✓</span><div><b>The habit this builds:</b> "is this an auth problem?" stops being a guess. You check the profile's <code>auth_scheme</code>, jump to that one branch in <code>_make_auth</code>, and know exactly what's on the wire.</div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">06</span> Check yourself</h2>
+<div class="quiz" id="quiz">
+  <p class="qh">Four questions, instant feedback</p>
+  <p class="qhs">tap an answer — no penalty for a wrong first try</p>
+
+  <div class="q" data-correct="1">
+    <div class="stem">1 · Your profile points at <code>orgexample.crm.dynamics.com</code>. Which <code>_make_auth</code> branch runs?</div>
+    <button class="opt"><span class="mk">A</span> <code>ntlm</code> → <code>HttpNtlmAuth</code></button>
+    <button class="opt"><span class="mk">B</span> <code>oauth</code> → bearer token via msal</button>
+    <button class="opt"><span class="mk">C</span> <code>negotiate</code> → <code>HttpNegotiateAuth</code></button>
+    <button class="opt"><span class="mk">D</span> none — cloud needs no auth adapter</button>
+    <div class="fb ok">Correct. A <code>*.dynamics.com</code> URL infers <code>auth_scheme: oauth</code> (M01 L02), so the OAuth branch builds a bearer-token adapter via msal.</div>
+    <div class="fb no">Not quite. Cloud (<code>*.dynamics.com</code>) infers <code>oauth</code>; <code>_make_auth</code> takes the <code>oauth</code> branch and builds a bearer-token adapter via msal. NTLM/Negotiate are the on-prem branches.</div>
+  </div>
+
+  <div class="q" data-correct="2">
+    <div class="stem">2 · Where does the cloud (OAuth) access token live between <code>crm</code> invocations?</div>
+    <button class="opt"><span class="mk">A</span> In the profile JSON, next to the secret</button>
+    <button class="opt"><span class="mk">B</span> Nowhere — fetched fresh on every single request</button>
+    <button class="opt"><span class="mk">C</span> A 0600 msal cache at <code>~/.crm/msal_token_cache.json</code></button>
+    <button class="opt"><span class="mk">D</span> In an environment variable</button>
+    <div class="fb ok">Correct. msal persists a serialized token cache (mode 0600) so the token survives across runs; AAD is only contacted when no valid token is cached.</div>
+    <div class="fb no">Not quite. msal serves the token from a persistent cache at <code>~/.crm/msal_token_cache.json</code> (0600). It isn't in the profile, and it isn't re-fetched every request when a valid one is cached.</div>
+  </div>
+
+  <div class="q" data-correct="0">
+    <div class="stem">3 · What do <code>DEFAULT_HEADERS</code> mainly encode?</div>
+    <button class="opt"><span class="mk">A</span> The OData v4 protocol contract (version + JSON)</button>
+    <button class="opt"><span class="mk">B</span> The user's credentials</button>
+    <button class="opt"><span class="mk">C</span> Retry and paging settings</button>
+    <button class="opt"><span class="mk">D</span> The <code>$filter</code> and <code>$select</code> query</button>
+    <div class="fb ok">Correct. <code>OData-Version</code>/<code>OData-MaxVersion: 4.0</code> + <code>Accept</code>/<code>Content-Type: application/json</code> declare "I speak OData v4 in JSON." Auth, query params, and retry live elsewhere.</div>
+    <div class="fb no">Not quite. The defaults are the OData v4 contract (version headers + JSON accept/content-type). Credentials come from the auth adapter; query params are built in the core layer.</div>
+  </div>
+
+  <div class="q" data-correct="3">
+    <div class="stem">4 · On-prem NTLM and cloud OAuth differ in what they put on the wire. Which is true?</div>
+    <button class="opt"><span class="mk">A</span> Both send <code>Authorization: Bearer</code></button>
+    <button class="opt"><span class="mk">B</span> NTLM sends a Bearer token; OAuth does a handshake</button>
+    <button class="opt"><span class="mk">C</span> Both negotiate over SSPI</button>
+    <button class="opt"><span class="mk">D</span> NTLM does a challenge/response handshake; OAuth sends a <code>Bearer</code> token header</button>
+    <div class="fb ok">Correct. NTLM negotiates a challenge/response per connection (no token stored); OAuth stamps an <code>Authorization: Bearer &lt;token&gt;</code> header sourced from the msal cache.</div>
+    <div class="fb no">Re-check §3: NTLM uses a Windows challenge/response handshake (<code>DOMAIN\user</code> + hashed challenge, nothing cached); OAuth sends an <code>Authorization: Bearer</code> token header.</div>
+  </div>
+
+  <div class="score" id="score"></div>
+</div>
+</section>
+
+<div class="ask reveal">
+  <b>Stuck or curious?</b> I'm your teacher for this — ask me anything in the chat. Good follow-ups right now:
+  <ul class="tight" style="margin-bottom:0">
+    <li>"Walk me through the msal client-credentials flow end to end."</li>
+    <li>"What's <code>requests_negotiate_sspi</code> for, and why is it Windows-only?"</li>
+    <li>"Show me how <code>verify_ssl</code> interacts with a self-signed on-prem cert."</li>
+  </ul>
+</div>
+
+<div class="next reveal">
+  <span class="pill t">up next</span>
+  <h2>What crm adds vs what Dataverse returns</h2>
+  <p style="margin:0">You can now read how a request is built and signed. <strong>L03 — Enrichment vs the Raw API</strong> follows the response back up: which displayed values come straight from Dataverse (the <code>FormattedValue</code> / <code>lookuplogicalname</code> annotations the <code>Prefer</code> header asked for) versus what <code>crm</code> derives itself — and why a lookup shows a GUID, not a name. <span class="live-only">Say <strong>"next lesson"</strong> when you're ready, or ask me to trace a request on your own org first.</span></p>
+</div>
+
+<footer class="reveal">
+  <p><strong>Sources</strong> — read from the source, not guessed (line refs are anchors on <code>main</code> and may drift; the symbol names won't):</p>
+  <ol class="refs">
+    <li id="r-init"><a href="https://github.com/Gharib89/crm/blob/main/crm/utils/d365_backend.py#L398-L428">D365Backend.__init__</a> (session + auth + verify) and the <a href="https://github.com/Gharib89/crm/blob/main/crm/utils/d365_backend.py#L251-L254">api_base</a> property (URL + version). Default <code>api_version</code> = <code>v9.2</code>.</li>
+    <li id="r-auth"><a href="https://github.com/Gharib89/crm/blob/main/crm/utils/d365_backend.py#L443-L472">_make_auth</a> — the <code>ntlm</code> / <code>kerberos|negotiate</code> / <code>oauth</code> branch on <code>profile.auth_scheme</code>.</li>
+    <li id="r-oauth"><a href="https://github.com/Gharib89/crm/blob/main/crm/utils/d365_backend.py#L474-L515">_make_oauth_auth</a> (scope/authority/cache) and <a href="https://github.com/Gharib89/crm/blob/main/crm/utils/d365_backend.py#L343-L363">_OAuthBearerAuth.__call__</a> (per-request <code>Bearer</code> stamping). Token cache path: <a href="https://github.com/Gharib89/crm/blob/main/crm/utils/d365_backend.py#L267-L282">_oauth_cache_path</a>.</li>
+    <li id="r-headers"><a href="https://github.com/Gharib89/crm/blob/main/crm/utils/d365_backend.py#L259-L264">DEFAULT_HEADERS</a> — the OData v4 base headers every request starts from.</li>
+  </ol>
+  <p class="ft">M11 · L02 · lessons/0009-the-request-layer.html · mapped from crm @ main (github.com/Gharib89/crm), 2026-06-13</p>
+</footer>
+
+</div>
+
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 11, "name": "Under the Hood"},
+  "lesson": 2,
+  "title": "The Request Layer",
+  "slug": "the-request-layer",
+  "topics": ["transport","auth","ntlm","oauth"],
+  "summary": "How D365Backend builds one authenticated request — session, the NTLM/OAuth auth branch, and the OData v4 headers.",
+  "order": 2,
+  "status": "published" }
+</script>
+</body>
+</html>

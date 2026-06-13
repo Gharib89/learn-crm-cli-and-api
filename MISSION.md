@@ -26,7 +26,13 @@ end-to-end through the CLI, learning the D365 platform itself along the way.
 - Lessons cite trusted sources (`RESOURCES.md`); never lean on the agent's parametric knowledge.
 
 ## Out of scope
-- Studying the `crm` CLI Python codebase for its own sake — kept **high-level / on-demand** only
-  (to write better upstream bug reports, or explain surprising CLI behavior).
-- Contributing code / PRs to the crm repo (we file issues, not fixes).
+- Contributing code / PRs to the crm repo (we file issues, not fixes) — true even in M11: the goal
+  there is *understanding* the codebase, not upstreaming changes.
 - GUI-only / non-API-automatable customizations, beyond *recognizing* them as such.
+
+## Appendix track — M11 "Under the Hood" (added 2026-06-13)
+Codebase study is **no longer globally out of scope** — it gets its own optional milestone, **M11**,
+sitting after the M10 capstone. Full deep-dive depth: package architecture, request handling,
+enrichment, control flow, how the code is structured (contributor-level *understanding*, not PRs).
+Within the M01–M10 spine, codebase detail still stays on-demand / high-level — M11 is where the
+deep-dive lives. Source of truth: <https://github.com/Gharib89/crm> (read directly, cite file:line).

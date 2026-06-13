@@ -52,6 +52,32 @@ envelope → dry-run → create → read → discover. (Update/delete shown in p
 preview, L05 delete, L07 help — not their own lessons; revisit as M01.5 if user wants
 dedicated CRUD-write drills.)
 
+## M11 (appendix) — "Under the Hood: how crm works" (decided 2026-06-13)
+
+User pivoted: wants a **dedicated milestone on the crm codebase itself** — architecture, structure,
+request handling, enrichment. Reverses the original MISSION "codebase out of scope" note (now
+amended). Decisions:
+- **Slot:** appendix **M11**, milestone num 11 → sorts after the M10 capstone; optional deep-dive.
+  M01–M10 spine untouched. GitHub issue #11 opened (learning-milestone label).
+- **Depth:** **full codebase deep-dive** — module design, classes, control flow, how you'd modify
+  it (contributor-level *understanding*; mission still = file issues, not PRs).
+- **Source of truth:** github.com/Gharib89/crm, cloned at `~/wip/projects/crm` (CLAUDE.local.md).
+  Cite file:line + GitHub blob URLs.
+- **Planned spine:** L01 architecture map (argv→command→core→backend) · L02 request layer
+  (auth/headers/session, `utils/d365_backend.py`) · L03 enrichment vs raw API (FormattedValue/
+  lookuplogicalname annotations, `--annotations`/`--minimal`) · **L04 the architecture, drawn**
+  (3 Mermaid diagrams: package map, one-way dependency rule, request sequence — vendored
+  `assets/mermaid.min.js`, shipped 2026-06-13) · L05 resilience (retry/backoff, paging
+  `@odata.nextLink`, `$batch`, error classification) · L06 (opt) reading source to file better
+  upstream bugs.
+- **Diagrams = Mermaid, vendored.** Chosen over Excalidraw MCP (renders in chat / shares a URL —
+  no embeddable file) and hand-authored inline SVG (no live edit). `assets/mermaid.min.js` is the
+  UMD build (exposes `globalThis.mermaid`, self-contained, no chunk fetches). Lessons embed
+  `<div class="mermaid">` + a local `<script src="../assets/mermaid.min.js">` — the same relative
+  path works in raw `lessons/` AND built `_site/lessons/`, so diagrams render during live teaching
+  too, and no `build.py` change is needed (`build.py` already copies `assets/` → `_site/`). The
+  1 MB lib only loads on lessons that include the script.
+
 ## Live-CLI gotchas caught while authoring (v3.9.1)
 
 - **`--validate` is a per-verb flag, NOT global.** `crm --json --validate --dry-run entity

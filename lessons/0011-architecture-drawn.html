@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M11 · L04 — The Architecture, Drawn</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-cmd{color:#5fe3bd;font-weight:500}.c-flag{color:#ffd479}
+  .c-grp{color:#8cc0ff;font-weight:600}.c-verb{color:#a7e6a0;font-weight:600}
+
+  /* mermaid diagram figures */
+  .fig{margin:24px 0;background:var(--card);border:1px solid var(--line2);border-radius:14px;
+    padding:20px 18px 12px;box-shadow:var(--shadow);break-inside:avoid}
+  /* a too-wide diagram (the sequence) breaks out past the reading column */
+  .fig.wide{width:min(1160px,94vw);margin-left:50%;transform:translateX(-50%);max-width:94vw}
+  .fig .mermaid{display:flex;justify-content:center;font-family:"Roboto Mono",monospace;
+    min-height:48px;visibility:hidden}
+  .fig .mermaid[data-processed]{visibility:visible}
+  .fig svg{max-width:100%;height:auto}
+  .fig figcaption{font-family:"Roboto Mono",monospace;font-size:12px;color:var(--ink-mute);
+    text-align:center;margin-top:12px;letter-spacing:.02em;line-height:1.5}
+  .fig figcaption b{color:var(--ink-soft);font-weight:600}
+
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+
+  table.map{width:100%;border-collapse:collapse;margin:14px 0;font-size:14.5px;
+    background:var(--card);border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.map th,table.map td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line)}
+  table.map th{font-family:"Roboto Mono",monospace;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink-mute);font-weight:600;background:#f7f1e6}
+  table.map tr:last-child td{border-bottom:none}
+  table.map td code{font-size:.82em}
+
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-cmd,pre .c-flag,pre .c-grp,pre .c-verb{color:#111}
+    .fig{box-shadow:none;border:1px solid #bbb;background:#fff;break-inside:avoid}
+    .fig.wide{width:100%;margin-left:0;transform:none;max-width:100%}
+    .fig .mermaid{visibility:visible}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="top reveal">
+  <div class="eyebrow">Milestone 11 <span class="dot">/</span> Under the Hood <span class="dot">/</span> Lesson 04</div>
+  <h1>The <em>Architecture,</em><br>Drawn</h1>
+  <p class="sub">Three diagrams that hold the whole codebase: what's in the box, which way the arrows point, and a request as it happens.</p>
+  <div class="livechip"><span class="led"></span> source&nbsp; <b>github.com/Gharib89/crm</b> &nbsp;·&nbsp; @ main</div>
+  <div class="rule"></div>
+  <div class="why"><b>Why now.</b> L01 traced one command through four boxes; L02 and L03 zoomed into the transport and the enrichment it returns. This lesson is the <em>step back</em> — the same architecture as three reference diagrams you can keep open while you read source. The mission payoff is unchanged: when <code>crm</code> surprises you, a glance at the right diagram tells you which file owns the problem.</div>
+</header>
+
+<p class="lead reveal">Today's win: three pictures — a <em>package map</em>, a <em>one-way dependency rule</em>, and a <em>request sequence</em> — that together <em>are</em> the architecture.</p>
+
+<section class="reveal">
+<h2><span class="n">01</span> What's in the box</h2>
+
+<p>Install <code>crm</code> and you get one Python package, <code>crm/</code>, with a handful of sub-packages — each a single, separable job. This is the whole map at the directory level:<sup><a href="#r-pkg">layout</a></sup></p>
+
+<figure class="fig">
+  <div class="mermaid">
+flowchart LR
+  root["crm/<br/>installed package"]:::pkg
+  root --> cli["cli.py<br/>root group · CLIContext · emit()"]:::spine
+  root --> cmd["commands/*.py<br/>~30 groups + _helpers + registries"]:::cmd
+  root --> core["core/*.py<br/>~40 request builders + logic"]:::core
+  root --> utils["utils/d365_backend.py<br/>the Dataverse transport"]:::tx
+  root --> side["skills/ · tests/<br/>bundled skills · 120+ tests"]:::side
+  classDef pkg fill:#1d2128,stroke:#1d2128,color:#f3ede1;
+  classDef spine fill:#efe8fb,stroke:#6d28d9,color:#1d2128;
+  classDef cmd fill:#e3f0ea,stroke:#0c7a64,color:#08533f;
+  classDef core fill:#f8ead4,stroke:#b4530a,color:#7a3807;
+  classDef tx fill:#e7e9ee,stroke:#1d2128,color:#1d2128;
+  classDef side fill:#fffdf8,stroke:#d6cdba,color:#7c849a;
+  </div>
+  <figcaption><b>Figure 1.</b> The <code>crm/</code> package. Three boxes do the request work (<span style="color:var(--guid)">spine</span> · <span style="color:var(--teal-deep)">command</span> · <span style="color:var(--amber)">core</span> · <span style="color:var(--ink)">transport</span>); <code>skills/</code> and <code>tests/</code> sit beside them.</figcaption>
+</figure>
+
+<p>The pairing is the thing to memorise: for any group — <code>entity</code>, <code>query</code>, <code>solution</code> — there's a <strong>matched pair</strong> of files. <code>commands/entity.py</code> (talks to your terminal) sits opposite <code>core/entity.py</code> (talks to Dataverse). Same name, opposite jobs.</p>
+</section>
+
+<section class="reveal">
+<h2><span class="n">02</span> The one rule: arrows point one way</h2>
+
+<p>The reason you can predict where a bug lives is a single architectural rule: <strong>dependencies flow in one direction only.</strong> Each layer calls the one below it and never reaches back up or skips ahead:<sup><a href="#r-dep">dispatch</a></sup></p>
+
+<figure class="fig">
+  <div class="mermaid">
+flowchart TD
+  shell(["your shell"]):::ext
+  shell -->|argv| cli["cli.py · spine"]:::spine
+  cli -->|"lazy dispatch"| cmd["commands/* · parse flags, render"]:::cmd
+  cmd -->|"call core fn"| core["core/* · build OData request"]:::core
+  core -->|"get / post / patch / delete"| tx["d365_backend.py · auth, HTTP, retry"]:::tx
+  tx -->|"HTTPS · OData v4"| dv[("Dataverse Web API")]:::ext
+  classDef ext fill:#fffdf8,stroke:#7c849a,color:#586072,stroke-dasharray:4 3;
+  classDef spine fill:#efe8fb,stroke:#6d28d9,color:#1d2128;
+  classDef cmd fill:#e3f0ea,stroke:#0c7a64,color:#08533f;
+  classDef core fill:#f8ead4,stroke:#b4530a,color:#7a3807;
+  classDef tx fill:#e7e9ee,stroke:#1d2128,color:#1d2128;
+  </div>
+  <figcaption><b>Figure 2.</b> One-way dependency, top to bottom. Logic (<code>core</code>) is sandwiched between two I/O edges — the terminal above, Dataverse HTTP below — and touches neither directly.</figcaption>
+</figure>
+
+<p>Two invariants enforce that shape, and you can <em>prove</em> both with a grep (you'll do it in §4):</p>
+<ul class="tight">
+  <li><strong>Core never imports Click.</strong> The business logic has no idea it's being driven by a CLI — which is why it's unit-testable without spawning a terminal. <code>grep "import click" crm/core/</code> returns <em>nothing</em>.</li>
+  <li><strong>All Dataverse traffic goes through the transport.</strong> Only <code>utils/d365_backend.py</code> builds the authenticated <code>requests</code> session that talks to your org. A command file never opens a socket.</li>
+</ul>
+
+<div class="callout warn"><span class="ic">!</span><div><b>The one honest exception.</b> <code>core/update.py</code> <em>does</em> call <code>requests.get()</code> directly — but to crm's <em>own release host</em> to check for and download a new version, not to Dataverse. It can't route that through a Dataverse backend (different host, no auth profile), so it's deliberately separate. The layering rule is about <em>Dataverse</em> I/O; self-update is a different axis.<sup><a href="#r-update">update</a></sup></div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">03</span> A request, as it happens</h2>
+
+<p>The first two diagrams are static — the shape at rest. This one adds <em>time</em>: the exact round-trip for the command from L01, top to bottom and back, with every hop numbered.<sup><a href="#r-seq">round-trip</a></sup></p>
+
+<figure class="fig wide">
+  <div class="mermaid">
+sequenceDiagram
+  autonumber
+  actor U as You
+  participant CLI as cli.py
+  participant CMD as commands/query
+  participant CORE as core/query
+  participant TX as backend
+  participant DV as Dataverse
+  U->>CLI: crm query odata …
+  CLI->>CLI: parse globals → ctx
+  CLI->>CMD: dispatch "query"
+  CMD->>CORE: odata_query(…)
+  CORE->>TX: backend.get(…)
+  TX->>DV: GET /contacts?$filter
+  DV-->>TX: 200 + JSON
+  TX-->>CORE: dict / D365Error
+  CORE-->>CMD: data
+  CMD->>CLI: ctx.emit(…)
+  CLI-->>U: {ok,data,meta} + exit
+  </div>
+  <figcaption><b>Figure 3.</b> One <code>query odata</code> call. Solid arrows go down (the request being built); dashed arrows come back up (the response, or a raised <code>D365Error</code>). <code>emit()</code> is the single exit.</figcaption>
+</figure>
+
+<p>Read it against Figure 2 and the symmetry pops: the request descends the dependency chain, the Dataverse JSON climbs back up the same chain, and the <em>only</em> place output reaches you is <code>emit()</code> — steps 11. That's the <code>{ok,data,meta}</code> contract from M01, drawn.</p>
+</section>
+
+<section class="reveal">
+<h2><span class="n">04</span> Prove the invariant yourself <span class="pill">~5 min</span></h2>
+
+<p>Diagrams are claims. Here's how to check the load-bearing one — that <em>core</em> never depends on the CLI framework — against the real tree. Clone or open <a href="https://github.com/Gharib89/crm">the repo</a> and run:</p>
+
+<pre class="term"><span class="tag">verify the invariant</span><code><span class="c-comment"># 1 · core must NOT import Click — expect zero hits</span>
+<span class="c-cmd">grep</span> <span class="c-flag">-rl</span> <span class="c-str">"import click"</span> crm/core/
+
+<span class="c-comment"># 2 · commands DO import Click — expect many files</span>
+<span class="c-cmd">grep</span> <span class="c-flag">-rl</span> <span class="c-str">"import click"</span> crm/commands/*.py | <span class="c-cmd">wc</span> <span class="c-flag">-l</span>
+
+<span class="c-comment"># 3 · who builds the requests session? — the transport</span>
+<span class="c-cmd">grep</span> <span class="c-flag">-rn</span> <span class="c-str">"requests.Session"</span> crm/utils/d365_backend.py</code></pre>
+
+<p>Expected: <strong>(1) prints nothing</strong> — the invariant holds; <strong>(2) prints a count near 29</strong> — every group is a Click command; <strong>(3) finds the one session</strong> that all Dataverse traffic shares. You just confirmed Figure 2 is true, not decorative.</p>
+
+<div class="callout tip"><span class="ic">✓</span><div><b>The habit this builds:</b> an architecture diagram is only worth trusting if you can falsify it with a command. When you read <em>any</em> codebase's docs, ask "what one grep would prove this?" — then run it.</div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">05</span> Check yourself</h2>
+<div class="quiz" id="quiz">
+  <p class="qh">Four questions, instant feedback</p>
+  <p class="qhs">tap an answer — no penalty for a wrong first try</p>
+
+  <div class="q" data-correct="1">
+    <div class="stem">1 · In Figure 1, what is the relationship between <code>commands/entity.py</code> and <code>core/entity.py</code>?</div>
+    <button class="opt"><span class="mk">A</span> They're the same file at different paths</button>
+    <button class="opt"><span class="mk">B</span> A matched pair — command speaks <em>terminal</em>, core speaks <em>Dataverse</em></button>
+    <button class="opt"><span class="mk">C</span> <code>core/entity.py</code> imports and wraps <code>commands/entity.py</code></button>
+    <button class="opt"><span class="mk">D</span> Only one of them exists; the other is generated</button>
+    <div class="fb ok">Correct. Each group is a pair with the same name and opposite jobs: the command file parses flags and renders; the core file builds the OData request. The arrow always goes command → core.</div>
+    <div class="fb no">Look again at §1: they're a matched pair with opposite jobs — <code>commands/entity.py</code> handles the terminal, <code>core/entity.py</code> builds the Dataverse request. Command calls core, never the reverse.</div>
+  </div>
+
+  <div class="q" data-correct="2">
+    <div class="stem">2 · Which grep would <em>prove</em> the load-bearing invariant from Figure 2, and what result confirms it?</div>
+    <button class="opt"><span class="mk">A</span> <code>grep "import requests" crm/core/</code> → expect zero hits</button>
+    <button class="opt"><span class="mk">B</span> <code>grep "import click" crm/commands/</code> → expect zero hits</button>
+    <button class="opt"><span class="mk">C</span> <code>grep "import click" crm/core/</code> → expect zero hits</button>
+    <button class="opt"><span class="mk">D</span> <code>grep "emit" crm/core/</code> → expect many hits</button>
+    <div class="fb ok">Correct. Core having <em>no</em> Click import is what keeps logic independent of the CLI. (Note A is a trap: <code>core/update.py</code> imports <code>requests</code> for the self-updater, so that grep is <em>not</em> empty.)</div>
+    <div class="fb no">It's C. The invariant is "core never imports Click," so an empty result for <code>grep "import click" crm/core/</code> confirms it. A is a trap — <code>core/update.py</code> imports <code>requests</code> for self-update, so that one isn't empty.</div>
+  </div>
+
+  <div class="q" data-correct="0">
+    <div class="stem">3 · In Figure 3, at which numbered step does any output first reach <em>you</em>?</div>
+    <button class="opt"><span class="mk">A</span> The final step — <code>emit()</code> renders the <code>{ok,data,meta}</code> envelope</button>
+    <button class="opt"><span class="mk">B</span> As soon as the core function returns <code>data</code></button>
+    <button class="opt"><span class="mk">C</span> When the transport receives <code>200</code> from Dataverse</button>
+    <button class="opt"><span class="mk">D</span> When Click finishes parsing the global flags</button>
+    <div class="fb ok">Correct. Everything before the last hop is internal; the single place output is produced — envelope and exit code — is <code>CLIContext.emit()</code>. One request, one exit.</div>
+    <div class="fb no">Re-read Figure 3: data climbs back up the chain silently. The only place it becomes <em>your</em> output is the last step, <code>emit()</code> — the single chokepoint for the envelope and exit code.</div>
+  </div>
+
+  <div class="q" data-correct="3">
+    <div class="stem">4 · <code>core/update.py</code> calls <code>requests.get()</code> directly. Does that break the layering rule?</div>
+    <button class="opt"><span class="mk">A</span> Yes — core should never touch <code>requests</code> under any circumstance</button>
+    <button class="opt"><span class="mk">B</span> Yes — it's a known bug waiting to be refactored</button>
+    <button class="opt"><span class="mk">C</span> No — the transport secretly proxies that call</button>
+    <button class="opt"><span class="mk">D</span> No — the rule governs <em>Dataverse</em> I/O; self-update hits a different host</button>
+    <div class="fb ok">Correct. The invariant is specifically about Dataverse traffic. The self-updater fetches crm's own new version from the release host — a separate concern that can't use a Dataverse backend, so it's intentionally outside the layering.</div>
+    <div class="fb no">It's D. The layering rule is about <em>Dataverse</em> traffic, all of which goes through <code>d365_backend.py</code>. The self-updater hits crm's release host — a different concern, deliberately separate.</div>
+  </div>
+
+  <div class="score" id="score"></div>
+</div>
+</section>
+
+<div class="ask reveal">
+  <b>Stuck or curious?</b> I'm your teacher for this — ask me anything in the chat. Good follow-ups right now:
+  <ul class="tight" style="margin-bottom:0">
+    <li>"Redraw Figure 3 for <code>entity create</code> instead of a query."</li>
+    <li>"Show me the line in <code>cli.py</code> where the lazy dispatch in Figure 2 actually happens."</li>
+    <li>"What would the diagram look like if I added a new command group?"</li>
+  </ul>
+</div>
+
+<div class="next reveal">
+  <span class="pill t">up next</span>
+  <h2>The wrapper around that one HTTP line</h2>
+  <p style="margin:0">You can now draw the whole shape. <strong>L05 — Resilience</strong> zooms back into the transport edge of Figure 2: retry with backoff on throttling, following <code>@odata.nextLink</code> to page through large results, the <code>$batch</code> envelope, and how a non-2xx becomes the typed <code>D365Error</code> behind M01's error categories. <span class="live-only">Say <strong>"next lesson"</strong> when you're ready, or ask me to redraw any figure for a different command first.</span></p>
+</div>
+
+<footer class="reveal">
+  <p><strong>Sources</strong> — read from the source, not guessed (line refs are anchors on <code>main</code> and may drift; the symbol names won't):</p>
+  <ol class="refs">
+    <li id="r-pkg"><strong>package layout</strong> — the <a href="https://github.com/Gharib89/crm/tree/main/crm">crm/ package</a>: <code>cli.py</code>, <code>commands/</code>, <code>core/</code>, <code>utils/</code>, <code>skills/</code>, <code>tests/</code>.</li>
+    <li id="r-dep"><strong>one-way dispatch</strong> — the lazy command registry in <a href="https://github.com/Gharib89/crm/blob/main/crm/cli.py">crm/cli.py</a> maps a group name to its <code>commands/&lt;group&gt;.py</code>; that file calls <code>crm/core/&lt;group&gt;.py</code>, which calls <a href="https://github.com/Gharib89/crm/blob/main/crm/utils/d365_backend.py">utils/d365_backend.py</a>.</li>
+    <li id="r-seq"><strong>round-trip</strong> — <a href="https://github.com/Gharib89/crm/blob/main/crm/commands/query.py">commands/query.py</a> (<code>query_odata</code>) → <a href="https://github.com/Gharib89/crm/blob/main/crm/core/query.py">core/query.py</a> (<code>odata_query</code>) → <code>D365Backend.get</code>; output via <code>CLIContext.emit</code> in <code>cli.py</code>.</li>
+    <li id="r-update"><strong>self-update exception</strong> — <a href="https://github.com/Gharib89/crm/blob/main/crm/core/update.py">core/update.py</a> calls <code>requests.get()</code> against crm's release host (lazy import, issue #247); <code>core/connection.py</code> references <code>requests.exceptions</code> only to classify <code>connection doctor</code> failures.</li>
+  </ol>
+  <p class="ft">M11 · L04 · lessons/0011-architecture-drawn.html · diagrams rendered with vendored mermaid@11 · mapped from crm @ main (github.com/Gharib89/crm), 2026-06-13</p>
+</footer>
+
+</div>
+
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script src="../assets/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad:true,
+    theme:"base",
+    themeVariables:{
+      fontFamily:'"Roboto Mono", ui-monospace, monospace',
+      fontSize:"14px",
+      lineColor:"#586072",
+      primaryColor:"#fffdf8",
+      primaryTextColor:"#1d2128",
+      primaryBorderColor:"#d6cdba",
+      actorBkg:"#efe8fb", actorBorder:"#6d28d9", actorTextColor:"#1d2128",
+      signalColor:"#586072", signalTextColor:"#1d2128",
+      labelBoxBkgColor:"#fffdf8", labelBoxBorderColor:"#d6cdba",
+      noteBkgColor:"#f8ead4", noteBorderColor:"#b4530a", noteTextColor:"#7a3807",
+      sequenceNumberColor:"#fffdf8"
+    },
+    flowchart:{ curve:"basis", htmlLabels:true, useMaxWidth:true, padding:14 },
+    sequence:{ useMaxWidth:true, mirrorActors:false, boxMargin:8 }
+  });
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 11, "name": "Under the Hood"},
+  "lesson": 4,
+  "title": "The Architecture, Drawn",
+  "slug": "architecture-drawn",
+  "topics": ["architecture","diagrams","dependencies","layers"],
+  "summary": "The crm codebase in three diagrams — package map, the one-way dependency rule, and a request as a sequence.",
+  "order": 4,
+  "status": "published" }
+</script>
+</body>
+</html>
