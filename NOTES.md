@@ -68,8 +68,11 @@ amended). Decisions:
   lookuplogicalname annotations, `--annotations`/`--minimal`) · **L04 the architecture, drawn**
   (3 Mermaid diagrams: package map, one-way dependency rule, request sequence — vendored
   `assets/mermaid.min.js`, shipped 2026-06-13) · L05 resilience (retry/backoff, paging
-  `@odata.nextLink`, `$batch`, error classification) · L06 (opt) reading source to file better
-  upstream bugs.
+  `@odata.nextLink`, `$batch`, error classification — shipped 2026-06-13) · **L06 from source to
+  issue** (capstone: localise via `connection doctor` + exit code, then file a fileable upstream
+  issue — repro/envelope/env/layer/expected-vs-actual, org scrubbed — shipped 2026-06-13).
+- **M11 COMPLETE** (L01–L06, lessons 0008–0013). Mission capstone (L06) ties the deep-dive to
+  filing precise crm bug reports.
 - **Diagrams = Mermaid, vendored.** Chosen over Excalidraw MCP (renders in chat / shares a URL —
   no embeddable file) and hand-authored inline SVG (no live edit). `assets/mermaid.min.js` is the
   UMD build (exposes `globalThis.mermaid`, self-contained, no chunk fetches). Lessons embed
