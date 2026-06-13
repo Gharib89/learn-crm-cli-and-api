@@ -1,3 +1,10 @@
+## crm CLI source
+
+The `crm` CLI these lessons teach is developed at <https://github.com/Gharib89/crm>.
+When answering a question about its behavior, flags, or internals, consult that source —
+read the implementation, don't guess. A local clone path may be recorded in
+`CLAUDE.local.md` (gitignored).
+
 ## Agent skills
 
 ### Issue tracker
