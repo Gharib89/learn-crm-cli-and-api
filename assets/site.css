@@ -1,0 +1,102 @@
+/* itWorx design system for the crm-learn site. Palette + fonts mirror crm-cli-docs. */
+:root{
+  --indigo:#1B1F8F; --indigo-royal:#353A9C; --indigo-dark:#12156B;
+  --red:#C83428; --red-light:#E0594D;
+  --bg:#ffffff; --surface:#f4f5fa; --surface2:#eceefb;
+  --ink:rgba(0,0,0,.87); --ink-soft:rgba(0,0,0,.6); --ink-mute:rgba(0,0,0,.44);
+  --line:#e3e5f2; --line2:#d3d6ec;
+  --shadow:0 1px 2px rgba(18,21,107,.06),0 6px 22px -14px rgba(18,21,107,.4);
+
+  /* ---- aliases so the existing lessons' inline CSS recolors to itWorx ---- */
+  --paper:var(--bg); --card:#ffffff;
+  --teal:var(--indigo); --teal-deep:var(--indigo-dark); --teal-soft:var(--surface2);
+  --amber:var(--red); --amber-soft:#f7e3e1;
+  --guid:var(--indigo-royal); --guid-soft:var(--surface2);
+  --term-bg:#12161f; --term-bg2:#1a2030; --term-ink:#e7ebf6;
+  --ok:var(--indigo); --bad:var(--red);
+}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);background:var(--bg);
+  font-family:"Roboto",system-ui,sans-serif;font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:var(--indigo-royal)}
+
+/* ---- navbar (build-injected on every page) ---- */
+.site-nav{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:16px;
+  padding:11px 20px;background:var(--indigo);color:#fff;box-shadow:0 2px 6px rgba(18,21,107,.35)}
+.site-nav .brand{display:flex;align-items:center;gap:9px;font-family:"Roboto Mono",monospace;
+  font-weight:700;font-size:14px;color:#fff;text-decoration:none;letter-spacing:.02em}
+.brand-gem{width:18px;height:18px;border-radius:5px;background:#fff;color:var(--indigo);
+  display:grid;place-items:center;font-family:"Roboto",sans-serif;font-weight:700;font-size:12px}
+.nav-spacer{flex:1}
+.site-nav .navlink{font-size:14px;color:rgba(255,255,255,.84);text-decoration:none;font-weight:500;
+  padding:6px 4px;background:none;border:0;cursor:pointer;font-family:inherit}
+.site-nav .navlink:hover{color:#fff}
+.navdrop{position:relative}
+.navmenu{position:absolute;top:32px;right:0;width:320px;background:#fff;color:var(--ink);
+  border:1px solid var(--line2);border-radius:12px;box-shadow:0 14px 36px -12px rgba(18,21,107,.5);
+  padding:8px;display:none}
+.navdrop:hover .navmenu,.navdrop:focus-within .navmenu{display:block}
+.navmenu-label{font-family:"Roboto Mono",monospace;font-size:9.5px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--ink-mute);padding:8px 9px 4px}
+.navmenu a{display:flex;gap:9px;align-items:baseline;padding:7px 9px;border-radius:8px;
+  text-decoration:none;color:var(--ink)}
+.navmenu a:hover{background:var(--surface2)}
+.navmenu-no{font-family:"Roboto Mono",monospace;font-size:10px;color:var(--red);font-weight:700}
+.navmenu-t{font-size:13px}
+
+/* ---- generated page shell ---- */
+.wrap{max-width:860px;margin:0 auto;padding:40px 24px 110px}
+.eyebrow{font-family:"Roboto Mono",monospace;font-size:11px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--indigo-royal);font-weight:500}
+.eyebrow .dot{color:var(--red)}
+.hero{font-weight:700;letter-spacing:-.025em;line-height:1.05;font-size:clamp(34px,6vw,52px);
+  margin:.18em 0 .1em;color:var(--indigo-dark)}
+.hero em{font-style:normal;color:var(--red)}
+.intro{display:grid;grid-template-columns:1.4fr 1fr;gap:20px;align-items:start;margin:26px 0 0}
+.lead{font-size:18px;line-height:1.55;margin:0}
+.lead em{font-style:normal;color:var(--indigo-royal);font-weight:500}
+.goal{background:var(--surface2);border-left:4px solid var(--indigo);border-radius:0 10px 10px 0;padding:14px 17px}
+.goal-label{font-family:"Roboto Mono",monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--indigo);font-weight:700}
+.goal p{margin:6px 0 0;font-size:14px;color:var(--ink-soft)}
+.facts{display:flex;gap:9px;flex-wrap:wrap;margin:22px 0 0}
+.fact{font-family:"Roboto Mono",monospace;font-size:11px;color:var(--ink-soft);background:#fff;
+  border:1px solid var(--line2);border-radius:999px;padding:5px 12px}
+.fact b{color:var(--indigo)}
+.topic-filter{display:flex;gap:8px;flex-wrap:wrap;margin:26px 0 0}
+.topic-chip{font-family:"Roboto Mono",monospace;font-size:11px;color:var(--ink-soft);background:#fff;
+  border:1px solid var(--line2);border-radius:999px;padding:5px 12px;cursor:pointer}
+.topic-chip.is-on{background:var(--indigo);color:#fff;border-color:var(--indigo)}
+.sec-rule{display:flex;align-items:center;gap:11px;margin:30px 0 16px;font-family:"Roboto Mono",monospace;
+  font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);font-weight:500}
+.sec-rule .r{height:1px;background:var(--line2);flex:1}
+.spine{position:relative;margin-left:16px;padding-left:26px;border-left:2px solid var(--line2)}
+.ms-node{position:relative;margin-bottom:22px}
+.ms-node::before{content:"";position:absolute;left:-33px;top:2px;width:13px;height:13px;border-radius:50%;
+  background:var(--red);border:2px solid #fff;box-shadow:0 0 0 2px var(--surface2)}
+.ms-label{font-family:"Roboto Mono",monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  font-weight:700;color:var(--indigo);margin-bottom:10px}
+.lcard{display:flex;gap:13px;align-items:flex-start;background:#fff;border:1px solid var(--line);
+  border-radius:11px;padding:14px 16px;box-shadow:var(--shadow);margin:9px 0;text-decoration:none;
+  color:var(--ink);transition:border-color .15s,transform .15s}
+.lcard:hover{border-color:var(--indigo-royal);transform:translateY(-1px)}
+.lc-no{font-family:"Roboto Mono",monospace;font-size:11px;color:var(--red);font-weight:700;padding-top:2px}
+.lc-body{display:flex;flex-direction:column;gap:4px}
+.lc-t{font-weight:700;font-size:16px;line-height:1.2;color:var(--ink)}
+.lc-sum{font-size:13.5px;color:var(--ink-soft)}
+.lc-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.lc-tag{font-family:"Roboto Mono",monospace;font-size:9.5px;color:var(--indigo-royal);
+  background:var(--surface2);border-radius:5px;padding:2px 7px}
+.lc-arrow{margin-left:auto;color:var(--indigo-royal);font-size:18px;align-self:center}
+
+/* ---- glossary prose ---- */
+.glossary h2{font-weight:700;color:var(--indigo-dark);margin:34px 0 10px;font-size:22px;
+  border-bottom:1px solid var(--line2);padding-bottom:6px}
+.glossary h3{font-weight:700;color:var(--ink);margin:18px 0 4px;font-size:16px}
+.glossary strong{color:var(--indigo-dark)}
+.glossary code{font-family:"Roboto Mono",monospace;font-size:.86em;background:var(--surface);
+  border:1px solid var(--line2);border-radius:5px;padding:1px 5px}
+.glossary hr{border:0;border-top:1px solid var(--line2);margin:26px 0}
+.glossary em{color:var(--ink-mute)}
+
+@media(max-width:640px){.intro{grid-template-columns:1fr}.site-nav{flex-wrap:wrap;gap:10px}}

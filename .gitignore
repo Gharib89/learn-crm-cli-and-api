@@ -1,0 +1,9 @@
+.scratch/
+__pycache__/
+*.pyc
+.env
+.venv/
+venv/
+.crm/
+.superpowers/
+_site/

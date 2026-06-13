@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M01 · L01 — Install, Configure &amp; the Profile Lifecycle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(38px,7.4vw,58px);
+    line-height:1.0;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:48ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;flex-wrap:wrap;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-dot{color:#5fe3bd}.c-off{color:#5a6573}
+
+  /* tables */
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--card);
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:#efe7d7;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);font-weight:700}
+  tr:last-child td{border-bottom:none}
+  td code{font-size:.8em}
+  .x{color:var(--bad);font-weight:700}.ck{color:var(--ok);font-weight:700}
+
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+  ul.tight li{margin:.34em 0}
+
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre,.anatomy{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-flag,pre .c-dot,pre .c-off{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="top reveal">
+  <div class="eyebrow">Milestone 01 <span class="dot">/</span> Foundations &amp; Connect <span class="dot">/</span> Lesson 01</div>
+  <h1>The <em>Profile</em><br>Lifecycle</h1>
+  <p class="sub">Install the CLI, then create, inspect, switch and edit the saved connection it runs against. This is the doorway to everything else.</p>
+  <div class="livechip"><span class="led"></span> crm <b>v3.9.0</b> &nbsp;·&nbsp; 5 profiles &nbsp;·&nbsp; active <b>agent-cloud</b></div>
+  <div class="rule"></div>
+  <div class="why"><b>Why this, first.</b> The <code>crm</code> CLI never talks to "a server" in the abstract — it talks to whichever <strong>profile</strong> is active. A profile bundles <em>where</em> (URL), <em>how</em> (auth scheme), and <em>the secret</em>. Get this model right and every later command has a known target; get it wrong and you'll customize the wrong org. Everything starts here.</div>
+</header>
+
+<p class="lead reveal">Today's win: read your real profile list, understand what each field means, and safely switch the active profile and back — the CLI's one piece of persistent state.</p>
+
+<section class="reveal">
+<h2><span class="n">01</span> Install — how the binary got here</h2>
+
+<p>The <code>crm</code> binary bundles its own Python runtime — there's nothing else to install.<sup><a href="#r-skill">skill</a></sup> One line per host:</p>
+
+<pre><code><span class="c-comment"># Linux / WSL (you're here — already on v3.9.0)</span>
+curl -fsSL https://pub-bbeb86c46454443ca76521dd4d29818e.r2.dev/install.sh | sh
+
+<span class="c-comment"># Windows (PowerShell)</span>
+irm https://pub-bbeb86c46454443ca76521dd4d29818e.r2.dev/install.ps1 | iex
+
+<span class="c-comment"># open a new shell so PATH updates, then verify</span>
+crm --version          <span class="c-comment"># → crm, version 3.9.0</span></code></pre>
+
+<p>You already have it installed, so that's the last you'll think about install. The real work — and the part you'll repeat on every new machine or org — is the <strong>profile</strong>.</p>
+</section>
+
+<section class="reveal">
+<h2><span class="n">02</span> What a profile <em>is</em></h2>
+
+<p>A <strong>profile</strong> is a named, saved connection. It answers three questions so you don't retype them every command:</p>
+
+<table>
+  <tr><th>Field</th><th>Question</th><th>Example</th></tr>
+  <tr><td><b>URL</b></td><td>Which org?</td><td><code>https://orgexample.crm.dynamics.com</code></td></tr>
+  <tr><td><b>Auth scheme</b></td><td>How do I prove who I am?</td><td><code>oauth</code> or <code>ntlm</code></td></tr>
+  <tr><td><b>Secret</b></td><td>The credential itself</td><td>OAuth client secret / NTLM password</td></tr>
+  <tr><td><b>Defaults</b></td><td>Optional conveniences</td><td><code>--default-solution</code>, <code>--publisher-prefix</code></td></tr>
+</table>
+
+<p>The CLI is <strong>stateful</strong>: exactly one profile is <em>active</em> at a time, and unflagged commands run against it. The auth scheme is <strong>inferred from the URL</strong> — a <code>*.dynamics.com</code> host means cloud → OAuth; anything else means on-prem → NTLM.<sup><a href="#r-skill">skill</a></sup> You can override with <code>--auth-scheme</code>, but the default is almost always right.</p>
+
+<table>
+  <tr><th></th><th>Cloud / online</th><th>On-prem</th></tr>
+  <tr><td><b>URL looks like</b></td><td><code>*.crm.dynamics.com</code></td><td><code>http://host/org</code></td></tr>
+  <tr><td><b>Auth scheme</b></td><td><code>oauth</code> (client-credentials)</td><td><code>ntlm</code></td></tr>
+  <tr><td><b><code>add</code> needs</b></td><td><code>--tenant-id --client-id --client-secret</code></td><td><code>--username --domain --password</code></td></tr>
+  <tr><td><b>Identity</b></td><td>an <em>application user</em> (app registration) with a security role</td><td>your AD user</td></tr>
+</table>
+</section>
+
+<section class="reveal">
+<h2><span class="n">03</span> <code>profile add</code> — create &amp; connect</h2>
+
+<p><code>crm profile add</code> does four things in one shot: <strong>save the secret → test the connection (WhoAmI) → activate the profile</strong>.<sup><a href="#r-skill">skill</a></sup> Run it bare for an interactive wizard, or pass flags for scripting:</p>
+
+<pre><code><span class="c-comment"># interactive wizard — easiest on a terminal</span>
+crm profile add
+
+<span class="c-comment"># cloud (OAuth) — non-interactive</span>
+crm profile add <span class="c-flag">--url</span> https://org.crm.dynamics.com <span class="c-flag">--name</span> mycloud \
+  <span class="c-flag">--tenant-id</span> &lt;aad-tenant&gt; <span class="c-flag">--client-id</span> &lt;app-id&gt; <span class="c-flag">--client-secret</span> '&lt;secret&gt;'
+
+<span class="c-comment"># on-prem (NTLM)</span>
+crm profile add <span class="c-flag">--url</span> http://crm.contoso.local/contoso <span class="c-flag">--name</span> onprem \
+  <span class="c-flag">--username</span> alice <span class="c-flag">--domain</span> CONTOSO <span class="c-flag">--password</span> '...'</code></pre>
+
+<h3>Where the secret lives</h3>
+<p>The secret is stored in the OS <strong>keyring</strong> when available, or as a <code>0600</code> plaintext field in the profile file when it isn't (WSL / headless), or whenever you pass <code>--store-password-plaintext</code>. It's keyring <em>or</em> plaintext — a single store, never both.<sup><a href="#r-skill">skill</a></sup></p>
+
+<div class="callout warn"><span class="ic">!</span><div><b>Security note (your setup).</b> On WSL there's no keyring, so all five of your profiles show <code>cred=plaintext</code> — the secret sits in a <code>0600</code> file readable by your user. That's expected here and these are mutate-safe dev orgs, but treat that file like any other credential: never commit it, and prefer per-run <code>--password</code> if you ever script against a sensitive org.</div></div>
+
+<p>Credential resolution at run time is a fixed order: <code>--password</code> (per-run override) <strong>&gt;</strong> stored secret <strong>&gt;</strong> TTY prompt. There is <strong>no environment-variable fallback</strong> — no <code>.env</code>, no <code>D365_*</code>. The only env knob is <code>CRM_HOME</code> (where state lives).<sup><a href="#r-skill">skill</a></sup></p>
+</section>
+
+<section class="reveal">
+<h2><span class="n">04</span> list · use · edit — the lifecycle</h2>
+
+<p><code>crm profile list</code> shows every saved profile; <strong>●</strong> marks the active one. Here's <em>your</em> real list:</p>
+
+<pre class="term"><span class="tag">crm profile list</span><code>  Profiles
+  ────────
+  <span class="c-dot">●</span> agent-cloud:   cloud    https://orgexample.crm.dynamics.com   cred=plaintext
+  <span class="c-off">○</span> agent-on-prem: on-prem  http://crm.contoso.local/Contoso     cred=plaintext
+  <span class="c-off">○</span> cloud:         cloud    https://orgexample.crm.dynamics.com   cred=plaintext
+  <span class="c-off">○</span> crmworx:       on-prem  http://crm.contoso.local/Contoso     cred=plaintext
+  <span class="c-off">○</span> mocedev:       on-prem  https://devdigitalplatform.mocd.gov.ae/MoCD  cred=plaintext</code></pre>
+
+<p>Each row is <em>name · kind · URL · where the secret is stored</em>. The full lifecycle:</p>
+
+<table>
+  <tr><th>Command</th><th>Does</th><th>Touches secret?</th></tr>
+  <tr><td><code>profile add</code></td><td>Create, save secret, test, activate</td><td><span class="ck">sets it</span></td></tr>
+  <tr><td><code>profile list</code></td><td>List all; mark the active <strong>●</strong></td><td>—</td></tr>
+  <tr><td><code>profile use [name]</code></td><td>Switch active. No name → picker; <code>--none</code> → clear</td><td>—</td></tr>
+  <tr><td><code>profile edit NAME</code></td><td>Change fields: url, username, domain, tenant-id, client-id, api-version, default-solution, publisher-prefix</td><td><span class="x">no</span> — not the secret</td></tr>
+  <tr><td><code>profile set-password NAME</code></td><td>Store / replace the secret</td><td><span class="ck">sets it</span></td></tr>
+  <tr><td><code>profile delete-password</code></td><td>Remove the stored secret</td><td><span class="ck">clears it</span></td></tr>
+  <tr><td><code>profile rm</code></td><td>Delete the profile <em>and</em> its secret</td><td><span class="ck">clears it</span></td></tr>
+</table>
+
+<div class="callout tip"><span class="ic">✓</span><div><b>The one trap to remember:</b> <code>profile edit</code> changes everything <em>except</em> the secret. To rotate a password or client secret you use <code>profile set-password</code> — not <code>edit</code>. (Editing the URL between two orgs without re-checking the secret is a classic way to get a confusing auth failure.)</div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">05</span> Do it yourself <span class="pill">~3 min</span></h2>
+
+<p>All read-only or fully reversible — your secrets are never touched:</p>
+<ol class="steps">
+  <li>List what you've got, and read the active marker:<br><code>crm profile list</code> &nbsp;— which row has the <strong>●</strong>?</li>
+  <li>Switch the active profile to the spare cloud one, then list again to see <strong>●</strong> move:<br><code>crm profile use cloud</code> &nbsp;→&nbsp; <code>crm profile list</code></li>
+  <li>Switch back to your primary target (do this — later lessons assume it):<br><code>crm profile use agent-cloud</code></li>
+  <li>Inspect what fields <code>edit</code> could change (no changes made):<br><code>crm profile edit --help</code></li>
+</ol>
+
+<div class="callout warn"><span class="ic">!</span><div><b>Leave these alone for now.</b> <code>profile rm</code>, <code>delete-password</code>, and <code>set-password</code> change credentials/state. You don't need them today — we'll use them deliberately when there's a reason.</div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">06</span> Check yourself</h2>
+<div class="quiz" id="quiz">
+  <p class="qh">Four questions, instant feedback</p>
+  <p class="qhs">tap an answer — no penalty for a wrong first try</p>
+
+  <div class="q" data-correct="2">
+    <div class="stem">1 · You run <code>crm profile add --url https://contoso.crm.dynamics.com …</code> The CLI picks an auth scheme. Which, and why?</div>
+    <button class="opt"><span class="mk">A</span> NTLM — it's the default for everything</button>
+    <button class="opt"><span class="mk">B</span> You must always pass <code>--auth-scheme</code> or it errors</button>
+    <button class="opt"><span class="mk">C</span> OAuth — inferred from the <code>*.dynamics.com</code> host</button>
+    <button class="opt"><span class="mk">D</span> Kerberos — cloud uses Kerberos</button>
+    <div class="fb ok">Correct. A <code>*.dynamics.com</code> URL = cloud, so the CLI infers <code>oauth</code> (client-credentials). A non-dynamics host would infer <code>ntlm</code>. You <em>can</em> override with <code>--auth-scheme</code>, but you rarely need to.</div>
+    <div class="fb no">Not quite. The scheme is inferred from the URL: <code>*.dynamics.com</code> → <code>oauth</code>; anything else → <code>ntlm</code>. So this cloud URL gives OAuth, no flag required.</div>
+  </div>
+
+  <div class="q" data-correct="1">
+    <div class="stem">2 · A client secret expired. You need to rotate it on your <code>agent-cloud</code> profile. Which command?</div>
+    <button class="opt"><span class="mk">A</span> <code>crm profile edit agent-cloud --client-secret '...'</code></button>
+    <button class="opt"><span class="mk">B</span> <code>crm profile set-password agent-cloud</code></button>
+    <button class="opt"><span class="mk">C</span> <code>crm profile use agent-cloud</code></button>
+    <button class="opt"><span class="mk">D</span> <code>crm profile list --rotate</code></button>
+    <div class="fb ok">Correct. <code>profile edit</code> changes every field <em>except</em> the secret; the secret is rotated with <code>profile set-password</code>. (There's no <code>--client-secret</code> on <code>edit</code> at all.)</div>
+    <div class="fb no">No. <code>profile edit</code> deliberately can't touch the secret — that's what <code>profile set-password</code> is for. <code>use</code> just switches active; <code>--rotate</code> isn't a thing.</div>
+  </div>
+
+  <div class="q" data-correct="3">
+    <div class="stem">3 · Your <code>profile list</code> shows <code>cred=plaintext</code> on every row. What does that mean?</div>
+    <button class="opt"><span class="mk">A</span> The secrets are unencrypted in transit over the network</button>
+    <button class="opt"><span class="mk">B</span> Something is broken — it should say keyring</button>
+    <button class="opt"><span class="mk">C</span> The CLI is storing passwords in an environment variable</button>
+    <button class="opt"><span class="mk">D</span> No OS keyring here (WSL), so the secret sits in a <code>0600</code> file</button>
+    <div class="fb ok">Correct. Keyring or plaintext is the at-<em>rest</em> store. WSL has no keyring, so the CLI falls back to a <code>0600</code> plaintext field — expected on this setup. (Auth on the wire is still NTLM/OAuth as normal; "plaintext" is only about disk.)</div>
+    <div class="fb no">Re-read §3: "plaintext" describes where the secret rests on <em>disk</em>, not the network. WSL has no keyring, so it uses a <code>0600</code> file. Nothing is broken, and there's no env-var store.</div>
+  </div>
+
+  <div class="q" data-correct="0">
+    <div class="stem">4 · You set <code>CRM_PASSWORD=hunter2</code> in your shell, then run a command with no <code>--password</code> and no stored secret. What happens?</div>
+    <button class="opt"><span class="mk">A</span> It ignores the env var and prompts on a TTY (no env-var fallback exists)</button>
+    <button class="opt"><span class="mk">B</span> It uses <code>CRM_PASSWORD</code> automatically</button>
+    <button class="opt"><span class="mk">C</span> It reads a <code>.env</code> file instead</button>
+    <button class="opt"><span class="mk">D</span> It fails immediately with "missing CRM_PASSWORD"</button>
+    <div class="fb ok">Correct. Credential resolution is <code>--password</code> &gt; stored secret &gt; TTY prompt — full stop. There is no <code>D365_*</code>/<code>CRM_*</code> password env var and no <code>.env</code> autoload. The only env knob the CLI reads is <code>CRM_HOME</code>.</div>
+    <div class="fb no">No — the CLI deliberately reads <em>no</em> credential env var and no <code>.env</code>. With no <code>--password</code> and no stored secret, it falls through to a TTY prompt (or errors cleanly under <code>--json</code>/non-TTY).</div>
+  </div>
+
+  <div class="score" id="score"></div>
+</div>
+</section>
+
+<div class="ask reveal">
+  <b>Stuck or curious?</b> I'm your teacher for this — ask me anything in the chat. Good follow-ups right now:
+  <ul class="tight" style="margin-bottom:0">
+    <li>"Walk me through creating a brand-new cloud profile end-to-end — where do tenant-id and client-id come from?"</li>
+    <li>"What's an <em>application user</em>, and why does OAuth need one instead of just my login?"</li>
+    <li>"Why do I have both <code>agent-cloud</code> and <code>cloud</code> pointing at the same org?"</li>
+  </ul>
+</div>
+
+<div class="next reveal">
+  <span class="pill t">next up</span>
+  <h2>Lesson 02 — The WhoAmI handshake</h2>
+  <p style="margin:0">Your profile is configured. Now prove it works: one read-only command that confirms <em>which</em> live org actually answers and <em>who</em> you are to it — the reflex you fasten before every write. Just say <strong>"next lesson"</strong>.</p>
+</div>
+
+<footer class="reveal">
+  <p><strong>Sources</strong> — grounded in, not guessed from:</p>
+  <ol class="refs">
+    <li id="r-skill"><strong>crm agent skill</strong> — <code>~/.claude/skills/crm/SKILL.md</code> (Install / Configure sections: auth inferred from URL, <code>profile add</code> tests + activates, keyring-XOR-plaintext, resolution order, no env-var fallback). Mirrored on the <a href="https://crm-cli-docs.pages.dev/">crm docs site</a>.</li>
+    <li id="r-cli"><strong>Live CLI surface</strong> — <code>crm describe profile</code>, <code>crm profile add --help</code>, <code>crm profile edit --help</code> (captured 2026-06-13). Always interrogate the CLI for exact flags; never guess.</li>
+    <li id="r-webapi"><a href="https://learn.microsoft.com/power-apps/developer/data-platform/webapi/overview">Use the Dataverse Web API (overview)</a> — Microsoft Learn. What the connection ultimately talks to.</li>
+  </ol>
+  <p class="ft">M01 · L01 · lessons/0001-install-configure-profiles.html · profile list captured from this machine on 2026-06-13</p>
+</footer>
+
+</div>
+
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 1, "name": "Foundations & Connect"},
+  "lesson": 1,
+  "title": "Install, Configure & the Profile Lifecycle",
+  "slug": "install-configure-profiles",
+  "topics": ["install","profiles","auth"],
+  "summary": "Saved connections: URL + auth scheme + secret storage.",
+  "order": 1,
+  "status": "published" }
+</script>
+</body>
+</html>
