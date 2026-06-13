@@ -21,6 +21,15 @@ META_RE = re.compile(
     re.DOTALL | re.IGNORECASE,
 )
 BODY_RE = re.compile(r"(<body[^>]*>)", re.IGNORECASE)
+# The end-of-lesson .next block has no nested divs, so a non-greedy match to the
+# first </div> reliably captures it.
+NEXT_DIV_RE = re.compile(r'(<div class="next reveal">)(.*?)(</div>)', re.DOTALL | re.IGNORECASE)
+# Live-/teach-session-only call to action, stripped from the published copy.
+LIVE_ONLY_RE = re.compile(r'\s*<span class="live-only">.*?</span>', re.DOTALL | re.IGNORECASE)
+
+
+def esc(s):
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def extract_meta(html):
@@ -89,6 +98,35 @@ def inject_nav(html, nav):
     if not BODY_RE.search(html):
         raise SystemExit("build: lesson missing <body>")
     return BODY_RE.sub(lambda m: m.group(1) + "\n" + nav, html, count=1)
+
+
+def order_lessons(lessons):
+    """Flat publish order: milestones ascending, lessons by `order` within each."""
+    flat = []
+    for g in group_by_milestone(lessons):
+        flat.extend(g["lessons"])
+    return flat
+
+
+def wire_next(html, nxt):
+    """Strip the live-session CTA, then link the .next block to the following lesson.
+
+    `nxt` is the next lesson's meta, or None for the last published lesson (no link)."""
+    html = LIVE_ONLY_RE.sub("", html)
+    if nxt is None:
+        return html
+    link = (
+        f'\n  <a class="next-go" href="{nxt["file"]}">'
+        f'<span class="next-go-k">Continue</span>'
+        f'<span class="next-go-t">Lesson {nxt["lesson"]:02d} · {esc(nxt["title"])}</span>'
+        f'<span class="next-go-x">→</span></a>'
+    )
+    if not NEXT_DIV_RE.search(html):
+        raise SystemExit('build: lesson missing <div class="next reveal"> block')
+    return NEXT_DIV_RE.sub(
+        lambda m: m.group(1) + m.group(2).rstrip() + link + "\n" + m.group(3),
+        html, count=1,
+    )
 
 
 LEAD = (
@@ -212,8 +250,12 @@ def main():
     (OUT / "glossary.html").write_text(render_glossary(md_text, lessons), encoding="utf-8")
 
     lesson_nav = nav_html(lessons, "../")
+    flat = order_lessons(lessons)
+    next_by_file = {L["file"]: (flat[i + 1] if i + 1 < len(flat) else None) for i, L in enumerate(flat)}
     for L in lessons:
-        (OUT / "lessons" / L["file"]).write_text(inject_nav(L["html"], lesson_nav), encoding="utf-8")
+        html = inject_nav(L["html"], lesson_nav)
+        html = wire_next(html, next_by_file[L["file"]])
+        (OUT / "lessons" / L["file"]).write_text(html, encoding="utf-8")
 
     if ASSETS_DIR.exists():
         shutil.copytree(ASSETS_DIR, OUT / "assets")

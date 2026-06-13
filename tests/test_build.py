@@ -72,3 +72,27 @@ def test_render_glossary_renders_markdown_and_nav():
     assert "<h2" in html and "Profile" in html
     assert 'class="site-nav"' in html
     assert "assets/site.css" in html
+
+def test_order_lessons_flattens_publish_order():
+    flat = build.order_lessons(_two_lessons())
+    assert [L["lesson"] for L in flat] == [1, 2]
+
+NEXT_BLOCK = (
+    '<div class="next reveal">'
+    '<span class="pill t">next up</span>'
+    '<h2>Lesson 02 — WhoAmI</h2>'
+    '<p>Prove it works. <span class="live-only">Just say <strong>"next lesson"</strong>.</span></p>'
+    '</div>'
+)
+
+def test_wire_next_strips_live_only_and_links_to_next():
+    nxt = build.extract_meta(LESSON_B); nxt["file"] = "0002-whoami.html"
+    out = build.wire_next(NEXT_BLOCK, nxt)
+    assert "live-only" not in out and "Just say" not in out
+    assert 'class="next-go" href="0002-whoami.html"' in out
+    assert "Lesson 02 · WhoAmI" in out
+
+def test_wire_next_last_lesson_strips_cta_without_link():
+    out = build.wire_next(NEXT_BLOCK, None)
+    assert "live-only" not in out and "Just say" not in out
+    assert "next-go" not in out

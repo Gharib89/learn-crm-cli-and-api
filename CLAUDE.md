@@ -31,6 +31,13 @@ https://gharib89.github.io/learn-crm-cli-and-api/.
   It is the build's source of truth — no meta block ⇒ the build fails loudly.
 - **Navbar:** the shared navbar is **build-injected** into every lesson. Do NOT hand-add a
   navbar to lesson source.
+- **Next-up link:** every lesson ends with a `<div class="next reveal">` block (narrative:
+  "what's next + why"). The build **auto-injects** a clickable `Continue → Lesson NN · Title`
+  link into it, computed from milestone + `order`, and **only when the next lesson exists** —
+  so adding a new lesson wires the prior lesson's link automatically. Do NOT hand-add a
+  next-lesson `<a>`. Any live-/teach-session-only call to action (e.g. *Just say "next
+  lesson"*) MUST be wrapped in `<span class="live-only">…</span>`: the build strips it from
+  the published site but it stays visible in the raw lesson used during live teaching.
 - **Skin:** the itWorx/Roboto design system lives in `assets/site.css`. New lessons link it
   (`../assets/site.css`, last in `<head>`) and use Roboto / Roboto Mono — matching the upstream
   crm docs site. (Supersedes the older "frontend-design / distinctive aesthetic" note.)
