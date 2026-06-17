@@ -5,6 +5,26 @@ When answering a question about its behavior, flags, or internals, consult that 
 read the implementation, don't guess. A local clone path may be recorded in
 `CLAUDE.local.md` (gitignored).
 
+### The CLI is evolving — versioned and subject to change
+
+Behavior, flags, the `{ok,data,meta}` envelope, and result shapes can shift between releases.
+A real example: **v3.9.x → v3.12.x** changed `query odata` from a `data.value` wrapper to a
+**bare `data` array**, and made `meta.count` **opt-in via `--count`** (M01 L06 was authored on
+the old shape and corrected on 2026-06-17). Treat every lesson as version-pinned to the CLI it
+was captured against. Therefore, as a standing rule:
+
+- **Live-verify before authoring.** Run every command/flag against the installed CLI
+  (`crm --version` first) and capture real output. Never trust prose — skill docs, older
+  lessons, or memory — over the running binary when they disagree.
+- **Capture the new info.** When you notice drift, record old-vs-new behavior **with the
+  version** in `NOTES.md`, and add/refresh the affected `GLOSSARY.md` term.
+- **Update affected lessons.** Older lessons go stale silently. When a change touches something
+  a published lesson shows (a flag, an output shape, an exit code), fix that lesson surgically,
+  note the correction + version + date in its footer `.ft` line, rebuild, and re-deploy — don't
+  leave contradictory shapes across the milestone.
+- **Footer the version.** Each lesson's footer records the capture date; when output is
+  version-sensitive, name the verified `crm` version too.
+
 ## Agent skills
 
 ### Issue tracker

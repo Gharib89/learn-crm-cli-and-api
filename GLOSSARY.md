@@ -180,14 +180,15 @@ _Met: M01 L05/L06._
 **`entity get` vs `query odata` (two read shapes)**
 The read splits on whether you know the GUID. `entity get <set> <guid>` = by identity →
 one object (OData `$entity`) directly under `data`. `query odata <set>` = by criteria →
-an array under `data.value` (+ `meta.count`), even for one or zero matches. Both are GETs.
-_Met: M01 L06._
+an array **as `data` itself** (this CLI unwraps OData's `value`; add `--count` for
+`meta.count`), even for one or zero matches. Both are GETs. _Met: M01 L06 (shape corrected
+to v3.12.6 in [[querying-sets]] M02 L03)._
 
 **`--select` / `--filter` / `--top`**
 The query workhorses. `--select` = which columns (omit ⇒ every column — always name
 them). `--filter` = which rows in OData syntax (`eq`, `ne`, `gt`/`lt`, `contains(f,'x')`,
-`and`/`or`). `--top` = max rows. Empty result = `value:[]`, `count:0`, still `ok:true`,
-exit 0 ("no match" is an answer, not a failure). _Met: M01 L06._
+`and`/`or`). `--top` = max rows. Empty result = `data:[]`, still `ok:true`, exit 0 ("no
+match" is an answer, not a failure). _Met: M01 L06._
 
 **`@odata.etag`**
 A row-version tag (`W/"2503282"`) returned on reads. The value the server compares for

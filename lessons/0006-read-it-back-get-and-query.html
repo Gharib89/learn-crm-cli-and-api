@@ -183,7 +183,7 @@
   <div class="why"><b>Why now.</b> In L05 you wrote a record and read it straight back from the create response. But most of the time the record already exists and you need to <em>find</em> it — to verify a change landed, to grab a GUID for the next command, to check what's there before you mutate. Reading is the half of the job you'll do most; these two verbs cover nearly all of it.</div>
 </header>
 
-<p class="lead reveal">Today's win: retrieve <em>one</em> contact by its GUID, then <em>list</em> contacts with a filter — and read both shapes (<code>$entity</code> vs a <code>value</code> array) fluently.</p>
+<p class="lead reveal">Today's win: retrieve <em>one</em> contact by its GUID, then <em>list</em> contacts with a filter — and read both shapes (a single <code>$entity</code> object vs a <code>data</code> array) fluently.</p>
 
 <section class="reveal">
 <h2><span class="n">01</span> Two shapes of read</h2>
@@ -191,7 +191,7 @@
 <p>Reading splits by whether you already know the record's GUID:</p>
 <dl class="ginfo">
   <dt>entity&nbsp;get</dt><dd><strong>By identity.</strong> You have the GUID → one specific record. Returns a single object (an OData <code>$entity</code>).</dd>
-  <dt>query&nbsp;odata</dt><dd><strong>By criteria.</strong> You have a filter → zero-or-more matching records. Returns an array under <code>value</code>, plus <code>meta.count</code>.</dd>
+  <dt>query&nbsp;odata</dt><dd><strong>By criteria.</strong> You have a filter → zero-or-more matching records. Returns an array directly as <code>data</code> (add <code>--count</code> for <code>meta.count</code>).</dd>
 </dl>
 <p>Both are <code>GET</code> requests to the same Web API you've been hitting all along — read-only, safe to run as often as you like.<sup><a href="#r-query">query</a></sup></p>
 </section>
@@ -225,21 +225,18 @@
 
 <p>When you don't have a GUID, you describe what you want. The three workhorse options: <code>--select</code> (which columns), <code>--filter</code> (which rows, in OData syntax), <code>--top</code> (how many):</p>
 
-<pre class="term"><span class="tag">agent-cloud · exit 0</span><code>crm <span class="c-flag">--json</span> query odata contacts <span class="c-flag">--filter</span> <span class="c-str">"jobtitle eq 'IT Director'"</span> <span class="c-flag">--select</span> fullname,jobtitle <span class="c-flag">--top</span> 5
+<pre class="term"><span class="tag">agent-cloud · exit 0</span><code>crm <span class="c-flag">--json</span> query odata contacts <span class="c-flag">--filter</span> <span class="c-str">"jobtitle eq 'IT Director'"</span> <span class="c-flag">--select</span> fullname,jobtitle <span class="c-flag">--top</span> 5 <span class="c-flag">--count</span>
 
 <span class="c-punc">{</span>
   <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
-  <span class="c-key">"data"</span><span class="c-punc">:</span> <span class="c-punc">{</span>
-    <span class="c-key">"@odata.context"</span><span class="c-punc">:</span> <span class="c-str">"...#contacts(fullname,jobtitle)"</span><span class="c-punc">,</span>
-    <span class="c-key">"value"</span><span class="c-punc">:</span> <span class="c-punc">[</span>
-      <span class="c-punc">{</span> <span class="c-key">"fullname"</span><span class="c-punc">:</span> <span class="c-str">"James Okafor"</span><span class="c-punc">,</span> <span class="c-key">"jobtitle"</span><span class="c-punc">:</span> <span class="c-str">"IT Director"</span><span class="c-punc">,</span>
-        <span class="c-key">"contactid"</span><span class="c-punc">:</span> <span class="c-guid">"b2c3d4e5-2222-3333-4444-00155d467b92"</span> <span class="c-punc">}</span>
-    <span class="c-punc">]</span>
-  <span class="c-punc">},</span>
+  <span class="c-key">"data"</span><span class="c-punc">:</span> <span class="c-punc">[</span>
+    <span class="c-punc">{</span> <span class="c-key">"fullname"</span><span class="c-punc">:</span> <span class="c-str">"James Okafor"</span><span class="c-punc">,</span> <span class="c-key">"jobtitle"</span><span class="c-punc">:</span> <span class="c-str">"IT Director"</span><span class="c-punc">,</span>
+      <span class="c-key">"contactid"</span><span class="c-punc">:</span> <span class="c-guid">"b2c3d4e5-2222-3333-4444-00155d467b92"</span> <span class="c-punc">}</span>
+  <span class="c-punc">],</span>
   <span class="c-key">"meta"</span><span class="c-punc">:</span> <span class="c-punc">{</span> <span class="c-key">"entity_set"</span><span class="c-punc">:</span> <span class="c-str">"contacts"</span><span class="c-punc">,</span> <span class="c-key">"count"</span><span class="c-punc">:</span> <span class="c-num">1</span> <span class="c-punc">}</span>
 <span class="c-punc">}</span></code></pre>
 
-<p>Results are always an <strong>array under <code>value</code></strong> — even one match, even zero (an empty list, still <code>ok:true</code>). <code>meta.count</code> tells you how many came back. Common <code>--filter</code> operators: <code>eq</code>, <code>ne</code>, <code>gt</code>/<code>lt</code>, <code>contains(name,'x')</code>, joined with <code>and</code>/<code>or</code>.<sup><a href="#r-query">query</a></sup></p>
+<p>Results are always an <strong>array — <code>data</code> itself</strong> (this CLI version returns the rows directly, no <code>value</code> wrapper) — even one match, even zero (an empty list, still <code>ok:true</code>). Add <code>--count</code> and <code>meta.count</code> tells you how many came back. Common <code>--filter</code> operators: <code>eq</code>, <code>ne</code>, <code>gt</code>/<code>lt</code>, <code>contains(name,'x')</code>, joined with <code>and</code>/<code>or</code>.<sup><a href="#r-query">query</a></sup></p>
 
 <div class="callout tip"><span class="ic">✓</span><div><b>This is your verification tool.</b> After any write, a quick <code>query odata … --filter</code> proves the change is really in the org — the live confirmation that closes the safe-write loop from L04/L05.</div></div>
 </section>
@@ -273,12 +270,12 @@ crm <span class="c-flag">--json</span> query odata contacts <span class="c-flag"
 crm <span class="c-flag">--json</span> entity get contacts &lt;paste-contactid&gt; <span class="c-flag">--select</span> fullname,jobtitle,emailaddress1
 
 <span class="c-comment"># 3 · filter — change the title to one you saw in step 1</span>
-crm <span class="c-flag">--json</span> query odata contacts <span class="c-flag">--filter</span> <span class="c-str">"jobtitle eq 'Sales Manager'"</span> <span class="c-flag">--select</span> fullname</code></pre>
+crm <span class="c-flag">--json</span> query odata contacts <span class="c-flag">--filter</span> <span class="c-str">"jobtitle eq 'Sales Manager'"</span> <span class="c-flag">--select</span> fullname <span class="c-flag">--count</span></code></pre>
 
 <p>Then answer, from your own output:</p>
 <ol class="steps">
-  <li>In step 1, where do the records live — under <code>data.value</code> or directly under <code>data</code>? In step 2, which is it?</li>
-  <li>What does <code>meta.count</code> say in step 3, and does it match the array length?</li>
+  <li>In step 1 (a query), is <code>data</code> an <em>array</em> of records or a <em>single object</em>? In step 2 (a get by GUID), which is it? (That's the <code>$entity</code> vs <code>data</code>-array split.)</li>
+  <li>With <code>--count</code> on step 3, what does <code>meta.count</code> say — and does it match the array length? Re-run step 3 <em>without</em> <code>--count</code>: is <code>meta.count</code> still there?</li>
   <li>Run <code>crm --json query count contacts</code> — what exit code and error? Now fix it. (One word changes.)</li>
 </ol>
 </section>
@@ -293,10 +290,10 @@ crm <span class="c-flag">--json</span> query odata contacts <span class="c-flag"
     <div class="stem">1 · You have a contact's GUID and want just that one record. Which verb, and what shape comes back?</div>
     <button class="opt"><span class="mk">A</span> <code>query odata</code> — a single object under <code>data</code></button>
     <button class="opt"><span class="mk">B</span> <code>entity get</code> — a single object (<code>$entity</code>) under <code>data</code></button>
-    <button class="opt"><span class="mk">C</span> <code>entity get</code> — an array under <code>data.value</code></button>
+    <button class="opt"><span class="mk">C</span> <code>entity get</code> — an array directly as <code>data</code></button>
     <button class="opt"><span class="mk">D</span> <code>query count</code> — just a number</button>
-    <div class="fb ok">Correct. By-GUID retrieval is <code>entity get</code>, and it returns one object (an OData <code>$entity</code>) directly under <code>data</code> — no <code>value</code> array. Arrays are what <em>queries</em> return.</div>
-    <div class="fb no">Not quite. By a known GUID you use <code>entity get</code>, and it returns a single object under <code>data</code> (the <code>$entity</code> shape) — not an array. The <code>value</code> array is what <code>query odata</code> returns.</div>
+    <div class="fb ok">Correct. By-GUID retrieval is <code>entity get</code>, and it returns one object (an OData <code>$entity</code>) directly under <code>data</code> — not an array. Arrays (<code>data</code> as a list) are what <em>queries</em> return.</div>
+    <div class="fb no">Not quite. By a known GUID you use <code>entity get</code>, and it returns a single object under <code>data</code> (the <code>$entity</code> shape) — not an array. A <code>data</code> array is what <code>query odata</code> returns.</div>
   </div>
 
   <div class="q" data-correct="2">
@@ -310,13 +307,13 @@ crm <span class="c-flag">--json</span> query odata contacts <span class="c-flag"
   </div>
 
   <div class="q" data-correct="0">
-    <div class="stem">3 · A <code>query odata</code> with a filter returns <code>"value": []</code> and <code>meta.count: 0</code>, with <code>ok:true</code>, exit 0. What happened?</div>
+    <div class="stem">3 · A <code>query odata</code> with a filter returns <code>"data": []</code> (and, with <code>--count</code>, <code>meta.count: 0</code>), with <code>ok:true</code>, exit 0. What happened?</div>
     <button class="opt"><span class="mk">A</span> The query succeeded; no rows matched the filter</button>
     <button class="opt"><span class="mk">B</span> The query failed — empty results mean an error</button>
     <button class="opt"><span class="mk">C</span> The entity doesn't exist</button>
     <button class="opt"><span class="mk">D</span> You forgot <code>--select</code></button>
-    <div class="fb ok">Correct. Zero matches is a perfectly successful query — <code>ok:true</code>, exit 0, an empty <code>value</code> array. "No rows match" is an <em>answer</em>, not a failure. (Contrast a real failure: <code>ok:false</code> + non-zero exit.)</div>
-    <div class="fb no">Not quite. <code>ok:true</code> + exit 0 means success — the query ran fine and simply found nothing. An empty <code>value</code> array is a valid result, not an error.</div>
+    <div class="fb ok">Correct. Zero matches is a perfectly successful query — <code>ok:true</code>, exit 0, an empty <code>data</code> array. "No rows match" is an <em>answer</em>, not a failure. (Contrast a real failure: <code>ok:false</code> + non-zero exit.)</div>
+    <div class="fb no">Not quite. <code>ok:true</code> + exit 0 means success — the query ran fine and simply found nothing. An empty <code>data</code> array is a valid result, not an error.</div>
   </div>
 
   <div class="q" data-correct="3">
@@ -351,11 +348,11 @@ crm <span class="c-flag">--json</span> query odata contacts <span class="c-flag"
 <footer class="reveal">
   <p><strong>Sources</strong> — grounded in, not guessed from:</p>
   <ol class="refs">
-    <li id="r-query"><a href="https://learn.microsoft.com/power-apps/developer/data-platform/webapi/query/overview">Query data using the Web API</a> &amp; <a href="https://learn.microsoft.com/power-apps/developer/data-platform/webapi/retrieve-entity-using-web-api">Retrieve a row</a> — Microsoft Learn. <code>$select</code>/<code>$filter</code>/<code>$top</code> and the <code>value</code>-array vs <code>$entity</code> shapes.</li>
+    <li id="r-query"><a href="https://learn.microsoft.com/power-apps/developer/data-platform/webapi/query/overview">Query data using the Web API</a> &amp; <a href="https://learn.microsoft.com/power-apps/developer/data-platform/webapi/retrieve-entity-using-web-api">Retrieve a row</a> — Microsoft Learn. <code>$select</code>/<code>$filter</code>/<code>$top</code> and the list-vs-single-row (<code>$entity</code>) shapes. (The Web API wraps lists in <code>value</code>; this CLI version unwraps them into the <code>data</code> array.)</li>
     <li id="r-update"><a href="https://learn.microsoft.com/power-apps/developer/data-platform/webapi/perform-conditional-operations-using-web-api">Conditional operations (ETags &amp; If-Match)</a> — Microsoft Learn. What <code>@odata.etag</code> is for.</li>
     <li id="r-skill"><strong>crm agent skill</strong> — <code>~/.claude/skills/crm/reference/records.md</code> &amp; <code>SKILL.md</code> (<code>query count</code> via <code>RetrieveTotalRecordCount</code>, cached; entity-set vs logical name). Mirrored on the <a href="https://crm-cli-docs.pages.dev/">crm docs site</a>.</li>
   </ol>
-  <p class="ft">M01 · L06 · lessons/0006-read-it-back-get-and-query.html · live output captured from agent-cloud on 2026-06-13 (host shown as the example env)</p>
+  <p class="ft">M01 · L06 · lessons/0006-read-it-back-get-and-query.html · live output captured from agent-cloud on 2026-06-13 (host shown as the example env) · query result-shape corrected to crm v3.12.6 (rows in the <code>data</code> array; <code>meta.count</code> via <code>--count</code>) on 2026-06-17</p>
 </footer>
 
 </div>
