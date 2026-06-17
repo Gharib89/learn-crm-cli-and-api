@@ -426,3 +426,73 @@ ONE read-only call returning exactly what a create/update payload needs: `entity
 An optional business-unique column set (email, order #) you can address a record *by* instead of
 its GUID — powers **upsert by business key** (`entity upsert`). Separate from the always-present
 GUID primary key. Most stock tables have none (`[]`). Defining one is M04. _Met: M03 L05._
+
+---
+
+## Schema authoring (write) — *M04*
+
+**Custom table (what gets provisioned)**
+Creating a table writes far more than the columns you name: an auto **primary id** GUID
+(`<table>id`, SystemRequired), an auto **primary-name** column (`<prefix>_name`, String,
+ApplicationRequired), the standard **system columns** (`ownerid`, `createdon`/`modifiedon`,
+`statecode`/`statuscode`…), **privileges**, and the Web API **entity set**. You pick only the
+display name, primary-name label, and **ownership** (`UserOwned` default / `OrganizationOwned`,
+near-permanent). _Met: M04 L01._
+
+**Publisher prefix · solution (write side)**
+Every custom component is stamped with the **publisher's customization prefix** (schema name =
+`<Prefix>_<Display>`) and tracked inside a **solution** (the deployable container, M06). The
+profile carries both as defaults. The prefix MUST match the target solution's publisher, else
+create 404s with `"solution unique name … is not valid"`. _Met: M04 L01._
+
+**Publish (`PublishAllXml`)**
+Metadata changes sit in an **unpublished** staging layer until published; only then are they live
+to users/forms. crm verbs publish by default (`--publish`); defer with `--no-publish` (per verb)
+or `--stage-only` (scaffold → `meta.staged=true`). Imperative verbs publish **per call**; batch
+builders (`scaffold`, `apply`) publish **once** at the end. _Met: M04 L01._
+
+**`create-entity` / `add-attribute` (imperative)**
+The explicit write verbs: `create-entity --display` makes the table (envelope returns all three
+names + `primary_attribute`); `add-attribute <logical> --kind …` adds one column. `--kind` palette:
+string·memo·integer·bigint·decimal·double·money·boolean·datetime·picklist·multiselect·lookup·image·file.
+Per-kind rules: decimal/double/**money require `--precision`**; string `--max-length`/`--format`;
+boolean `--true/false-label`; datetime `--format DateOnly|DateAndTime`. _Met: M04 L02._
+
+**Local vs global option set (write side)**
+**Local** = inline picklist options on one column (`add-attribute --option value:label` or
+`:label` auto-value; bare label rejected); private, not reusable. **Global** = a standalone named
+set (`create-optionset`, or an `optionsets:` entry in an apply spec) reusable across columns/tables
+via `--optionset-name`/`optionset_name`. A global **outlives** the tables that use it. _Met: M04 L02, L04._
+
+**`scaffold table` (shorthand builder)**
+One command builds a table + N columns, one publish: `scaffold table "Display" --column
+"Disp:KIND[:opts]"`. Opts limited to `max_length, required, description, optionset_name,
+target_entity` — **no precision/format/min/max/inline-options**, so decimal/double can't be
+scaffolded and picklists must reference an existing global. Idempotent (if-exists=skip);
+`--dry-run` (plan only) / `--stage-only` (no publish). _Met: M04 L03._
+
+**`apply -f` (declarative desired-state)**
+A reviewable YAML/JSON **spec** (`entities[]`, optional `optionsets[]`) applied with
+if-exists=skip in **dependency order** (option set before the picklist that uses it), one publish
+at the end. Re-applying an unchanged spec is a **no-op** (all `skipped`). Top-level `solution` must
+be a **mapping** — easier to pass `--solution` flag. The agentic default: Claude writes the spec,
+you review the diff, apply. _Met: M04 L04._
+
+**`{applied, skipped, planned, failed}` report**
+The standard envelope for batch builders (scaffold + apply). `applied`=created now,
+`skipped`=already existed, `planned`=would create (dry-run only), `failed`=errored (with reason).
+Partial-apply: resources build in order, a failure leaves prior ones created — fix and re-run
+(skip recovers). _Met: M04 L01, L03._
+
+**`export-spec` · the `_Base` companion**
+Reverse of apply: reads a live table over pure GETs → an apply-consumable spec (`-o FILE`,
+`--with-views/--with-relationships`). **Warns** about what it can't round-trip: local option sets
+(unreadable via this API path) and read-only `*name` **VirtualType** shadow columns are dropped.
+Every **money** column auto-spawns a `_Base` companion (base-currency mirror) that shows up in the
+export. _Met: M04 L05._
+
+**`delete-entity` / `delete-optionset` (clean teardown)**
+Permanently delete a custom table (+ all its rows) or a global option set — **irreversible**,
+`--yes` required in JSON mode (else `"aborted by user"`). Preview with `delete-entity --dry-run
+--check-dependencies` → `{would_delete, can_delete, blockers[]}` (empty blockers = safe). Deleting
+a table does NOT delete the global option sets it used. _Met: M04 L05._

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M04 · L04 — Declarative apply -f: desired-state schema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-false{color:#ff8f7a}.c-num{color:#ffd479}.c-meth{color:#ffd479;font-weight:700}.c-ann{color:#7fb0c9}
+  .c-xtag{color:#8cc0ff}.c-xattr{color:#ffd479}.c-xval{color:#a7e6a0}
+
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+
+  table.ops{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--card);
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.ops th,table.ops td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.ops th{background:var(--guid-soft);color:var(--guid);font-family:"Roboto Mono",monospace;
+    font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  table.ops tr:last-child td{border-bottom:none}
+  table.ops code{font-size:12.5px}
+  table.ops .pk{color:var(--teal-deep);font-weight:700}
+
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-false,pre .c-num,pre .c-meth,pre .c-flag,pre .c-ann,pre .c-xtag,pre .c-xattr,pre .c-xval{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+<header class="top reveal">
+  <div class="eyebrow">Milestone 04 <span class="dot">/</span> Schema Authoring <span class="dot">/</span> Lesson 04</div>
+  <h1>Declare it:<br><em>apply</em> a spec</h1>
+  <p class="sub">Write the whole desired state — table, columns, and a shared option set — as one reviewable file, then let the CLI converge the org to it.</p>
+  <div class="livechip"><span class="led"></span> target&nbsp; <b>agent-cloud</b> &nbsp;·&nbsp; orgexample.crm.dynamics.com</div>
+  <div class="rule"></div>
+  <div class="why"><b>Why now.</b> Scaffold packs a table into a command; <code>apply -f</code> packs it into a <em>file</em>. A file can be reviewed in a pull request, committed to git, and re-applied to dev/test/prod to get the same result. It's the form that fits the mission best: Claude Code writes the spec, you read the diff, then apply. This is declarative, desired-state schema authoring.</div>
+</header>
+
+<p class="lead reveal">Today's win: author a YAML spec with a global option set and a table that uses it, apply it, then re-apply and watch the org say "already there — nothing to do."</p>
+
+<section class="reveal">
+<h2><span class="n">01</span> The spec file</h2>
+
+<p>A spec declares <code>entities</code> and, optionally, shared <code>optionsets</code>. Here's Project with a <em>global</em> Priority option set it references:<sup><a href="#r-apply">apply</a></sup></p>
+
+<pre class="term"><span class="tag">project.yaml</span><code><span class="c-key">optionsets</span>:
+<span class="c-punc">-</span> <span class="c-key">name</span>: itworx_priority
+  <span class="c-key">display_name</span>: Priority
+  <span class="c-key">options</span>:
+  <span class="c-punc">-</span> <span class="c-punc">{</span> <span class="c-key">value</span>: <span class="c-num">100000000</span>, <span class="c-key">label</span>: Low <span class="c-punc">}</span>
+  <span class="c-punc">-</span> <span class="c-punc">{</span> <span class="c-key">value</span>: <span class="c-num">100000001</span>, <span class="c-key">label</span>: Medium <span class="c-punc">}</span>
+  <span class="c-punc">-</span> <span class="c-punc">{</span> <span class="c-key">value</span>: <span class="c-num">100000002</span>, <span class="c-key">label</span>: High <span class="c-punc">}</span>
+<span class="c-key">entities</span>:
+<span class="c-punc">-</span> <span class="c-key">schema_name</span>: itworx_Project
+  <span class="c-key">display_name</span>: Project
+  <span class="c-key">display_collection_name</span>: Projects
+  <span class="c-key">ownership</span>: UserOwned
+  <span class="c-key">primary_attr</span>: <span class="c-punc">{</span> <span class="c-key">schema_name</span>: itworx_Name, <span class="c-key">label</span>: Name <span class="c-punc">}</span>
+  <span class="c-key">attributes</span>:
+  <span class="c-punc">-</span> <span class="c-punc">{</span> <span class="c-key">kind</span>: string,   <span class="c-key">schema_name</span>: itworx_Code,    <span class="c-key">display_name</span>: Code, <span class="c-key">required</span>: ApplicationRequired, <span class="c-key">max_length</span>: <span class="c-num">30</span> <span class="c-punc">}</span>
+  <span class="c-punc">-</span> <span class="c-punc">{</span> <span class="c-key">kind</span>: money,    <span class="c-key">schema_name</span>: itworx_Cost,    <span class="c-key">display_name</span>: Cost, <span class="c-key">precision</span>: <span class="c-num">2</span> <span class="c-punc">}</span>
+  <span class="c-punc">-</span> <span class="c-punc">{</span> <span class="c-key">kind</span>: picklist, <span class="c-key">schema_name</span>: itworx_Priority, <span class="c-key">display_name</span>: Priority, <span class="c-key">optionset_name</span>: itworx_priority <span class="c-punc">}</span></code></pre>
+
+<pre class="term"><span class="tag">agent-cloud · exit 0</span><code>crm <span class="c-flag">--json</span> apply <span class="c-flag">-f</span> project.yaml <span class="c-flag">--solution</span> itworx_dev
+
+<span class="c-punc">{</span> <span class="c-key">"ok"</span>: <span class="c-true">true</span>, <span class="c-key">"data"</span>: <span class="c-punc">{</span> <span class="c-key">"applied"</span>: <span class="c-punc">[</span>
+    <span class="c-punc">{</span><span class="c-key">"kind"</span>:<span class="c-str">"entity"</span>,    <span class="c-key">"name"</span>:<span class="c-str">"itworx_Project"</span><span class="c-punc">}</span>,
+    <span class="c-punc">{</span><span class="c-key">"kind"</span>:<span class="c-str">"optionset"</span>, <span class="c-key">"name"</span>:<span class="c-str">"itworx_priority"</span><span class="c-punc">}</span>,    <span class="c-comment"># created before the column that needs it</span>
+    <span class="c-punc">{</span><span class="c-key">"kind"</span>:<span class="c-str">"attribute"</span>, <span class="c-key">"name"</span>:<span class="c-str">"itworx_Code"</span><span class="c-punc">}</span>,
+    <span class="c-punc">{</span><span class="c-key">"kind"</span>:<span class="c-str">"attribute"</span>, <span class="c-key">"name"</span>:<span class="c-str">"itworx_Cost"</span><span class="c-punc">}</span>,
+    <span class="c-punc">{</span><span class="c-key">"kind"</span>:<span class="c-str">"attribute"</span>, <span class="c-key">"name"</span>:<span class="c-str">"itworx_Priority"</span><span class="c-punc">}</span>
+  <span class="c-punc">]</span>, <span class="c-key">"skipped"</span>:<span class="c-punc">[]</span>, <span class="c-key">"failed"</span>:<span class="c-punc">[]</span> <span class="c-punc">}</span>, <span class="c-key">"meta"</span>: <span class="c-punc">{</span> <span class="c-key">"staged"</span>: <span class="c-false">false</span> <span class="c-punc">}</span> <span class="c-punc">}</span></code></pre>
+
+<div class="callout warn"><span class="ic">!</span><div><b>The top-level <code>solution</code> must be a mapping, not a string.</b> Writing <code>solution: itworx_dev</code> fails with <code>"solution must be a mapping."</code> The simplest path is to leave it out of the file and pass <code>--solution itworx_dev</code> on the command — which also overrides any solution the spec declares.</div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">02</span> Desired state, in dependency order</h2>
+
+<p>Read the <code>applied</code> list again: the <strong>option set was created before the picklist column that references it</strong>. You didn't order that — <code>apply</code> works out the dependency graph and creates resources in the right sequence, then runs <strong>one</strong> <code>PublishAllXml</code> at the end.<sup><a href="#r-apply">apply</a></sup> Each resource is created with if-exists=skip, exactly like scaffold — so the spec describes the <em>state you want</em>, and apply makes reality match it.</p>
+
+<table class="ops">
+  <tr><th></th><th><code>scaffold table</code> (L03)</th><th><code>apply -f</code></th></tr>
+  <tr><td>Input</td><td>One command line</td><td>A YAML/JSON file</td></tr>
+  <tr><td>Scope</td><td>One table + its columns</td><td>Many entities, option sets, (relationships, views)</td></tr>
+  <tr><td>Reviewable</td><td>Shell history</td><td>A file — diff it, PR it, commit it</td></tr>
+  <tr><td>Shared option sets</td><td>Reference an existing global</td><td><em>Define</em> the global inline</td></tr>
+  <tr><td>Idempotent · publish</td><td>✓ · once</td><td>✓ · once</td></tr>
+</table>
+</section>
+
+<section class="reveal">
+<h2><span class="n">03</span> Re-apply: convergence, not repetition</h2>
+
+<p>The defining property: applying an unchanged spec is a <strong>no-op</strong>. Everything already exists, so everything is <code>skipped</code> — apply converges the org to the spec rather than blindly re-running steps:</p>
+
+<pre class="term"><span class="tag">agent-cloud · exit 0 · second apply, unchanged</span><code>crm <span class="c-flag">--json</span> apply <span class="c-flag">-f</span> project.yaml <span class="c-flag">--solution</span> itworx_dev
+
+<span class="c-punc">{</span> <span class="c-key">"ok"</span>: <span class="c-true">true</span>, <span class="c-key">"data"</span>: <span class="c-punc">{</span>
+    <span class="c-key">"applied"</span>: <span class="c-punc">[]</span>,                              <span class="c-comment"># nothing to do</span>
+    <span class="c-key">"skipped"</span>: <span class="c-punc">[</span> <span class="c-str">"itworx_Project"</span>, <span class="c-str">"itworx_priority"</span>, <span class="c-str">"itworx_Code"</span>,
+                 <span class="c-str">"itworx_Cost"</span>, <span class="c-str">"itworx_Priority"</span> <span class="c-punc">]</span>,
+    <span class="c-key">"failed"</span>: <span class="c-punc">[]</span> <span class="c-punc">}</span> <span class="c-punc">}</span></code></pre>
+
+<div class="callout tip"><span class="ic">✓</span><div><b>This is the agentic sweet spot.</b> Ask Claude Code to "add a Project table with a code, a cost, and a priority" and it can write <em>this file</em>. You review the YAML like any code change, apply it, and if you re-run it nothing breaks. The spec is the reviewable artifact the GUI never gives you — and the same file deploys to every org. <span class="live-only">Editing a spec and applying it is the loop you'll use constantly from here.</span></div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">04</span> Global vs local option sets</h2>
+
+<p>In L02 you built a picklist with <em>inline</em> options — that creates a <strong>local</strong> option set, private to one column. The spec above instead <strong>defines a global</strong> one (<code>itworx_priority</code>) and points the column at it. The difference matters:</p>
+<div class="ginfo">
+  <dt>local</dt><dd>Belongs to one column on one table. Simple, but not reusable. (L02's inline <code>--option</code>.)</dd>
+  <dt>global</dt><dd>A standalone, named, reusable set — many columns/tables can share <code>itworx_priority</code>. Defined once, referenced by <code>optionset_name</code>.</dd>
+</div>
+<p>This is the M03 L03 read-side distinction, now from the write side — and the issue's <code>create-optionset</code> in declarative form. When a picklist references a <em>pre-existing</em> global, apply's <code>--include-referenced-optionsets</code> (on by default) makes sure that global is pulled into your target solution so the export is complete.<sup><a href="#r-apply">apply</a></sup> Prefer global whenever the same choice list appears in more than one place.</p>
+</section>
+
+<section class="reveal">
+<h2><span class="n">05</span> Do it yourself <span class="pill">~8 min</span> <span class="pill t">writes</span></h2>
+<p>Save the spec from §01 as <code>project.yaml</code> (drop the top-level solution; you'll pass it as a flag), then:</p>
+<pre><code><span class="c-comment"># 1 · preview the plan — no writes</span>
+crm <span class="c-flag">--json --dry-run</span> apply <span class="c-flag">-f</span> project.yaml <span class="c-flag">--solution</span> itworx_dev
+
+<span class="c-comment"># 2 · apply for real</span>
+crm <span class="c-flag">--json</span> apply <span class="c-flag">-f</span> project.yaml <span class="c-flag">--solution</span> itworx_dev
+
+<span class="c-comment"># 3 · apply again, unchanged — everything skips</span>
+crm <span class="c-flag">--json</span> apply <span class="c-flag">-f</span> project.yaml <span class="c-flag">--solution</span> itworx_dev
+
+<span class="c-comment"># 4 · clean up (the global option set survives the table — delete it too)</span>
+crm <span class="c-flag">--json</span> metadata delete-entity itworx_project <span class="c-flag">--yes</span>
+crm <span class="c-flag">--json</span> metadata delete-optionset itworx_priority <span class="c-flag">--yes</span></code></pre>
+<ol class="steps">
+  <li>In step 1, note the order of <code>planned</code>: where does <code>optionset</code> sit relative to the <code>itworx_Priority</code> column? Why must it come first?</li>
+  <li>In step 2, count the entries in <code>applied</code>. In step 3, count <code>applied</code> vs <code>skipped</code>. What changed, and what does that prove?</li>
+  <li>Edit <code>project.yaml</code>: add a <code>{ kind: boolean, schema_name: itworx_Active, display_name: Active }</code> column, then apply again. Which buckets do the old vs new resources land in?</li>
+  <li>After step 4's <code>delete-entity</code>, run <code>metadata get-optionset itworx_priority</code>. It still exists — that's why step 4 deletes it separately. Why does a global outlive the table?</li>
+</ol>
+</section>
+
+<section class="reveal">
+<h2><span class="n">06</span> Check yourself</h2>
+<div class="quiz" id="quiz">
+  <p class="qh">Four questions, instant feedback</p>
+  <p class="qhs">tap an answer — no penalty for a wrong first try</p>
+
+  <div class="q" data-correct="3">
+    <div class="stem">1 · You apply an unchanged spec a second time. What's in <code>applied</code>?</div>
+    <button class="opt"><span class="mk">A</span> Everything, again</button>
+    <button class="opt"><span class="mk">B</span> An error is raised</button>
+    <button class="opt"><span class="mk">C</span> Only the entity</button>
+    <button class="opt"><span class="mk">D</span> Nothing — it's empty; every resource is <code>skipped</code></button>
+    <div class="fb ok">Correct. Apply converges the org to the spec. If the org already matches, there's nothing to apply — all resources are <code>skipped</code>. Re-running is safe and idempotent.</div>
+    <div class="fb no">An unchanged re-apply is a no-op: <code>applied</code> is empty and everything is <code>skipped</code>. That idempotency is the whole point of desired-state.</div>
+  </div>
+
+  <div class="q" data-correct="0">
+    <div class="stem">2 · Your spec has a picklist column referencing a global option set defined in the same file. What ensures the option set exists first?</div>
+    <button class="opt"><span class="mk">A</span> Apply resolves dependencies and creates the option set before the column that needs it</button>
+    <button class="opt"><span class="mk">B</span> You must list it last</button>
+    <button class="opt"><span class="mk">C</span> It doesn't — you get an error</button>
+    <button class="opt"><span class="mk">D</span> You add a <code>depends_on</code> key</button>
+    <div class="fb ok">Correct. Apply orders resources by dependency automatically — the <code>applied</code> list shows the option set created before the picklist. You just declare; apply sequences.</div>
+    <div class="fb no">Apply builds a dependency graph and creates in order — option set before the column that references it. No manual ordering or <code>depends_on</code> needed.</div>
+  </div>
+
+  <div class="q" data-correct="2">
+    <div class="stem">3 · You wrote <code>solution: itworx_dev</code> as a top-level string in the spec and apply failed. Fix?</div>
+    <button class="opt"><span class="mk">A</span> Rename it to <code>publisher</code></button>
+    <button class="opt"><span class="mk">B</span> Quote the value</button>
+    <button class="opt"><span class="mk">C</span> Remove it and pass <code>--solution itworx_dev</code> on the command (or make it a mapping)</button>
+    <button class="opt"><span class="mk">D</span> Move it under <code>entities</code></button>
+    <div class="fb ok">Correct. The error is <code>"solution must be a mapping."</code> The clean fix is the <code>--solution</code> flag, which also overrides whatever the spec declares.</div>
+    <div class="fb no">Top-level <code>solution</code> must be a mapping, not a bare string. Easiest: drop it and use the <code>--solution</code> flag.</div>
+  </div>
+
+  <div class="q" data-correct="1">
+    <div class="stem">4 · Why prefer a <em>global</em> option set in a spec over an inline local one?</div>
+    <button class="opt"><span class="mk">A</span> Globals are faster to query</button>
+    <button class="opt"><span class="mk">B</span> A global is reusable and named — many columns/tables can share it; it also survives the table's deletion</button>
+    <button class="opt"><span class="mk">C</span> Locals can't have labels</button>
+    <button class="opt"><span class="mk">D</span> There's no difference</button>
+    <div class="fb ok">Correct. Global = a standalone, named set referenced by <code>optionset_name</code>; reuse it everywhere the same choices appear. Local belongs to one column. (And a global outlives the table — delete it separately.)</div>
+    <div class="fb no">A global option set is standalone and reusable across columns and tables (referenced by name), where a local one is private to a single column. That reuse is the reason to define it once in the spec.</div>
+  </div>
+
+  <div class="score" id="score"></div>
+</div>
+</section>
+
+<div class="ask reveal">
+  <b>Stuck or curious?</b> I'm your teacher for this — ask me anything in the chat. Good follow-ups right now:
+  <ul class="tight" style="margin-bottom:0">
+    <li>"Can a spec include relationships and views too? Show me the keys." (relationships are M05)</li>
+    <li>"How would Claude Code generate this spec from a plain-English requirement?"</li>
+    <li>"What does <code>--include-referenced-optionsets</code> actually pull into my solution?"</li>
+  </ul>
+</div>
+
+<div class="next reveal">
+  <span class="pill">up next</span>
+  <h2>Three roads, one destination</h2>
+  <p style="margin:0">You've now built the same table three ways — imperative, scaffold, declarative. Next, <strong>L05 — the capstone</strong>: when to choose each, how to capture a live table back into a spec with <code>export-spec</code> (and what it can't round-trip), and how to delete cleanly with a dependency check — leaving the org exactly as you found it. <span class="live-only">Just say <strong>"next lesson"</strong>.</span></p>
+</div>
+
+<footer class="reveal">
+  <p><strong>Sources</strong> — grounded in, not guessed from:</p>
+  <ol class="refs">
+    <li id="r-apply"><strong>crm agent skill</strong> — <code>crm apply --help</code> ("declarative desired-state spec … created with if_exists=skip in dependency order and PublishAllXml runs once at the end, so re-applying an unchanged spec is a no-op"; <code>--include-referenced-optionsets</code>). Spec shape (<code>optionsets</code> with <code>display_name</code>/<code>options</code>; <code>entities</code> with <code>primary_attr</code>/<code>attributes</code>; <code>solution</code>-must-be-mapping) and idempotent re-apply verified against crm v4.12.0 on agent-cloud.</li>
+    <li><a href="https://learn.microsoft.com/power-apps/maker/data-platform/create-edit-global-option-sets">Create &amp; edit global option sets (choices)</a> — Microsoft Learn. Global vs local choices and reuse.</li>
+    <li><a href="https://learn.microsoft.com/power-platform/alm/">Application lifecycle management (ALM)</a> — Microsoft Learn. Why a reviewable, re-deployable spec matters across dev/test/prod (M06).</li>
+  </ol>
+  <p class="ft">M04 · L04 · lessons/0026-declarative-apply.html · live output captured from agent-cloud on 2026-06-17, crm v4.12.0 (host, prefix &amp; solution shown as the example env)</p>
+</footer>
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 4, "name": "Schema Authoring"},
+  "lesson": 4,
+  "title": "Declarative apply -f: desired-state schema",
+  "slug": "declarative-apply",
+  "topics": ["apply","desired-state","yaml-spec","optionsets","global-option-set","dependency-order","idempotent","create-optionset","solution-mapping"],
+  "summary": "Author schema as a reviewable YAML desired-state spec and apply it with crm apply -f: entities plus a global option set, created if-exists=skip in dependency order with one publish. Covers idempotent re-apply, the solution-must-be-a-mapping rule, global vs local option sets, and the agentic write-review-apply loop.",
+  "order": 4,
+  "status": "published" }
+</script>
+</body>
+</html>

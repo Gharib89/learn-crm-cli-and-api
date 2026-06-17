@@ -268,3 +268,64 @@ command that proves it works. (User correction — mechanic before confirmation.
 
 Tool defect → upstream `Gharib89/crm`. · Learning insight → `learning-records/`. ·
 Learning backlog → this repo's GitHub issues.
+
+## M04 lesson sequence (shipped 2026-06-17)
+
+Milestone: **Schema authoring (write)** (issue #4). "Done when": create a custom table with 3+
+typed columns via BOTH imperative verbs AND `apply -f`, then publish. First WRITE-to-schema
+milestone. All live-verified against **crm v4.12.0** on agent-cloud (full create→delete round-trip,
+org left clean). Running example: a **Project** table; published lessons use example env (prefix
+`itworx`, solution `itworx_dev`, host orgexample.crm.dynamics.com).
+
+- **L01** — **What a Custom Table Really Is** (`0023`, mental model, no big write). Auto-provisioned:
+  primary id GUID, primary-name col, system cols, privileges, entity set. Publisher prefix
+  (schema=`<Prefix>_<Display>`) + solution-as-container; prefix must match solution's publisher.
+  Ownership UserOwned/OrganizationOwned (near-permanent). Preview via `scaffold --dry-run`. Publish
+  = PublishAllXml (unpublished staging layer); imperative publishes per-call, batch once.
+- **L02** — **Imperative Create** (`0024`). `create-entity --display` (envelope: created/schema_name/
+  logical_name/entity_set_name/primary_attribute/solution/published) then `add-attribute <logical>
+  --kind …`. Full `--kind` palette + per-kind flags. `--no-publish` staging. Verify w/ describe.
+- **L03** — **scaffold table** (`0025`). `scaffold table "X" --column "Disp:KIND[:opts]"`,
+  `{applied,skipped,planned,failed}`, idempotent skip, `--dry-run`/`--stage-only`, one publish.
+- **L04** — **Declarative apply -f** (`0026`). YAML spec (`entities[]` + `optionsets[]`), if-exists=skip
+  in dependency order, one publish, idempotent re-apply. Global vs local option set. `create-optionset`
+  in declarative form. The reviewable/agentic default.
+- **L05** — **Choose, Capture, Clean up** (`0027`, capstone). Decision matrix imperative/scaffold/apply;
+  `export-spec` (round-trip + warnings + `_Base` money companion); clean delete via `delete-entity
+  --check-dependencies` + `delete-optionset`. Done-when satisfied (L02 imperative + L04 apply).
+
+**✅ M04 COMPLETE — 5 lessons** (L01–L05, lessons 0023–0027; shipped 2026-06-17). Build green
+(27 lessons). Next-link chain 0022→0023→…→0027 verified; 0027 auto-Continue points to 0008 (M11 L01)
+since M05–M10 unbuilt — narrative names M05, button auto-rewires when M05 ships (same pattern 0022 had).
+
+### M04 live-CLI facts (crm v4.12.0, captured from agent-cloud)
+
+- **Profile was stale → fixed.** `agent-cloud` had `publisher_prefix=cwxdf` / `default_solution=
+  cwxdf_dogfood`, but NO publisher/solution with that prefix exists on the org → every create 404'd
+  (`"solution unique name (cwxdf_dogfood) is not valid"`). Real working setup on the org: unmanaged
+  solution **`agsol`** ("Agent Solution") ↔ publisher **`agpublisher`** prefix **`ag`**. Ran
+  `crm profile edit agent-cloud --default-solution agsol --publisher-prefix ag`. Live captures use
+  `ag_`/`agsol`; published lessons scrub to `itworx_`/`itworx_dev` (privacy rule).
+- **create-entity** auto-creates primary name `<prefix>_name` (ApplicationRequired); PK `<prefix>_<table>id`
+  (Uniqueidentifier, SystemRequired). 16 writable attrs on a 5-custom-col table (rest = system cols).
+- **add-attribute** `--kind` ∈ string|memo|integer|bigint|decimal|double|money|boolean|datetime|picklist|
+  multiselect|lookup|image|file. **decimal/double/money REQUIRE `--precision`** (`"--precision is
+  required for this kind."`). Inline `--option` MUST be `value:label` or `:label` (auto-value);
+  bare label rejected. Local picklist auto-values base = publisher's option base (was 550000000 on
+  this org; lessons show conventional 100000000). `--no-publish` → no `published` key in envelope.
+- **scaffold** column opts allowed: `description,max_length,optionset_name,required,target_entity`
+  ONLY (no precision/format/min/max/inline-options). decimal in scaffold → `failed`
+  ("--precision is required"). Partial-apply: entity+prior cols stay `applied`, bad col `failed`,
+  rest skipped; re-run recovers (skip). `--dry-run`→planned (1 existence GET); `--stage-only`→staged.
+- **apply** spec: top-level `solution` must be a MAPPING (string → `"solution must be a mapping."`)
+  → pass `--solution` flag. optionset spec keys: `name`, `display_name`, `options:[{value,label}]`
+  (NOT `display`). entity: schema_name/display_name/display_collection_name/ownership/
+  primary_attr{schema_name,label}/attributes[{kind,schema_name,display_name,required,max_length,
+  precision,format_name,optionset_name}]. Dependency order (optionset before its picklist col),
+  one publish. Re-apply unchanged → all `skipped`. Global `--dry-run` supported.
+- **export-spec** warns + drops: local picklist (`OptionSet IsGlobal='False' … cannot be retrieved`),
+  `VirtualType` `*name` shadow cols (boolean also spawns `<col>name`). **money auto-spawns `_Base`
+  companion** (`<col>_Base`, "X (Base)", base currency) — appears in the spec.
+- **delete-entity**/`delete-optionset` need `--yes` in JSON mode (else `"aborted by user"`).
+  `delete-entity --dry-run --check-dependencies` → `{would_delete, can_delete, blockers[]}`. Envelope
+  `{deleted, logical_name|name, solution}`. Global optionset survives entity delete (delete separately).
