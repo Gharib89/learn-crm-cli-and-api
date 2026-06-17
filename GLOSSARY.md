@@ -61,9 +61,18 @@ The Web API's read-only "are you there, and who am I?" function. No input; retur
 GUIDs — `UserId`, `BusinessUnitId`, `OrganizationId`. The canonical first/confirm call.
 CLI: `crm --json connection whoami`. _Met: M01 L02._
 
+**`connection test` (host + version confirm)**
+Sibling of whoami that reports `api_base` (the live host) and `api_version` as first-class
+fields — the **v4.7.0** way to confirm *which org + which API version* you're hitting. (whoami
+now returns only the three identity GUIDs; older versions exposed host/version inside
+`@odata.context`.) Also `connection status` (active session/profile, no network) and
+`connection doctor` (DNS/TLS/auth diagnosis). _Met: M01 L02 (added v4.7.0)._
+
 **`@odata.context`**
-A URL the server echoes back in every response, showing the exact host + API version that
-answered. The proof of *which org* you actually hit — checked before any mutation. _Met: M01 L02._
+An OData URL the *Web API* echoes back showing the host + API version that answered. In crm
+**v4.7.0** the CLI no longer surfaces it in `--json` output — confirm host + version with
+[[connection-test]] `connection test` (`api_base` / `api_version`) instead. _Met: M01 L02
+(CLI behavior updated v4.7.0)._
 
 **GUID**
 A 32-hex universal identifier (`bf40e4d2-ee3e-f111-…`). Dataverse's primary key: every
@@ -191,8 +200,10 @@ them). `--filter` = which rows in OData syntax (`eq`, `ne`, `gt`/`lt`, `contains
 match" is an answer, not a failure). _Met: M01 L06._
 
 **`@odata.etag`**
-A row-version tag (`W/"2503282"`) returned on reads. The value the server compares for
-optimistic concurrency — the other half of L04's update `If-Match` header. _Met: M01 L06._
+A row-version tag (`W/"2503282"`) — the value the server compares for optimistic concurrency,
+the other half of `If-Match`. In crm **v4.7.0** the CLI no longer returns it on reads; guard a
+write with `--if-match "*"` ("any current version") and let the server enforce the check.
+_Met: M01 L06 (CLI behavior updated v4.7.0)._
 
 **`query count` — set-name vs logical-name trap**
 Counts rows via `RetrieveTotalRecordCount`. Two edges: (1) takes the **logical name**

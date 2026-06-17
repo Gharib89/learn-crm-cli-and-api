@@ -225,7 +225,7 @@
 
 <p>Two more names from the same table definition are worth knowing, because they name the keys you just saw: the <strong>PrimaryIdAttribute</strong> is <code>contactid</code> (the GUID primary key) and the <strong>PrimaryNameAttribute</strong> is <code>fullname</code> (the column the GUI uses as the record's title). Pattern holds platform-wide: <code>account</code> → <code>accountid</code>/<code>name</code>, <code>contact</code> → <code>contactid</code>/<code>fullname</code>.<sup><a href="#r-metadata">metadata</a></sup></p>
 
-<div class="callout tip"><span class="ic">✓</span><div><b>Rule of thumb.</b> Plural <code>contacts</code> when you're <em>addressing rows</em> over the API (get/query). Singular <code>contact</code> when you're <em>talking about the table</em> (count, metadata). When in doubt, the name in the <code>@odata.context</code> URL is always the entity-set.</div></div>
+<div class="callout tip"><span class="ic">✓</span><div><b>Rule of thumb.</b> Plural <code>contacts</code> when you're <em>addressing rows</em> over the API (get/query). Singular <code>contact</code> when you're <em>talking about the table</em> (count, metadata). When in doubt, the entity-set is the plural in the record's <code>_entity_id_url</code> path (e.g. <code>…/contacts(…)</code>).</div></div>
 </section>
 
 <section class="reveal">
@@ -237,9 +237,6 @@
     <span class="c-flag">--select</span> fullname,jobtitle,gendercode,statecode,statuscode,_ownerid_value,createdon
 
 <span class="c-punc">{</span> <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span> <span class="c-key">"data"</span><span class="c-punc">:</span> <span class="c-punc">{</span>
-  <span class="c-key">"@odata.context"</span><span class="c-punc">:</span> <span class="c-str">"https://orgexample.crm.dynamics.com/api/data/v9.2/$metadata#contacts(...)/$entity"</span><span class="c-punc">,</span>
-  <span class="c-key">"@odata.etag"</span><span class="c-punc">:</span> <span class="c-str">"W/\"2503282\""</span><span class="c-punc">,</span>
-
   <span class="c-key">"fullname"</span><span class="c-punc">:</span> <span class="c-str">"Sara Mitchell"</span><span class="c-punc">,</span>                          <span class="c-comment"># plain text</span>
   <span class="c-key">"jobtitle"</span><span class="c-punc">:</span> <span class="c-str">"Sales Manager"</span><span class="c-punc">,</span>                         <span class="c-comment"># plain text</span>
   <span class="c-key">"createdon"</span><span class="c-punc">:</span> <span class="c-str">"2026-05-05T12:12:12Z"</span><span class="c-punc">,</span>                 <span class="c-comment"># datetime (raw ISO)</span>
@@ -286,7 +283,7 @@
   <span class="c-key">"contactid"</span><span class="c-punc">:</span> <span class="c-guid">"a1b2c3d4-1111-2222-3333-00155d467b91"</span><span class="c-punc">,</span>
   <span class="c-key">"gendercode"</span><span class="c-punc">:</span> <span class="c-num">2</span> <span class="c-punc">}</span></code></pre>
 
-<p><code>--minimal</code> drops <em>every key containing <code>@</code></em> — the <code>@odata.etag</code>, the FormattedValues, the lookup annotations — and keeps the business fields, the <code>_*_value</code> lookup GUIDs, and the primary id. Two ways to think about the pair:<sup><a href="#r-skill">skill</a></sup></p>
+<p><code>--minimal</code> drops <em>every key containing <code>@</code></em> — the FormattedValues and the lookup annotations — and keeps the business fields, the <code>_*_value</code> lookup GUIDs, and the primary id. Two ways to think about the pair:<sup><a href="#r-skill">skill</a></sup></p>
 
 <dl class="ginfo">
   <dt>Annotated</dt><dd>The <strong>form's view</strong> — codes <em>plus</em> their labels, GUIDs <em>plus</em> their names and target tables. For <em>human</em> reading and reporting.</dd>
@@ -394,7 +391,7 @@ crm <span class="c-flag">--json</span> entity get contacts &lt;paste-id&gt; <spa
     <li id="r-fmt"><a href="https://learn.microsoft.com/power-apps/developer/data-platform/webapi/query/select-columns#formatted-values">Select columns — Formatted values</a> — Microsoft Learn. How option-set codes and dates get their <code>@…FormattedValue</code> labels.</li>
     <li id="r-skill"><strong>crm agent skill</strong> — <code>~/.claude/skills/crm/reference/records.md</code> &amp; <code>crm entity get --help</code> (<code>--annotations</code>/<code>--no-annotations</code>, <code>--minimal</code> drops every <code>@</code>-key). Mirrored on the <a href="https://crm-cli-docs.pages.dev/">crm docs site</a>.</li>
   </ol>
-  <p class="ft">M02 · L01 · lessons/0014-anatomy-of-a-record.html · live output captured from agent-cloud on 2026-06-15 (host, owner id &amp; owner name shown as the example env)</p>
+  <p class="ft">M02 · L01 · lessons/0014-anatomy-of-a-record.html · live output captured from agent-cloud on 2026-06-15 (host, owner id &amp; owner name shown as the example env) · verified against crm v4.7.0 on 2026-06-17 (<code>@odata.context</code>/<code>@odata.etag</code> no longer emitted)</p>
 </footer>
 
 </div>

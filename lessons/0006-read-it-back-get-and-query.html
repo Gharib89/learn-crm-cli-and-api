@@ -204,8 +204,6 @@
 <span class="c-punc">{</span>
   <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
   <span class="c-key">"data"</span><span class="c-punc">:</span> <span class="c-punc">{</span>
-    <span class="c-key">"@odata.context"</span><span class="c-punc">:</span> <span class="c-str">"https://orgexample.crm.dynamics.com/api/data/v9.2/$metadata#contacts(...)/$entity"</span><span class="c-punc">,</span>
-    <span class="c-key">"@odata.etag"</span><span class="c-punc">:</span> <span class="c-str">"W/\"2503282\""</span><span class="c-punc">,</span>
     <span class="c-key">"fullname"</span><span class="c-punc">:</span> <span class="c-str">"Sara Mitchell"</span><span class="c-punc">,</span>
     <span class="c-key">"emailaddress1"</span><span class="c-punc">:</span> <span class="c-str">"sara.mitchell@example.com"</span><span class="c-punc">,</span>
     <span class="c-key">"jobtitle"</span><span class="c-punc">:</span> <span class="c-str">"Sales Manager"</span><span class="c-punc">,</span>
@@ -216,7 +214,7 @@
 <p>Two things to notice:</p>
 <ul class="tight">
   <li><strong><code>--select</code> is not optional politeness — it's discipline.</strong> Omit it and you get <em>every</em> column on the entity (dozens, mostly empty). Always name the fields you need.<sup><a href="#r-query">query</a></sup></li>
-  <li><strong><code>@odata.etag</code></strong> (<code>W/"2503282"</code>) is the row's version tag. Remember L04's <code>If-Match: *</code> on an update? That header is how the server detects whether the row changed under you; the etag is the value it compares. You're seeing the two halves of optimistic concurrency.<sup><a href="#r-update">update</a></sup></li>
+  <li><strong>Optimistic concurrency — the etag.</strong> Every Dataverse row has a server <em>version tag</em> (the OData <code>@odata.etag</code>, e.g. <code>W/"2503282"</code>) — the value L04's <code>If-Match</code> header compares to detect whether a row changed under you. <em>Heads-up:</em> crm <strong>v4.7.0</strong> no longer prints the etag in <code>--json</code> output (that's why you don't see it above); in practice you guard a write with <code>--if-match "*"</code> ("only if the row still exists") and let the server enforce the version check. You'll wire this up in M02 L02.<sup><a href="#r-update">update</a></sup></li>
 </ul>
 </section>
 
@@ -352,7 +350,7 @@ crm <span class="c-flag">--json</span> query odata contacts <span class="c-flag"
     <li id="r-update"><a href="https://learn.microsoft.com/power-apps/developer/data-platform/webapi/perform-conditional-operations-using-web-api">Conditional operations (ETags &amp; If-Match)</a> — Microsoft Learn. What <code>@odata.etag</code> is for.</li>
     <li id="r-skill"><strong>crm agent skill</strong> — <code>~/.claude/skills/crm/reference/records.md</code> &amp; <code>SKILL.md</code> (<code>query count</code> via <code>RetrieveTotalRecordCount</code>, cached; entity-set vs logical name). Mirrored on the <a href="https://crm-cli-docs.pages.dev/">crm docs site</a>.</li>
   </ol>
-  <p class="ft">M01 · L06 · lessons/0006-read-it-back-get-and-query.html · live output captured from agent-cloud on 2026-06-13 (host shown as the example env) · query result-shape corrected to crm v3.12.6 (rows in the <code>data</code> array; <code>meta.count</code> via <code>--count</code>) on 2026-06-17</p>
+  <p class="ft">M01 · L06 · lessons/0006-read-it-back-get-and-query.html · live output captured from agent-cloud on 2026-06-13 (host shown as the example env) · verified against crm v4.7.0 on 2026-06-17 (rows in the <code>data</code> array; <code>meta.count</code> via <code>--count</code>; <code>@odata.context</code>/<code>@odata.etag</code> no longer emitted)</p>
 </footer>
 
 </div>

@@ -100,6 +100,33 @@ surgical L06 fix-up pass. L03 §01 calls out the current shape explicitly so lea
   `<fetch aggregate="true">` + `groupby="true"` + `aggregate="count"` + `alias` → `[{num:3,gender:2},
   {num:2,gender:1}]` (3 Female / 2 Male in agent-cloud seed). Also `query saved`/`user` (views by GUID).
 
+## crm v4.7.0 upgrade — full re-verification + lesson pass (2026-06-17)
+
+CLI bumped **3.12.6 → 4.7.0** (major). Re-verified everything the lessons touch against the
+installed binary (per the CLAUDE.md evolving-CLI policy). **Drift found — two output changes:**
+
+1. **`@odata.context` and `@odata.etag` dropped** from `entity get`, `entity create`, `whoami`,
+   and `query` output (confirmed absent even with `--full`). Replaced by `_entity_id` +
+   `_entity_id_url` (the url carries host + `/api/data/v9.2/` + entity-set).
+2. **New `connection test`** verb → reports `api_base` + `api_version` as first-class fields;
+   also `connection status` (no network) and `connection doctor`. This is now the way to confirm
+   host/version (whoami is identity-GUIDs-only).
+
+**Unchanged (re-verified):** field-level annotations (FormattedValue / lookuplogicalname /
+associatednavigationproperty) with `--annotations`; `query odata` bare-`data` array + `--count`
++ `--page-size`/`next_link`; `entity update` PATCH/partial/silent/`If-Match:*` + flags; lookup
+verbs (`set-lookup`/`clear-lookup`); FetchXML aggregate. New `entity get --full` flag (human-mode
+nulls).
+
+**Lessons updated (full pass, 7):** 0002 (whoami → pivot host/version to `connection test`),
+0003 (envelope examples: drop context; query → bare `data` array), 0005 (create: drop context/etag),
+0006 (get: drop context/etag; etag bullet reframed — concept kept, CLI-no-longer-prints note),
+0010 (M11 enrichment: drop `@odata.etag` "API control" example), 0014 (M02 L01: §03 JSON +
+rule-of-thumb → `_entity_id_url` + `--minimal` prose), 0015 (M02 L02: `--if-match` note + ask).
+Etag decision: **keep the optimistic-concurrency concept**, note v4.7.0 doesn't surface the value,
+teach `--if-match "*"` as the practical guard. GLOSSARY: `@odata.context`/`@odata.etag` reframed +
+new `connection test` entry. Footers stamped "verified against crm v4.7.0 on 2026-06-17".
+
 ### Live-CLI facts caught while authoring L01 (v3.12.6 — note: CLI bumped from 3.9.x)
 
 - `crm --version` now reports **3.12.6** (was 3.9.0/3.9.1 in earlier notes).

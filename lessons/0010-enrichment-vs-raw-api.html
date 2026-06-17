@@ -211,7 +211,7 @@
 <pre class="term"><span class="tag">core/query.py</span><code><span class="c-key">if</span> include_annotations:
     headers[<span class="c-str">"Prefer"</span>] = <span class="c-str">'odata.include-annotations="*"'</span></code></pre>
 
-<p>That single header asks Dataverse to <strong>decorate</strong> each row with extra, <code>@</code>-keyed sibling fields. For <code>query odata</code> the default is <code>--no-annotations</code> (you opt in); saved &amp; user queries turn it on by default.<sup><a href="#r-flag">flag</a></sup> Without it, a row is just raw values, lookup GUIDs, and <code>@odata.etag</code>. <strong>crm only asks — Dataverse does the decorating.</strong></p>
+<p>That single header asks Dataverse to <strong>decorate</strong> each row with extra, <code>@</code>-keyed sibling fields. For <code>query odata</code> the default is <code>--no-annotations</code> (you opt in); saved &amp; user queries turn it on by default.<sup><a href="#r-flag">flag</a></sup> Without it, a row is just raw values and lookup GUIDs. <strong>crm only asks — Dataverse does the decorating.</strong> (Note: crm v4.7.0 also stops echoing the OData control annotations <code>@odata.context</code>/<code>@odata.etag</code> in its output, so the only <code>@</code>-keys you'll now see are enrichment ones.)</p>
 </section>
 
 <section class="reveal">
@@ -224,8 +224,7 @@
   <span class="m-raw c-key">"statuscode"</span>: <span class="c-num">1</span>,                              <span class="c-comment">← raw option-set int</span>
   <span class="m-api c-key">"statuscode@OData...FormattedValue"</span>: <span class="c-str">"Active"</span>,  <span class="m-api">← API label</span>
   <span class="m-raw c-key">"_parentcustomerid_value"</span>: <span class="c-str">"a1b2…-guid"</span>,         <span class="c-comment">← raw lookup GUID</span>
-  <span class="m-api c-key">"_parentcustomerid_value@...lookuplogicalname"</span>: <span class="c-str">"account"</span>,  <span class="m-api">← API: lookup's table</span>
-  <span class="m-api c-key">"@odata.etag"</span>: <span class="c-str">"W/\"123456\""</span>             <span class="m-api">← API control</span>
+  <span class="m-api c-key">"_parentcustomerid_value@...lookuplogicalname"</span>: <span class="c-str">"account"</span>  <span class="m-api">← API: lookup's table</span>
 }</code></pre>
 
 <p>The label <code>"Active"</code> and the lookup's table <code>"account"</code> are <strong>sibling fields the server attached</strong> — not values <code>crm</code> derived. Strip the <code>Prefer</code> header (<code>--no-annotations</code>) and the green lines simply vanish; you're left with <code>statuscode: 1</code> and a bare GUID.</p>

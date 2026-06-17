@@ -239,7 +239,7 @@
 <dl class="ginfo">
   <dt>default</dt><dd><strong>Update-only.</strong> <code>If-Match: "*"</code> sent → a missing id fails (no accidental create). This is what you want 99% of the time.</dd>
   <dt>--allow-create</dt><dd><strong>Opt into upsert.</strong> Drops the header → PATCH-creates if the id is absent. (Or use the dedicated <code>entity upsert</code> verb.)</dd>
-  <dt>--if-match 'W/"…"'</dt><dd><strong>Optimistic concurrency.</strong> Pass a specific etag (from L06) → the update only lands if the row hasn't changed since you read it; otherwise it's rejected.</dd>
+  <dt>--if-match 'W/"…"'</dt><dd><strong>Optimistic concurrency.</strong> Pass a row's version etag → the update only lands if it hasn't changed since you read it. (crm v4.7.0 no longer prints the etag in <code>--json</code> output, so in practice you use <code>--if-match "*"</code> — "any current version" — and let the server enforce the check.)</dd>
 </dl>
 </section>
 
@@ -385,7 +385,7 @@ crm <span class="c-flag">--json</span> entity update contacts <span class="c-gui
   <ul class="tight" style="margin-bottom:0">
     <li>"How do I find a lookup's navigation-property name when I don't have a record to read the annotation off?"</li>
     <li>"When would I actually <em>want</em> <code>--allow-create</code> / <code>entity upsert</code> instead of update?"</li>
-    <li>"How do I use the etag from L06 with <code>--if-match</code> to avoid clobbering someone else's edit?"</li>
+    <li>"How does <code>--if-match</code> stop me clobbering a concurrent edit, now that the CLI doesn't print the etag?"</li>
   </ul>
 </div>
 
@@ -403,7 +403,7 @@ crm <span class="c-flag">--json</span> entity update contacts <span class="c-gui
     <li id="r-bind"><a href="https://learn.microsoft.com/power-apps/developer/data-platform/webapi/associate-disassociate-entities-using-web-api">Associate and disassociate rows using the Web API</a> — Microsoft Learn. Setting a single-valued navigation property with <code>@odata.bind</code>, and removing it via <code>DELETE …/$ref</code>.</li>
     <li id="r-skill"><strong>crm agent skill</strong> — <code>~/.claude/skills/crm/reference/records.md</code> &amp; <code>crm entity update / set-lookup / clear-lookup --help</code> (<code>--allow-create</code>, <code>--return-record</code>, <code>--if-match</code>; the lookup verbs). Mirrored on the <a href="https://crm-cli-docs.pages.dev/">crm docs site</a>.</li>
   </ol>
-  <p class="ft">M02 · L02 · lessons/0015-update-a-record.html · live preview→commit→verify→revert round-trip captured from agent-cloud on 2026-06-15; org left clean (host, ids &amp; the bound account shown as the example env)</p>
+  <p class="ft">M02 · L02 · lessons/0015-update-a-record.html · live preview→commit→verify→revert round-trip captured from agent-cloud on 2026-06-15; org left clean (host, ids &amp; the bound account shown as the example env) · verified against crm v4.7.0 on 2026-06-17</p>
 </footer>
 
 </div>

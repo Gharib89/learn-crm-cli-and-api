@@ -229,24 +229,31 @@ crm <span class="c-flag">--json</span> connection whoami</code></pre>
 <pre class="term"><span class="tag">agent-cloud · exit 0</span><code><span class="c-punc">{</span>
   <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
   <span class="c-key">"data"</span><span class="c-punc">:</span> <span class="c-punc">{</span>
-    <span class="c-key">"@odata.context"</span><span class="c-punc">:</span> <span class="c-str">"https://orgexample.crm.dynamics.com/api/data/v9.2/$metadata#...WhoAmIResponse"</span><span class="c-punc">,</span>
     <span class="c-key">"BusinessUnitId"</span><span class="c-punc">:</span> <span class="c-guid">"4a617aa7-5a3d-f111-88b5-000d3a3b279b"</span><span class="c-punc">,</span>
     <span class="c-key">"UserId"</span><span class="c-punc">:</span>         <span class="c-guid">"bf40e4d2-ee3e-f111-88b4-6045bd001b10"</span><span class="c-punc">,</span>
     <span class="c-key">"OrganizationId"</span><span class="c-punc">:</span> <span class="c-guid">"9102ced1-5c3e-f111-b31d-000d3a302819"</span>
   <span class="c-punc">}</span>
 <span class="c-punc">}</span></code></pre>
 
-<p>Read it as the three facts of "where am I, as whom":</p>
+<p>Read it as the three facts of "as whom" — three GUIDs, nothing more:</p>
 <dl class="ginfo">
-  <dt>@odata.context</dt><dd>The URL the request actually hit. <strong>Your proof of which org + which API version</strong> (note the live <code>v9.2</code>). Check this before any write.<sup><a href="#r-skill">skill</a></sup></dd>
   <dt>OrganizationId</dt><dd>GUID of the org (the environment) itself.</dd>
   <dt>UserId</dt><dd>GUID of the user the CLI authenticated <em>as</em> — your application user.</dd>
   <dt>BusinessUnitId</dt><dd>GUID of that user's business unit — the security / ownership container it sits in.</dd>
 </dl>
 
+<p><strong>WhoAmI answers "who," not "where."</strong> In crm <strong>v4.7.0</strong> the response is just those three IDs — to confirm <em>which org and which API version</em> you're actually hitting, use its sibling <code>connection test</code>, which reports them as first-class fields:<sup><a href="#r-skill">skill</a></sup></p>
+
+<pre class="term"><span class="tag">agent-cloud · exit 0</span><code>crm <span class="c-flag">--json</span> connection test
+
+<span class="c-punc">{</span> <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span> <span class="c-key">"data"</span><span class="c-punc">:</span> <span class="c-punc">{</span>
+    <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span> <span class="c-key">"user_id"</span><span class="c-punc">:</span> <span class="c-guid">"bf40e4d2-…b10"</span><span class="c-punc">,</span>
+    <span class="c-key">"api_base"</span><span class="c-punc">:</span> <span class="c-str">"https://orgexample.crm.dynamics.com/api/data/v9.2/"</span><span class="c-punc">,</span>   <span class="c-comment"># which org</span>
+    <span class="c-key">"api_version"</span><span class="c-punc">:</span> <span class="c-str">"v9.2"</span> <span class="c-punc">}</span> <span class="c-punc">}</span>                                <span class="c-comment"># which version</span></code></pre>
+
 <p>A <strong>GUID</strong> (e.g. <code>bf40e4d2-ee3e-f111-…</code>) is Dataverse's universal primary key — every record, table, and org is identified by one. You'll copy-paste these constantly, so get comfortable now.</p>
 
-<div class="callout tip"><span class="ic">✓</span><div><b>The whole win:</b> if <code>"ok": true</code> comes back and the <code>@odata.context</code> host matches the org you <em>intended</em>, you're connected and pointed at the right place. That two-second check is the seatbelt you'll fasten before every mutation later in the mission.</div></div>
+<div class="callout tip"><span class="ic">✓</span><div><b>The whole win:</b> <code>whoami</code> returning <code>"ok": true</code> proves auth works and names who you are; <code>connection test</code>'s <code>api_base</code> matching the org you <em>intended</em> proves you're pointed at the right place. That two-second pair is the seatbelt you'll fasten before every mutation later in the mission.</div></div>
 </section>
 
 <section class="reveal">
@@ -257,13 +264,16 @@ crm <span class="c-flag">--json</span> connection whoami</code></pre>
 <pre><code><span class="c-comment"># 1 · which profile is active? the ● marks it</span>
 crm profile list
 
-<span class="c-comment"># 2 · the handshake against the active org</span>
-crm <span class="c-flag">--json</span> connection whoami</code></pre>
+<span class="c-comment"># 2 · the identity handshake against the active org</span>
+crm <span class="c-flag">--json</span> connection whoami
+
+<span class="c-comment"># 3 · which org + API version is that, really?</span>
+crm <span class="c-flag">--json</span> connection test</code></pre>
 
 <p>Then confirm you can answer these <em>from your own output</em> before moving on:</p>
 <ol class="steps">
   <li>Which profile shows the <strong>●</strong> dot? Does its URL end in <code>.dynamics.com</code> (cloud) — your intended target?</li>
-  <li>In the whoami output, what API <strong>version</strong> appears inside <code>@odata.context</code>?</li>
+  <li>In the <code>connection test</code> output, what <code>api_version</code> appears — and what does it tell you about cloud vs on-prem?</li>
   <li>Could you point to your <code>OrganizationId</code> from memory of where it sits in the JSON?</li>
 </ol>
 
@@ -277,13 +287,13 @@ crm <span class="c-flag">--json</span> connection whoami</code></pre>
   <p class="qhs">tap an answer — no penalty for a wrong first try</p>
 
   <div class="q" data-correct="1">
-    <div class="stem">1 · You're about to create a custom table and want to be <b>certain</b> the CLI is pointed at your cloud dev org, not on-prem. Which single field in the <code>whoami</code> output proves <em>which host + which API version</em> you're hitting?</div>
-    <button class="opt"><span class="mk">A</span> UserId</button>
-    <button class="opt"><span class="mk">B</span> @odata.context</button>
-    <button class="opt"><span class="mk">C</span> BusinessUnitId</button>
-    <button class="opt"><span class="mk">D</span> OrganizationId</button>
-    <div class="fb ok">Correct. <code>@odata.context</code> is a real URL echoed back by the server — host <em>and</em> <code>/api/data/v9.x/</code> version. The skill's rule: confirm it before any mutation. (<code>OrganizationId</code> also names the org, but it's an opaque GUID — no host or version at a glance.)</div>
-    <div class="fb no">Not quite. That field is a GUID for the user / BU / org — useful, but it won't show you the <em>host or API version</em>. The field that echoes the actual URL hit is <code>@odata.context</code>.</div>
+    <div class="stem">1 · You're about to create a custom table and want to be <b>certain</b> the CLI is pointed at your cloud dev org, not on-prem. In crm v4.7.0, <code>whoami</code> returns only identity GUIDs — which command confirms <em>which host + which API version</em> you're hitting?</div>
+    <button class="opt"><span class="mk">A</span> <code>connection whoami</code> — read <code>OrganizationId</code></button>
+    <button class="opt"><span class="mk">B</span> <code>connection test</code> — read <code>api_base</code> + <code>api_version</code></button>
+    <button class="opt"><span class="mk">C</span> <code>profile list</code> — the ● dot</button>
+    <button class="opt"><span class="mk">D</span> <code>entity get</code> on any record</button>
+    <div class="fb ok">Correct. <code>connection test</code> reports <code>api_base</code> (the live host) and <code>api_version</code> as explicit fields — exactly the host + version proof you want before a write. (v4.7.0's <code>whoami</code> is identity-only; older versions exposed this in <code>@odata.context</code>.)</div>
+    <div class="fb no">Not quite. <code>whoami</code> now returns only the three identity GUIDs, and <code>profile list</code> shows config, not the live server. The command that reports the host + version from the server is <code>connection test</code> (<code>api_base</code> / <code>api_version</code>).</div>
   </div>
 
   <div class="q" data-correct="2">
@@ -297,12 +307,12 @@ crm <span class="c-flag">--json</span> connection whoami</code></pre>
   </div>
 
   <div class="q" data-correct="1">
-    <div class="stem">3 · Your <code>whoami</code> shows <code>@odata.context: …/api/data/<b>v9.2</b>/…</code> What does that version tell you about which org you're on?</div>
+    <div class="stem">3 · Your <code>connection test</code> shows <code>api_version: <b>v9.2</b></code>. What does that version tell you about which org you're on?</div>
     <button class="opt"><span class="mk">A</span> It's on-prem — on-prem is the newer one</button>
     <button class="opt"><span class="mk">B</span> It's the cloud org — on-prem caps at v9.1</button>
     <button class="opt"><span class="mk">C</span> Nothing; version is unrelated to on-prem vs cloud</button>
     <button class="opt"><span class="mk">D</span> It means the CLI is out of date</button>
-    <div class="fb ok">Correct. Cloud (OAuth) serves <code>v9.2</code>; on-prem (NTLM) maxes at <code>v9.1</code> and returns HTTP 501 if you ask for v9.2. So <code>v9.2</code> in the context = the cloud org. You'll use this tell constantly.</div>
+    <div class="fb ok">Correct. Cloud (OAuth) serves <code>v9.2</code>; on-prem (NTLM) maxes at <code>v9.1</code> and returns HTTP 501 if you ask for v9.2. So <code>v9.2</code> in <code>api_version</code> = the cloud org. You'll use this tell constantly.</div>
     <div class="fb no">Re-check §1: on-prem caps at <code>v9.1</code>, cloud serves <code>v9.2</code>. Seeing <code>v9.2</code> means you're on the cloud org.</div>
   </div>
 
@@ -340,9 +350,9 @@ crm <span class="c-flag">--json</span> connection whoami</code></pre>
   <ol class="refs">
     <li id="r-webapi"><a href="https://learn.microsoft.com/power-apps/developer/data-platform/webapi/overview">Use the Dataverse Web API (overview)</a> — Microsoft Learn. The canonical Web API entry point; applies to on-prem too.</li>
     <li id="r-ops"><a href="https://learn.microsoft.com/power-apps/developer/data-platform/webapi/perform-operations-web-api">Perform operations by using the Web API</a> — Microsoft Learn. Request shapes behind the CLI verbs.</li>
-    <li id="r-skill"><strong>crm agent skill</strong> — <code>~/.claude/skills/crm/SKILL.md</code> (on-prem-vs-cloud table; "confirm the live host via <code>@odata.context</code> before any mutation"). Mirrored on the <a href="https://crm-cli-docs.pages.dev/">crm docs site</a>.</li>
+    <li id="r-skill"><strong>crm agent skill</strong> — <code>~/.claude/skills/crm/SKILL.md</code> (on-prem-vs-cloud table; confirm the live host + version via <code>connection test</code> before any mutation). Mirrored on the <a href="https://crm-cli-docs.pages.dev/">crm docs site</a>.</li>
   </ol>
-  <p class="ft">M01 · L02 · lessons/0002-the-whoami-handshake.html · live output captured from agent-cloud on 2026-06-13</p>
+  <p class="ft">M01 · L02 · lessons/0002-the-whoami-handshake.html · live output captured from agent-cloud on 2026-06-13 · updated for crm v4.7.0 (whoami is identity-only; host/version via connection test) 2026-06-17</p>
 </footer>
 
 </div>
