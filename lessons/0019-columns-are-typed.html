@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M03 · L02 — Columns Are Typed</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-false{color:#ff8f7a}.c-num{color:#ffd479}.c-meth{color:#ffd479;font-weight:700}.c-ann{color:#7fb0c9}
+  .c-xtag{color:#8cc0ff}.c-xattr{color:#ffd479}.c-xval{color:#a7e6a0}
+
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+
+  table.ops{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--card);
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.ops th,table.ops td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.ops th{background:var(--guid-soft);color:var(--guid);font-family:"Roboto Mono",monospace;
+    font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  table.ops tr:last-child td{border-bottom:none}
+  table.ops code{font-size:12.5px}
+  table.ops .pk{color:var(--teal-deep);font-weight:700}
+
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-false,pre .c-num,pre .c-meth,pre .c-flag,pre .c-ann,pre .c-xtag,pre .c-xattr,pre .c-xval{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="top reveal">
+  <div class="eyebrow">Milestone 03 <span class="dot">/</span> Metadata Model <span class="dot">/</span> Lesson 02</div>
+  <h1>Columns<br>are <em>typed</em></h1>
+  <p class="sub">A column is never just a name. It carries a data type and a set of flags that decide whether — and how — you're allowed to write it.</p>
+  <div class="livechip"><span class="led"></span> target&nbsp; <b>agent-cloud</b> &nbsp;·&nbsp; orgexample.crm.dynamics.com</div>
+  <div class="rule"></div>
+  <div class="why"><b>Why now.</b> In M02 you wrote <code>gendercode</code> as a number and bound <code>parentcustomerid</code> to an account — but you took on faith that those were legal moves. The attribute metadata is what <em>tells</em> you: this column is a Picklist, that one's a read-only mirror, this one is required on create. Read it first and a write in M04 becomes mechanical instead of trial-and-error.</div>
+</header>
+
+<p class="lead reveal">Today's win: list a table's columns, then read one column's definition — its <em>type</em>, its <em>writability</em>, and whether it's <em>required</em>.</p>
+
+<section class="reveal">
+<h2><span class="n">01</span> List the columns</h2>
+
+<p><code>metadata attributes &lt;logical-name&gt;</code> returns every column of a table as a compact row — each with its two names (L01 applies to columns too), its <strong>type</strong>, and three writability flags:<sup><a href="#r-attr">attrmeta</a></sup></p>
+
+<pre class="term"><span class="tag">agent-cloud · exit 0</span><code>crm <span class="c-flag">--json</span> metadata attributes contact
+
+<span class="c-punc">{</span> <span class="c-key">"ok"</span>: <span class="c-true">true</span>, <span class="c-key">"data"</span>: <span class="c-punc">[</span>
+    <span class="c-punc">{</span> <span class="c-key">"LogicalName"</span>: <span class="c-str">"accountid"</span>,    <span class="c-key">"AttributeType"</span>: <span class="c-str">"Lookup"</span>,
+      <span class="c-key">"IsValidForCreate"</span>: <span class="c-false">false</span>, <span class="c-key">"IsValidForRead"</span>: <span class="c-true">true</span>, <span class="c-key">"IsValidForUpdate"</span>: <span class="c-false">false</span>,
+      <span class="c-key">"RequiredLevel"</span>: <span class="c-str">"None"</span> <span class="c-punc">},</span>
+    <span class="c-punc">{</span> <span class="c-key">"LogicalName"</span>: <span class="c-str">"accountidname"</span>, <span class="c-key">"AttributeType"</span>: <span class="c-str">"String"</span>,
+      <span class="c-key">"IsValidForCreate"</span>: <span class="c-false">false</span>, <span class="c-key">"IsValidForRead"</span>: <span class="c-true">true</span>, <span class="c-key">"IsValidForUpdate"</span>: <span class="c-false">false</span> <span class="c-punc">},</span>  <span class="c-comment"># shadow — §03</span>
+    <span class="c-punc">{</span> <span class="c-key">"LogicalName"</span>: <span class="c-str">"gendercode"</span>,   <span class="c-key">"AttributeType"</span>: <span class="c-str">"Picklist"</span>,
+      <span class="c-key">"IsValidForCreate"</span>: <span class="c-true">true</span>,  <span class="c-key">"IsValidForRead"</span>: <span class="c-true">true</span>, <span class="c-key">"IsValidForUpdate"</span>: <span class="c-true">true</span>,
+      <span class="c-key">"RequiredLevel"</span>: <span class="c-str">"None"</span> <span class="c-punc">}</span>
+  <span class="c-punc">]</span> <span class="c-punc">}</span></code></pre>
+
+<p>Three columns, three different stories — and you can read all three off the flags before touching a single write.</p>
+</section>
+
+<section class="reveal">
+<h2><span class="n">02</span> The three things every column tells you</h2>
+
+<dl class="ginfo">
+  <dt>AttributeType</dt><dd>The <strong>shape</strong> of the value. <code>String</code>, <code>Integer</code>, <code>DateTime</code>, <code>Money</code>, <code>Boolean</code>, <code>Picklist</code> (option-set), <code>Lookup</code> (foreign key), <code>Uniqueidentifier</code> (a GUID). This decides how you encode the value in a payload — a Picklist takes a code (L03), a Lookup takes an <code>@odata.bind</code> (M02 L02).</dd>
+  <dt>IsValidForCreate / Update</dt><dd>Whether you may <strong>set</strong> this column on a create / on an update. <code>false</code> means the platform owns it — attempting to write it errors. (<code>IsValidForRead</code> is almost always <code>true</code>; the interesting signal is the write pair.)</dd>
+  <dt>RequiredLevel</dt><dd>Whether you <strong>must</strong> supply it. <code>None</code> (optional) · <code>ApplicationRequired</code> (the app insists) · <code>SystemRequired</code> (the platform insists — you can't even make it optional). Skipping a required column fails the create.</dd>
+</dl>
+
+<p>For the full picture of one column, <code>metadata attribute &lt;logical&gt; &lt;column&gt;</code> returns the complete definition — dozens of fields including <code>IsPrimaryId</code>, <code>IsPrimaryName</code>, <code>MaxLength</code>, <code>IsCustomAttribute</code>, and the option-set when it's a Picklist:</p>
+
+<pre class="term"><span class="tag">agent-cloud · exit 0</span><code>crm <span class="c-flag">--json</span> metadata attribute contact gendercode
+
+<span class="c-punc">{</span> <span class="c-key">"ok"</span>: <span class="c-true">true</span>, <span class="c-key">"data"</span>: <span class="c-punc">{</span>
+    <span class="c-key">"LogicalName"</span>: <span class="c-str">"gendercode"</span>, <span class="c-key">"SchemaName"</span>: <span class="c-str">"GenderCode"</span>,
+    <span class="c-key">"AttributeType"</span>: <span class="c-str">"Picklist"</span>, <span class="c-key">"EntityLogicalName"</span>: <span class="c-str">"contact"</span>,
+    <span class="c-key">"IsPrimaryId"</span>: <span class="c-false">false</span>, <span class="c-key">"IsPrimaryName"</span>: <span class="c-false">false</span>,
+    <span class="c-key">"IsValidForCreate"</span>: <span class="c-true">true</span>, <span class="c-key">"IsValidForUpdate"</span>: <span class="c-true">true</span>,
+    <span class="c-key">"IsCustomAttribute"</span>: <span class="c-false">false</span>, <span class="c-key">"IsManaged"</span>: <span class="c-true">true</span>,
+    <span class="c-key">"RequiredLevel"</span>: <span class="c-punc">{</span> <span class="c-key">"Value"</span>: <span class="c-str">"None"</span>, <span class="c-key">"CanBeChanged"</span>: <span class="c-true">true</span> <span class="c-punc">}</span> .. <span class="c-punc">}</span> <span class="c-punc">}</span></code></pre>
+
+<p class="callout tip" style="display:block"><span class="ic">✓</span> The single-attribute view nests <code>RequiredLevel</code> as an object — <code>{Value, CanBeChanged}</code> — where <code>CanBeChanged:false</code> is how <code>SystemRequired</code> locks itself in. The compact <code>attributes</code> <em>list</em> (§01) flattens it to just the string value.</p>
+
+<div class="callout tip"><span class="ic">✓</span><div><b>Recognise two columns instantly.</b> <code>IsPrimaryId:true</code> marks the GUID key (<code>contactid</code> — M02 L01's PrimaryIdAttribute). <code>IsPrimaryName:true</code> marks the title column (<code>fullname</code> — what shows in lookups and lists). Every table has exactly one of each.</div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">03</span> Shadow columns: the read-only mirrors</h2>
+
+<p>Look again at the list in §01. The <code>accountid</code> lookup is followed by <code>accountidname</code> — a <code>String</code> with <code>IsValidForCreate:false</code> and <code>IsValidForUpdate:false</code>. You'll see one (sometimes two — a <code>…yominame</code> for phonetic sort) trailing <em>every</em> lookup column.</p>
+
+<p>These are <strong>shadow attributes</strong>: read-only mirrors the platform maintains so a query can show the related record's <em>name</em> without a join. They explain what you saw back in M02 L01 — a lookup surfaces as a <code>_x_value</code> GUID <em>plus</em> annotations carrying the name. The shadow column is where that name lives in storage.</p>
+
+<table class="ops">
+  <tr><th>Column</th><th>Type</th><th>Write?</th><th>What it is</th></tr>
+  <tr><td><code class="pk">accountid</code></td><td>Lookup</td><td>via bind</td><td>The real foreign key. Set it with <code>@odata.bind</code> (M02 L02).</td></tr>
+  <tr><td><code>accountidname</code></td><td>String</td><td>never</td><td>Read-only mirror of the parent's name — for display.</td></tr>
+  <tr><td><code>accountidyominame</code></td><td>String</td><td>never</td><td>Phonetic (yomi) mirror, for Japanese-style sorting.</td></tr>
+</table>
+<p>Rule of thumb: if a <code>String</code> column's name is another column's name with <code>name</code>/<code>yominame</code> tacked on, and it's not writable — it's a shadow. You read it, you never set it.</p>
+</section>
+
+<section class="reveal">
+<h2><span class="n">04</span> Do it yourself <span class="pill">~4 min</span></h2>
+<p>All read-only. List, inspect, and spot the shadows:</p>
+<pre><code><span class="c-comment"># 1 · every column of contact — scan the AttributeType column</span>
+crm <span class="c-flag">--json</span> metadata attributes contact
+
+<span class="c-comment"># 2 · the full definition of one column — note IsPrimaryName / RequiredLevel</span>
+crm <span class="c-flag">--json</span> metadata attribute contact fullname
+
+<span class="c-comment"># 3 · a required column? inspect the primary name on account</span>
+crm <span class="c-flag">--json</span> metadata attribute account name</code></pre>
+<ol class="steps">
+  <li>In query 1, find <code>fullname</code>. Is it <code>IsValidForCreate:true</code>? (Surprise — it's a computed full name; check what its flags say.)</li>
+  <li>Query 2: which flag marks <code>fullname</code> as the table's title column? What's its <code>RequiredLevel</code>?</li>
+  <li>Query 3: account's <code>name</code> — what <code>RequiredLevel</code> does it carry, and what would happen if you tried to create an account without it?</li>
+  <li>Back in query 1, count the shadow columns: how many <code>…name</code> strings sit right after a Lookup?</li>
+</ol>
+</section>
+
+<section class="reveal">
+<h2><span class="n">05</span> Check yourself</h2>
+<div class="quiz" id="quiz">
+  <p class="qh">Four questions, instant feedback</p>
+  <p class="qhs">tap an answer — no penalty for a wrong first try</p>
+
+  <div class="q" data-correct="1">
+    <div class="stem">1 · A column shows <code>IsValidForCreate:false</code> and <code>IsValidForUpdate:false</code>. What does that mean for your payload?</div>
+    <button class="opt"><span class="mk">A</span> You must always include it</button>
+    <button class="opt"><span class="mk">B</span> The platform owns it — you can read it but can't set it; writing it errors</button>
+    <button class="opt"><span class="mk">C</span> It only works on-prem</button>
+    <button class="opt"><span class="mk">D</span> It's the primary key</button>
+    <div class="fb ok">Correct. Both write flags <code>false</code> = a system-maintained / read-only column. Leave it out of create and update payloads; trying to set it is an error.</div>
+    <div class="fb no">It's read-only — the platform maintains it. <code>IsValidForRead</code> is still true (you can query it), but it must stay out of write payloads. Shadow columns and computed fields look exactly like this.</div>
+  </div>
+
+  <div class="q" data-correct="2">
+    <div class="stem">2 · <code>RequiredLevel: "SystemRequired"</code> on a column means…</div>
+    <button class="opt"><span class="mk">A</span> It's optional but recommended</button>
+    <button class="opt"><span class="mk">B</span> Only system administrators can set it</button>
+    <button class="opt"><span class="mk">C</span> The platform mandates a value — you can't even relax it to optional</button>
+    <button class="opt"><span class="mk">D</span> It's required only on update, not create</button>
+    <div class="fb ok">Correct. <code>SystemRequired</code> is the platform's own mandate (vs <code>ApplicationRequired</code>, which a maker sets and can lift). A create without it fails.</div>
+    <div class="fb no">It's the platform's hard requirement — stronger than <code>ApplicationRequired</code>, which a maker can toggle. You must supply a value; you can't make it optional.</div>
+  </div>
+
+  <div class="q" data-correct="0">
+    <div class="stem">3 · You see <code>contactidname</code> (String, not writable) right after a Lookup column. It's…</div>
+    <button class="opt"><span class="mk">A</span> A shadow column — a read-only mirror of the related record's name, for display</button>
+    <button class="opt"><span class="mk">B</span> A typo in the metadata</button>
+    <button class="opt"><span class="mk">C</span> The lookup's actual foreign-key value</button>
+    <button class="opt"><span class="mk">D</span> A second primary key</button>
+    <div class="fb ok">Correct. Every lookup spawns a non-writable <code>…name</code> (and often <code>…yominame</code>) String that mirrors the parent's name so queries can show it without a join. You read it; you set the lookup itself via <code>@odata.bind</code>.</div>
+    <div class="fb no">It's a <em>shadow attribute</em> — the read-only name-mirror the platform maintains alongside every lookup. The real FK is the Lookup column; the shadow is just for display.</div>
+  </div>
+
+  <div class="q" data-correct="3">
+    <div class="stem">4 · Which flag tells you a column is the table's <b>title</b> (what shows in a lookup picker)?</div>
+    <button class="opt"><span class="mk">A</span> <code>IsCustomAttribute</code></button>
+    <button class="opt"><span class="mk">B</span> <code>IsValidForRead</code></button>
+    <button class="opt"><span class="mk">C</span> <code>IsPrimaryId</code></button>
+    <button class="opt"><span class="mk">D</span> <code>IsPrimaryName</code></button>
+    <div class="fb ok">Correct. <code>IsPrimaryName:true</code> marks the title column (e.g. <code>fullname</code> on contact, <code>name</code> on account). <code>IsPrimaryId</code> is the GUID key, a different column.</div>
+    <div class="fb no">It's <code>IsPrimaryName</code> — the title/display column. <code>IsPrimaryId</code> marks the GUID primary key; the two are always separate columns.</div>
+  </div>
+
+  <div class="score" id="score"></div>
+</div>
+</section>
+
+<div class="ask reveal">
+  <b>Stuck or curious?</b> I'm your teacher for this — ask me anything in the chat. Good follow-ups right now:
+  <ul class="tight" style="margin-bottom:0">
+    <li>"Show me a <code>Money</code> or <code>DateTime</code> column's full definition — what extra fields do those types carry?"</li>
+    <li>"What's the difference between <code>ApplicationRequired</code> and <code>SystemRequired</code> in practice?"</li>
+    <li>"How do I filter <code>metadata attributes</code> down to just the writable columns?"</li>
+  </ul>
+</div>
+
+<div class="next reveal">
+  <span class="pill t">up next · M03 L03</span>
+  <h2>Option sets: local vs global</h2>
+  <p style="margin:0">You just saw <code>gendercode</code> is a <code>Picklist</code> — but its metadata row doesn't tell you the <em>legal codes</em>. Next we pull the actual <code>{value, label}</code> pairs with <code>metadata picklist</code>, and learn the difference between an option set that belongs to one column and a <em>global</em> one shared across tables — so you stop guessing that gender is <code>1</code> or <code>2</code>. <span class="live-only">Just say <strong>"next lesson"</strong>.</span></p>
+</div>
+
+<footer class="reveal">
+  <p><strong>Sources</strong> — grounded in, not guessed from:</p>
+  <ol class="refs">
+    <li id="r-attr"><a href="https://learn.microsoft.com/power-apps/developer/data-platform/webapi/web-api-attributemetadata-reference">AttributeMetadata reference</a> — Microsoft Learn. <code>AttributeType</code>, <code>IsValidForCreate/Read/Update</code>, <code>RequiredLevel</code>, <code>IsPrimaryId/Name</code>.</li>
+    <li id="r-types"><a href="https://learn.microsoft.com/power-apps/maker/data-platform/types-of-fields">Types of columns / fields</a> — Microsoft Learn. The column data types and what each stores.</li>
+    <li id="r-skill"><strong>crm agent skill</strong> — <code>crm metadata attributes --help</code> &amp; <code>crm metadata attribute --help</code>; <code>~/.claude/skills/crm/reference/metadata.md</code>. Mirrored on the <a href="https://crm-cli-docs.pages.dev/">crm docs site</a>.</li>
+  </ol>
+  <p class="ft">M03 · L02 · lessons/0019-columns-are-typed.html · live output captured from agent-cloud on 2026-06-17, crm v4.12.0 (host &amp; ids shown as the example env)</p>
+</footer>
+
+</div>
+
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 3, "name": "Metadata Model"},
+  "lesson": 2,
+  "title": "Columns Are Typed",
+  "slug": "columns-are-typed",
+  "topics": ["metadata-attributes","attribute-type","required-level","writability","shadow-attributes","primary-name"],
+  "summary": "List a table's columns and read one column's definition — its data type, its IsValidForCreate/Update writability flags, its RequiredLevel, and the read-only shadow mirrors every lookup spawns.",
+  "order": 2,
+  "status": "published" }
+</script>
+</body>
+</html>

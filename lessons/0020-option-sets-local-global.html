@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M03 · L03 — Option Sets: Local vs Global</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-false{color:#ff8f7a}.c-num{color:#ffd479}.c-meth{color:#ffd479;font-weight:700}.c-ann{color:#7fb0c9}
+  .c-xtag{color:#8cc0ff}.c-xattr{color:#ffd479}.c-xval{color:#a7e6a0}
+
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+
+  table.ops{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--card);
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.ops th,table.ops td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.ops th{background:var(--guid-soft);color:var(--guid);font-family:"Roboto Mono",monospace;
+    font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  table.ops tr:last-child td{border-bottom:none}
+  table.ops code{font-size:12.5px}
+  table.ops .pk{color:var(--teal-deep);font-weight:700}
+
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-false,pre .c-num,pre .c-meth,pre .c-flag,pre .c-ann,pre .c-xtag,pre .c-xattr,pre .c-xval{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="top reveal">
+  <div class="eyebrow">Milestone 03 <span class="dot">/</span> Metadata Model <span class="dot">/</span> Lesson 03</div>
+  <h1>Option sets:<br><em>local</em> vs global</h1>
+  <p class="sub">A picklist's legal codes aren't yours to guess. Pull the real <code>{value, label}</code> pairs from the org — and learn which option sets live on one column and which are shared estate-wide.</p>
+  <div class="livechip"><span class="led"></span> target&nbsp; <b>agent-cloud</b> &nbsp;·&nbsp; orgexample.crm.dynamics.com</div>
+  <div class="rule"></div>
+  <div class="why"><b>Why now.</b> In M02 you set <code>gendercode</code> to <code>1</code> and trusted it meant "Male." That worked because the seed data hinted at it — but a real requirement ("set status to <em>Escalated</em>") gives you a <em>label</em>, and the API only accepts the <em>code</em>. The picklist metadata is the dictionary that translates one to the other. Read it and you never hard-code a magic number again.</div>
+</header>
+
+<p class="lead reveal">Today's win: resolve a column's allowed options to <em>code → label</em> pairs, and tell a <em>local</em> option set from a reusable <em>global</em> one.</p>
+
+<section class="reveal">
+<h2><span class="n">01</span> Resolve a column's options</h2>
+
+<p>L02 told you <code>gendercode</code> is a <code>Picklist</code> — but not its legal values. <code>metadata picklist &lt;logical&gt; &lt;column&gt;</code> returns the option set behind the column, with each option's stored <strong>code</strong> and human <strong>label</strong>:<sup><a href="#r-opt">optionset</a></sup></p>
+
+<pre class="term"><span class="tag">agent-cloud · exit 0</span><code>crm <span class="c-flag">--json</span> metadata picklist contact gendercode
+
+<span class="c-punc">{</span> <span class="c-key">"ok"</span>: <span class="c-true">true</span>, <span class="c-key">"data"</span>: <span class="c-punc">{</span>
+    <span class="c-key">"LogicalName"</span>: <span class="c-str">"gendercode"</span>,
+    <span class="c-key">"OptionSet"</span>: <span class="c-punc">{</span>
+      <span class="c-key">"Name"</span>: <span class="c-str">"contact_gendercode"</span>,    <span class="c-comment"># the option-set's own name</span>
+      <span class="c-key">"IsGlobal"</span>: <span class="c-false">false</span>,                <span class="c-comment"># ← LOCAL: belongs to this column</span>
+      <span class="c-key">"Options"</span>: <span class="c-punc">[</span>
+        <span class="c-punc">{</span> <span class="c-key">"Value"</span>: <span class="c-num">1</span>, <span class="c-key">"Label"</span>: <span class="c-punc">{</span> ..<span class="c-str">"Male"</span>.. <span class="c-punc">}</span> <span class="c-punc">},</span>
+        <span class="c-punc">{</span> <span class="c-key">"Value"</span>: <span class="c-num">2</span>, <span class="c-key">"Label"</span>: <span class="c-punc">{</span> ..<span class="c-str">"Female"</span>.. <span class="c-punc">}</span> <span class="c-punc">}</span>
+      <span class="c-punc">]</span> <span class="c-punc">}</span> <span class="c-punc">}</span> <span class="c-punc">}</span></code></pre>
+
+<p>There's the answer M02 took on faith: <code>1 → Male</code>, <code>2 → Female</code>. The <code>Label</code> arrives as the same fat localized-label object you met in L01 (trimmed to the English string above). When you write the column, you send the <strong>code</strong>; the label is only ever for humans.</p>
+
+<div class="callout tip"><span class="ic">✓</span><div><b>Works for state/status too.</b> The same verb resolves <code>statecode</code> and <code>statuscode</code> — the State and Status option sets every table has. That's how you'd turn "set this case to <em>Resolved</em>" into the right numeric <code>statuscode</code>.</div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">02</span> Local vs global — the <code>IsGlobal</code> flag</h2>
+
+<p>Notice <code>"IsGlobal": false</code> above. That one boolean is the whole distinction:</p>
+<dl class="ginfo">
+  <dt>Local option set</dt><dd><code>IsGlobal:false</code>. Defined <em>on a single column</em> and used nowhere else. Its <code>Name</code> is usually <code>&lt;table&gt;_&lt;column&gt;</code> (<code>contact_gendercode</code>). Edit it and only that one column changes.</dd>
+  <dt>Global option set</dt><dd><code>IsGlobal:true</code>. A <em>standalone, named</em> list that many columns across many tables can share. Defined once; reused everywhere. Edit it and <em>every</em> column bound to it changes at once.</dd>
+</dl>
+
+<p>Global sets have their own two verbs, independent of any column. <code>list-optionsets</code> enumerates them; <code>get-optionset &lt;name&gt;</code> retrieves one with its options:<sup><a href="#r-global">global</a></sup></p>
+
+<pre class="term"><span class="tag">agent-cloud · exit 0</span><code>crm <span class="c-flag">--json</span> metadata get-optionset componentstate
+
+<span class="c-punc">{</span> <span class="c-key">"ok"</span>: <span class="c-true">true</span>, <span class="c-key">"data"</span>: <span class="c-punc">{</span>
+    <span class="c-key">"Name"</span>: <span class="c-str">"componentstate"</span>, <span class="c-key">"IsGlobal"</span>: <span class="c-true">true</span>,   <span class="c-comment"># ← GLOBAL, reusable</span>
+    <span class="c-key">"Options"</span>: <span class="c-punc">[</span>
+      <span class="c-punc">{</span> <span class="c-key">"Value"</span>: <span class="c-num">0</span>, <span class="c-key">"Label"</span>: <span class="c-punc">{</span> ..<span class="c-str">"Published"</span>.. <span class="c-punc">}</span> <span class="c-punc">},</span>
+      <span class="c-punc">{</span> <span class="c-key">"Value"</span>: <span class="c-num">1</span>, <span class="c-key">"Label"</span>: <span class="c-punc">{</span> ..<span class="c-str">"Unpublished"</span>.. <span class="c-punc">}</span> <span class="c-punc">},</span>
+      <span class="c-punc">{</span> <span class="c-key">"Value"</span>: <span class="c-num">2</span>, <span class="c-key">"Label"</span>: <span class="c-punc">{</span> ..<span class="c-str">"Deleted"</span>.. <span class="c-punc">}</span> <span class="c-punc">},</span>
+      <span class="c-punc">{</span> <span class="c-key">"Value"</span>: <span class="c-num">3</span>, <span class="c-key">"Label"</span>: <span class="c-punc">{</span> ..<span class="c-str">"Deleted Unpublished"</span>.. <span class="c-punc">}</span> <span class="c-punc">}</span>
+    <span class="c-punc">]</span> <span class="c-punc">}</span> <span class="c-punc">}</span></code></pre>
+
+<p>By default, <code>picklist</code> <em>expands</em> a bound global so you always get the options inline — pass <code>--no-global</code> to skip that expansion and just see the reference. For a column bound to a global, the full <code>describe</code> view (L05) even hands you the global's <code>global_optionset_id</code>.</p>
+</section>
+
+<section class="reveal">
+<h2><span class="n">03</span> Why the difference matters</h2>
+
+<table class="ops">
+  <tr><th>Reach for…</th><th>When…</th></tr>
+  <tr><td><strong>Local</strong> option set</td><td>The choices mean something only to one column — <code>contact</code>'s gender, this table's custom "stage." No reuse intended.</td></tr>
+  <tr><td><strong>Global</strong> option set</td><td>The same list recurs across the model — a company-wide "Region," "Priority," or "Approval status" you want defined <em>once</em> and kept consistent everywhere it's used.</td></tr>
+</table>
+<p>It's the same reasoning as a shared enum versus a one-off constant in code. You'll feel this directly in M04: when you author a custom picklist column, you'll <em>choose</em> whether to mint a local set or bind an existing global. Reading them now means that choice won't be blind.</p>
+
+<div class="callout warn"><span class="ic">!</span><div><b>Editing a global ripples.</b> Because many columns share it, changing a global option set's members changes them <em>everywhere</em> at once. Convenient for consistency, dangerous if you forget the blast radius. Local sets have no such reach.</div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">04</span> Do it yourself <span class="pill">~4 min</span></h2>
+<p>All read-only. Resolve some codes, then meet the globals:</p>
+<pre><code><span class="c-comment"># 1 · the gender codes M02 took on faith — now confirmed</span>
+crm <span class="c-flag">--json</span> metadata picklist contact gendercode
+
+<span class="c-comment"># 2 · the Status option set every record carries</span>
+crm <span class="c-flag">--json</span> metadata picklist contact statuscode
+
+<span class="c-comment"># 3 · list the org's GLOBAL option sets (IsGlobal:true)</span>
+crm <span class="c-flag">--json</span> metadata list-optionsets
+
+<span class="c-comment"># 4 · retrieve one global directly, by name</span>
+crm <span class="c-flag">--json</span> metadata get-optionset componentstate</code></pre>
+<ol class="steps">
+  <li>Query 1: which code is "Female"? Re-read M02 L02 — is that the value you set there?</li>
+  <li>Query 2: list every <code>statuscode</code> option for contact as <em>code → label</em>. Which code means "Inactive"?</li>
+  <li>Query 1 vs query 4: compare the <code>IsGlobal</code> flag and the <code>Name</code>. Which is <code>&lt;table&gt;_&lt;column&gt;</code>, which is a standalone name?</li>
+  <li>Re-run query 1 with <code>--no-global</code>. Does gendercode change? (It's local — predict before you run.)</li>
+</ol>
+</section>
+
+<section class="reveal">
+<h2><span class="n">05</span> Check yourself</h2>
+<div class="quiz" id="quiz">
+  <p class="qh">Four questions, instant feedback</p>
+  <p class="qhs">tap an answer — no penalty for a wrong first try</p>
+
+  <div class="q" data-correct="2">
+    <div class="stem">1 · A requirement says "set the contact's gender to <b>Female</b>." What do you actually send in the PATCH?</div>
+    <button class="opt"><span class="mk">A</span> <code>"gendercode": "Female"</code></button>
+    <button class="opt"><span class="mk">B</span> <code>"gendercode": "F"</code></button>
+    <button class="opt"><span class="mk">C</span> <code>"gendercode": 2</code> — the numeric code the picklist maps "Female" to</button>
+    <button class="opt"><span class="mk">D</span> The DisplayName of the option set</button>
+    <div class="fb ok">Correct. The API stores and accepts the <em>code</em>. You resolve "Female" → <code>2</code> with <code>metadata picklist</code>, then send the number. The label is never written.</div>
+    <div class="fb no">Option sets store an integer <em>code</em>, not the label text. <code>metadata picklist</code> tells you "Female" = <code>2</code>; you send <code>2</code>.</div>
+  </div>
+
+  <div class="q" data-correct="0">
+    <div class="stem">2 · <code>IsGlobal: true</code> on an option set means…</div>
+    <button class="opt"><span class="mk">A</span> It's a standalone, named list that many columns across many tables can share</button>
+    <button class="opt"><span class="mk">B</span> It's visible to all users regardless of security role</button>
+    <button class="opt"><span class="mk">C</span> It applies to every record in the org</button>
+    <button class="opt"><span class="mk">D</span> It can only hold global (worldwide) values like countries</button>
+    <div class="fb ok">Correct. "Global" = reusable. Defined once as its own object, bound by any number of columns. Editing it changes them all. A local set (<code>IsGlobal:false</code>) lives on a single column.</div>
+    <div class="fb no">Global is about <em>reuse</em>, not visibility or scope of records. It's a named option set defined once and shared by many columns/tables — edit it once, every binding updates.</div>
+  </div>
+
+  <div class="q" data-correct="3">
+    <div class="stem">3 · You want to inspect a global option set without going through any particular column. Which verb?</div>
+    <button class="opt"><span class="mk">A</span> <code>metadata attributes &lt;table&gt;</code></button>
+    <button class="opt"><span class="mk">B</span> <code>metadata entity &lt;table&gt;</code></button>
+    <button class="opt"><span class="mk">C</span> <code>query odata optionsets</code></button>
+    <button class="opt"><span class="mk">D</span> <code>metadata get-optionset &lt;name&gt;</code> (and <code>list-optionsets</code> to find the name)</button>
+    <div class="fb ok">Correct. Globals are first-class objects with their own verbs: <code>list-optionsets</code> to enumerate, <code>get-optionset &lt;name&gt;</code> to retrieve one with its options — no column needed.</div>
+    <div class="fb no">Globals stand on their own. <code>list-optionsets</code> enumerates them and <code>get-optionset &lt;name&gt;</code> fetches one directly — no table or column in the picture.</div>
+  </div>
+
+  <div class="q" data-correct="1">
+    <div class="stem">4 · By default, what does <code>metadata picklist</code> do when a column is bound to a <b>global</b> set?</div>
+    <button class="opt"><span class="mk">A</span> Errors — you must use <code>get-optionset</code> instead</button>
+    <button class="opt"><span class="mk">B</span> Expands the global inline so you get the options anyway (<code>--no-global</code> turns this off)</button>
+    <button class="opt"><span class="mk">C</span> Returns only the global's GUID, never the options</button>
+    <button class="opt"><span class="mk">D</span> Shows the label text but hides the codes</button>
+    <div class="fb ok">Correct. <code>picklist</code> resolves the options whether the set is local or global — it expands a bound global by default. <code>--no-global</code> skips the expansion if you only want the reference.</div>
+    <div class="fb no">It expands the bound global inline by default, so you always get usable <code>{value,label}</code> pairs. Use <code>--no-global</code> only when you want to skip that and see the bare reference.</div>
+  </div>
+
+  <div class="score" id="score"></div>
+</div>
+</section>
+
+<div class="ask reveal">
+  <b>Stuck or curious?</b> I'm your teacher for this — ask me anything in the chat. Good follow-ups right now:
+  <ul class="tight" style="margin-bottom:0">
+    <li>"Show me <code>statuscode</code> for a case (incident) — why are there so many more statuses than states?"</li>
+    <li>"What's the relationship between <code>statecode</code> and <code>statuscode</code>? Why two?"</li>
+    <li>"Which global option sets in this org are Microsoft's vs custom?"</li>
+  </ul>
+</div>
+
+<div class="next reveal">
+  <span class="pill t">up next · M03 L04</span>
+  <h2>Reading the wiring</h2>
+  <p style="margin:0">You can read a table's names (L01), its columns (L02), and its choice lists (L03). What's left is how tables <em>connect</em>. Next we read <code>metadata relationships</code> — the 1:N, N:1, and N:N links — and find the exact navigation property you bound to back in M02 L02, plus the difference between the "one" side and the "many" side. <span class="live-only">Just say <strong>"next lesson"</strong>.</span></p>
+</div>
+
+<footer class="reveal">
+  <p><strong>Sources</strong> — grounded in, not guessed from:</p>
+  <ol class="refs">
+    <li id="r-opt"><a href="https://learn.microsoft.com/power-apps/maker/data-platform/create-edit-global-choices">Create and edit choices (option sets)</a> — Microsoft Learn. Local vs global choices and how columns bind to them.</li>
+    <li id="r-global"><a href="https://learn.microsoft.com/power-apps/developer/data-platform/webapi/query-metadata-web-api">Query option set metadata</a> — Microsoft Learn. <code>GlobalOptionSetDefinitions</code>, <code>Options[].Value</code> + <code>Label</code>, the <code>IsGlobal</code> flag.</li>
+    <li id="r-skill"><strong>crm agent skill</strong> — <code>crm metadata picklist --help</code> (<code>--no-global</code>), <code>list-optionsets</code> / <code>get-optionset --help</code>; <code>~/.claude/skills/crm/reference/metadata.md</code>. Mirrored on the <a href="https://crm-cli-docs.pages.dev/">crm docs site</a>.</li>
+  </ol>
+  <p class="ft">M03 · L03 · lessons/0020-option-sets-local-global.html · live output captured from agent-cloud on 2026-06-17, crm v4.12.0 (host &amp; ids shown as the example env)</p>
+</footer>
+
+</div>
+
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 3, "name": "Metadata Model"},
+  "lesson": 3,
+  "title": "Option Sets: Local vs Global",
+  "slug": "option-sets-local-global",
+  "topics": ["metadata-picklist","optionset","global-optionset","value-label","statuscode","no-global"],
+  "summary": "Resolve a picklist column's allowed code-to-label pairs with metadata picklist, and tell a local (single-column) option set from a reusable global one via the IsGlobal flag, list-optionsets, and get-optionset.",
+  "order": 3,
+  "status": "published" }
+</script>
+</body>
+</html>

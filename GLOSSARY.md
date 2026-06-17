@@ -354,3 +354,75 @@ rarely hand-write it — build in Advanced Find → *Download FetchXML* → `--f
 **`query saved` / `query user`**
 System views (`savedquery`) and personal views (`userquery`) are **stored as FetchXML**, so they
 run by GUID with no XML: `crm query saved <view-id>` / `crm query user <view-id>`. _Met: M02 L04._
+
+---
+
+## Metadata model — read — *M03*
+
+**The three names (+ a label)**
+Every table carries three machine names and one human label. **LogicalName** (lowercase,
+`contact`) = the canonical id — metadata, FetchXML `<entity name>`, `query count`, `$filter`
+fields. **SchemaName** (PascalCase, `Contact`) = design-time identity, used in solution XML.
+**EntitySetName** (plural, `contacts`) = the Web API URL path — `query odata`, `entity get/create`.
+**DisplayName** = the localized form label ("Account"); cosmetic, never key code off it. _Met: M03 L01._
+
+**`metadata entities`**
+Lists every table's three names side by side, with `IsCustomEntity`. `--top N` caps rows;
+`--custom-only` hides stock Microsoft tables — but "custom" includes managed add-ins (e.g.
+`aaduser`), not only your own. The naming triad behind M01 L06's `count`-wants-singular 400-trap.
+_Met: M03 L01._
+
+**`metadata attributes` / `metadata attribute`**
+`attributes <logical>` lists every column compactly (LogicalName, SchemaName, **AttributeType**,
+writability flags, RequiredLevel-as-string). `attribute <logical> <col>` returns one column's full
+def — including `IsPrimaryId`/`IsPrimaryName` and **RequiredLevel as an object** `{Value,
+CanBeChanged,…}` (the list flattens it to a bare string). _Met: M03 L02._
+
+**AttributeType · writability flags · RequiredLevel**
+A column = name + **type** (String/Integer/DateTime/Money/Boolean/Picklist/Lookup/Uniqueidentifier
+— decides how you encode the value) + **IsValidForCreate/Update** (may you set it? both false =
+read-only, leave out of payloads) + **RequiredLevel** (must you? `None` / `ApplicationRequired`
+(maker-set, liftable) / `SystemRequired` (platform-locked, `CanBeChanged:false`)). _Met: M03 L02._
+
+**Shadow attribute**
+A read-only String mirror the platform maintains beside every Lookup — `<lookup>name` (+ often
+`<lookup>yominame` for phonetic sort), both IsValidForCreate/Update:false. Lets a query show the
+related record's name without a join; it's where M02 L01's lookup name-annotation lives. You read
+it, never set it (set the lookup itself via `@odata.bind`). _Met: M03 L02._
+
+**Option set: local vs global (`IsGlobal`)**
+A picklist's allowed values. **Local** (`IsGlobal:false`, Name `<table>_<column>`) belongs to one
+column. **Global** (`IsGlobal:true`) is a standalone named list many columns/tables share — edit
+once, every binding changes. _Met: M03 L03._
+
+**`metadata picklist` / `list-optionsets` / `get-optionset`**
+`picklist <logical> <attr>` resolves a column's options to stored **code → label** pairs (you write
+the code, label is for humans); works on `statecode`/`statuscode` too; **expands bound globals by
+default** (`--no-global` skips). `list-optionsets` enumerates global sets; `get-optionset <name>`
+fetches one directly (no column needed). _Met: M03 L03._
+
+**`metadata relationships` — Referenced vs Referencing**
+Returns a table's links grouped **OneToMany** (this table is the parent/"one"), **ManyToOne** (this
+table is the child/"many", holds the lookup FK), **ManyToMany** (symmetric peers). In 1:N/N:1:
+**ReferencedEntity** = the "one"/parent pointed at; **ReferencingEntity** = the "many"/child that
+physically stores the FK; **ReferencingAttribute** = the lookup column;
+**ReferencingEntityNavigationPropertyName** = the `@odata.bind` target (M02 L02's
+`parentcustomerid_account`). _Met: M03 L04._
+
+**Polymorphic (customer) lookup · N:N intersect**
+A polymorphic lookup (e.g. `parentcustomerid`) can point at more than one table — it appears once
+per target in `ManyToOne`, each with its own `…_account` / `…_contact` nav property. **N:N** has no
+FK on either side: symmetric `Entity1LogicalName`/`Entity2LogicalName` + an `IntersectEntityName`
+join table; link rows with `associate`/`disassociate`, not a column write. _Met: M03 L04._
+
+**`metadata describe` (write-readiness brief)**
+ONE read-only call returning exactly what a create/update payload needs: `entity_set_name`,
+`primary_id`, `primary_name`, and `writable_attributes[]` (only IsValidForCreate/Update) each with
+`attribute_type` + `required_level`; picklists carry inline flat `options[{value,label}]` (+
+`global_optionset_id` when global-bound); lookups carry `bind_key` (`<Nav>@odata.bind`) + `targets[]`
+({logical, set_name}). The agentic contract — what Claude reads before building a write. _Met: M03 L05._
+
+**Alternate key (`metadata keys`)**
+An optional business-unique column set (email, order #) you can address a record *by* instead of
+its GUID — powers **upsert by business key** (`entity upsert`). Separate from the always-present
+GUID primary key. Most stock tables have none (`[]`). Defining one is M04. _Met: M03 L05._

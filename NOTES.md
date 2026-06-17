@@ -100,6 +100,60 @@ surgical L06 fix-up pass. L03 §01 calls out the current shape explicitly so lea
   `<fetch aggregate="true">` + `groupby="true"` + `aggregate="count"` + `alias` → `[{num:3,gender:2},
   {num:2,gender:1}]` (3 Female / 2 Male in agent-cloud seed). Also `query saved`/`user` (views by GUID).
 
+## M03 lesson sequence (shipped 2026-06-17)
+
+Milestone: **Metadata model (read)** (issue #3). "Done when": describe a table's columns +
+relationships and explain logical-vs-set naming. Read-only on cloud. All five live-verified
+against **crm v4.12.0** (CLI bumped 4.7.0 → 4.12.0 since last session — see version note below).
+
+- **L01** — **The Three Names** (`lessons/0018-the-three-names.html`). `metadata entities`
+  (`--top`/`--custom-only`). logical (lowercase, canonical — metadata/count/FetchXML/$filter) vs
+  schema (PascalCase — solution XML/design-time) vs entity-set (plural — URL path) vs DisplayName
+  (localized label, never for code). Closes the M01 L06 400-trap loop. Real: `account`/`Account`/
+  `accounts`; `aaduser` is a managed add-in (`IsCustomEntity:true` ≠ "yours").
+- **L02** — **Columns Are Typed** (`0019`). `metadata attributes <logical>` (list) +
+  `metadata attribute <logical> <attr>` (full def). AttributeType, IsValidForCreate/Read/Update,
+  RequiredLevel, IsPrimaryId/IsPrimaryName. **Shadow attributes**: every Lookup spawns read-only
+  `<x>name`/`<x>yominame` String mirrors (explains M02 L01 lookup annotations). **Drift caught:**
+  the **single-attribute** view returns `RequiredLevel` as an OBJECT `{Value, CanBeChanged,
+  ManagedPropertyLogicalName}`; the **attributes list** flattens it to a bare string. Lesson §02
+  shows the object shape + a callout on the list/single difference. `contact.fullname` is
+  IsValidForCreate:false (computed); `account.name` RequiredLevel.Value = `ApplicationRequired`.
+- **L03** — **Option Sets: Local vs Global** (`0020`). `metadata picklist <logical> <attr>`
+  (`--no-global`), `list-optionsets`, `get-optionset <name>`. `IsGlobal` flag is the whole
+  distinction; local Name = `<table>_<column>` (`contact_gendercode`, IsGlobal:false; 1→Male,
+  2→Female — confirms M02's faith). Global demo: `componentstate` (IsGlobal:true; 0 Published /
+  1 Unpublished / 2 Deleted / 3 Deleted Unpublished). picklist EXPANDS bound globals by default;
+  `--no-global` skips. Label arrives as localized-label object (trimmed in lesson).
+- **L04** — **Reading the Wiring** (`0021`). `metadata relationships <logical>` → groups
+  OneToMany / ManyToOne / ManyToMany. Referenced=the "one"/parent, Referencing=the "many"/child
+  (holds the FK). ReferencingAttribute=lookup column; **ReferencingEntityNavigationPropertyName=
+  the @odata.bind target** — exactly M02 L02's `parentcustomerid_account`. Polymorphic customer
+  lookup = `parentcustomerid` appears twice (→account, →contact), one nav prop per target. N:N =
+  symmetric Entity1/Entity2 + `IntersectEntityName`, no FK column → link via `associate`.
+- **L05** — **describe: the Write-Readiness Brief** (`0022`, capstone). `metadata describe
+  <logical>` = ONE read-only call fusing L01–L04: `logical_name`, `entity_set_name`, `primary_id`,
+  `primary_name`, `writable_attributes[]` (only IsValidForCreate/Update; 191 on contact) each with
+  `attribute_type` + `required_level`; picklist → inline flat `options[{value,label}]` (+
+  `global_optionset_id` when global-bound); lookup → `bind_key` (`<Nav>@odata.bind`) + `targets[]`
+  ({logical, set_name}). The agentic contract: the read Claude makes before building a payload.
+  Plus `metadata keys` (alt keys; contact has none → `[]` → no business-key upsert path). Bridges
+  to M04. describe top keys verified: logical_name/entity_set_name/primary_id/primary_name/
+  writable_attributes. Lookup sample: `msa_managingpartnerid` → targets account.
+
+**✅ M03 COMPLETE — 5 lessons** (L01–L05, lessons 0018–0022; shipped 2026-06-17). Spine: names →
+columns → option sets → relationships → describe. Done-when satisfied: L01 (logical-vs-set naming),
+L02+L05 (columns), L04 (relationships). Build green (22 lessons). Next-link chain verified
+0017→0018→…→0022; 0022's auto-Continue currently points to M11 L01 (0008) because M04–M10 have no
+lessons yet — narrative names M04, button auto-rewires when M04 ships (same pattern 0017 had pre-M03).
+
+### crm version bump 4.7.0 → 4.12.0 (noted 2026-06-17)
+
+`crm --version` now reports **4.12.0** (was 4.7.0 earlier today). M03 read-metadata verbs
+(entities/entity/attributes/attribute/picklist/relationships/keys/describe/list-optionsets/
+get-optionset) all behave as captured above on 4.12.0. No re-verification of M01/M02 lessons done
+this session (those touch CRUD/query, not metadata-read) — flag for a pass if drift surfaces.
+
 ## crm v4.7.0 upgrade — full re-verification + lesson pass (2026-06-17)
 
 CLI bumped **3.12.6 → 4.7.0** (major). Re-verified everything the lessons touch against the
