@@ -221,3 +221,124 @@ The same command tree as **machine-readable** catalogue (commands, options, choi
 an agent/script to parse and plan a call. No arg = whole tree; with `GROUP` = just that
 subtree (loads only that module, faster). `--help` is for you; `describe` is for the agent.
 _Met: M01 L07._
+
+---
+
+## Record anatomy — *M02 L01*
+
+**Record (row) vs form**
+A record is a **row in a table**; the GUI form is just a *styled view* of that row — dropdowns
+rendered as words, GUIDs rendered as names. The Web API returns the raw row underneath. Reading
+the API face fluently is the whole skill of M02. _Met: M02 L01._
+
+**EntitySetName vs LogicalName (a table's two names)**
+Every table carries both. **EntitySetName** = the plural collection name (`contacts`) — it's in
+the Web API URL, so `entity get` / `query odata` use it. **LogicalName** = the singular,
+all-lowercase internal name (`contact`) — metadata and `query count` use it. Formalizes L06's
+400-error trap. Also `PrimaryIdAttribute` (`contactid`, the GUID key) and `PrimaryNameAttribute`
+(`fullname`, the GUI title column). _Met: M02 L01._
+
+**The four field shapes**
+Every column is one of: (1) **primary key** — server-assigned GUID (`contactid`); (2) **plain
+column** — text/number/datetime, value is the value (dates = raw ISO `Edm.DateTimeOffset`);
+(3) **option-set (choice)** — stores a *code* (`gendercode: 2`), label rides along only as the
+`@…FormattedValue` twin; (4) **lookup (relationship)** — `_<name>_value` holds *another row's*
+GUID. _Met: M02 L01._
+
+**Lookup / foreign key (`_x_value` + 3 annotations)**
+A lookup is a foreign key: `_ownerid_value` is a computed, read-only `Edm.Guid` pointing into
+another table. Three annotations decode it — `…FormattedValue` (related row's display name),
+`…lookuplogicalname` (**which table** it points to, e.g. `systemuser` — the GUID is meaningless
+without it), `…associatednavigationproperty` (the name used to `$expand`). You *set* a lookup by
+GUID + table, never by name. _Met: M02 L01._
+
+**Annotated vs `--minimal` (two views of one row)**
+`entity get` is annotated by default (codes + labels, GUIDs + names/target tables — the *form's*
+view, for humans). `--minimal` drops **every key containing `@`** (etag, FormattedValues, lookup
+annotations), keeping business fields, `_*_value` GUIDs, and the primary id — the *storage* view,
+i.e. exactly what the column holds. You filter and update against the stored values (codes/GUIDs),
+not the labels. _Met: M02 L01._
+
+---
+
+## Updating records — *M02 L02*
+
+**`entity update` (PATCH) — surgical & silent**
+A `PATCH` against an existing GUID (vs create = `POST` of a whole new row). The body carries
+**only the keys you name** — a partial update; unmentioned columns are untouched. **Silent by
+default**: returns just `_entity_id`, no row body (opposite of create's `return=representation`).
+Use `--return-record` to get the row back, or `entity get` to verify. _Met: M02 L02._
+
+**`If-Match: "*"` default (update-only) / `--allow-create` / `upsert`**
+A bare Web API `PATCH` will **create** the row if the id is missing (upsert) — so a typo'd GUID
+could spawn a stray record. `crm` blocks this by sending `If-Match: "*"` ("only if it already
+exists") by default. Opt into create-if-missing with `--allow-create` or the dedicated
+`entity upsert` verb. `--if-match 'W/"…"'` with a real etag (L06) = optimistic concurrency
+(reject if the row changed since you read it). _Met: M02 L02._
+
+**Writing the three field shapes**
+The L01 read-anatomy, inverted for writing: **plain** column → value straight in `--data`;
+**option-set** → the **code, never the label** (`"gendercode": 1`, not `"Male"`); **lookup** →
+**not** the read-only `_x_value`, but the *navigation property* + `@odata.bind` naming the related
+**set + GUID**: `"parentcustomerid_account@odata.bind": "/accounts(<guid>)"`. GUID + table, never
+a name. The nav-property name is the `associatednavigationproperty` annotation you read in L01
+(customer lookups suffix the target table: `parentcustomerid_account` vs `…_contact`). _Met: M02 L02._
+
+**`entity set-lookup` / `entity clear-lookup`**
+Purpose-built verbs so you don't hand-write `@odata.bind`. `set-lookup ENTITY_SET ID NAV
+RELATED_SET RELATED_ID` builds the bind PATCH; `clear-lookup ENTITY_SET ID NAV` does the
+`DELETE …/$ref` (`{cleared:true}`). _Met: M02 L02._
+
+**Revert = another update (no undo)**
+Dataverse has no undo. You restore a record by writing the *old* values back over the new ones
+(and clearing what you set) — which is why the safe-write loop reads originals **before** touching
+anything. M02 L02 ran the full loop live (preview→commit→verify→revert), leaving the org clean.
+_Met: M02 L02._
+
+---
+
+## Querying sets — *M02 L03*
+
+**`query odata` result shape (v3.12.6)**
+Rows come back as **`data` itself — a bare array** (this CLI unwraps OData's `value`); `meta`
+carries `entity_set`, optional `count` (with `--count`), and `next_link` (with `--page-size`).
+⚠️ Differs from the M01 L06 examples, which show `data.value` (pre-3.12 shape). _Met: M02 L03._
+
+**Filtering on stored values**
+A `--filter` is written in the L01 *stored* vocabulary: option-sets by **code** (`gendercode eq 1`,
+not `'Male'`), lookups by their **`_x_value` GUID** (`_ownerid_value eq <guid>` — the "my records"
+pattern with whoami's UserId). Operators: `eq`/`ne`/`gt`/`lt`/`ge`/`le`, `contains(f,'x')`/
+`startswith`, `and`/`or`, `eq null`/`ne null`. String literals in single quotes; codes/GUIDs/dates/
+null bare. _Met: M02 L03._
+
+**`--orderby` / `--count` / `--top` vs `--page-size`**
+`--orderby "fullname asc|desc"` sorts. `--count` adds the **exact, filtered** total to `meta.count`
+(vs `query count`'s cached whole-table estimate, L06). `--top N` = at most N rows (a sample);
+`--page-size N` = N at a time **plus** `meta.next_link` (the `@odata.nextLink` + skiptoken cookie)
+when more remain. A page maxes at **5,000 rows**; no `next_link` = last page. _Met: M02 L03._
+
+---
+
+## FetchXML — *M02 L04*
+
+**FetchXML (the second query language)**
+Dynamics' native query language, written as an **XML document** (`<fetch><entity><attribute>
+<filter><condition><order>`), run over the *same* Web API GET as OData, same `data`-array
+envelope. `crm query fetchxml --xml '<…>'` or `--file q.xml`. `<entity name="contact">` uses the
+**logical name**; crm resolves it to the entity-set (or pass the set positionally). More verbose
+than OData for plain filtering. _Met: M02 L04._
+
+**Aggregate & group-by (the OData-can't superpower)**
+The reason to choose FetchXML: the OData Web API can't aggregate. `<fetch aggregate="true">` +
+an attribute with `aggregate="count|sum|avg|min|max"` + another with `groupby="true"`, each
+needing an `alias` (which becomes the output key). Buckets by the **stored code**; map codes to
+labels via L01. _Met: M02 L04._
+
+**OData vs FetchXML (when to pick)**
+OData = everyday filter/select/sort/page (default — simpler, composable, scriptable). FetchXML =
+① aggregation/group-by, ② deep `<link-entity>` joins, ③ running an existing **saved view**. You
+rarely hand-write it — build in Advanced Find → *Download FetchXML* → `--file`. _Met: M02 L04._
+
+**`query saved` / `query user`**
+System views (`savedquery`) and personal views (`userquery`) are **stored as FetchXML**, so they
+run by GUID with no XML: `crm query saved <view-id>` / `crm query user <view-id>`. _Met: M02 L04._

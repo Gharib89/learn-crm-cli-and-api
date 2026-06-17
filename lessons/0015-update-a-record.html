@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M02 · L02 — Update a Record</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-false{color:#ff8f7a}.c-num{color:#ffd479}.c-meth{color:#ffd479;font-weight:700}.c-ann{color:#7fb0c9}
+
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+
+  /* field-shape write table */
+  .shapes{margin:18px 0;border:1px solid var(--line2);border-radius:14px;overflow:hidden;background:var(--card)}
+  .shapes .row{display:grid;grid-template-columns:148px 1fr;border-bottom:1px solid var(--line)}
+  .shapes .row:last-child{border-bottom:none}
+  .shapes .tag2{font-family:"Roboto Mono",monospace;font-size:12px;font-weight:600;letter-spacing:.04em;
+    text-transform:uppercase;color:var(--teal-deep);background:var(--teal-soft);
+    padding:14px 16px;border-right:1px solid var(--line);display:flex;align-items:center}
+  .shapes .body{padding:13px 17px;font-size:15px}
+  .shapes .body code{font-size:13px}
+  .shapes .body .lbl{color:var(--ink-mute);font-size:13.5px}
+
+  /* loop strip */
+  .loop{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:18px 0}
+  .loop .step{background:var(--card);border:1px solid var(--line2);border-radius:12px;padding:12px 13px;text-align:center}
+  .loop .step .k{font-family:"Roboto Mono",monospace;font-size:11px;color:var(--ink-mute);letter-spacing:.08em;text-transform:uppercase}
+  .loop .step .v{font-weight:700;font-size:15px;color:var(--ink);margin-top:3px}
+  .loop .step .d{font-size:12.5px;color:var(--ink-soft);margin-top:3px;line-height:1.35}
+  .loop .step.cur{border-color:var(--teal);background:var(--teal-soft)}
+  @media(max-width:560px){.loop{grid-template-columns:repeat(2,1fr)}}
+
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-false,pre .c-num,pre .c-meth,pre .c-flag,pre .c-ann{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="top reveal">
+  <div class="eyebrow">Milestone 02 <span class="dot">/</span> Records &amp; Queries <span class="dot">/</span> Lesson 02</div>
+  <h1>Update a<br><em>Record</em></h1>
+  <p class="sub">Change a row in place with PATCH — a scalar, an option-set, and a lookup — and watch the preview show exactly which keys move.</p>
+  <div class="livechip"><span class="led"></span> target&nbsp; <b>agent-cloud</b> &nbsp;·&nbsp; orgexample.crm.dynamics.com</div>
+  <div class="rule"></div>
+  <div class="why"><b>Why now.</b> In L01 you learned to <em>read</em> a record's true shape — codes, GUIDs, the <code>_x_value</code> lookups. Updating is the mirror image: you now write back in that same vocabulary. An update speaks <em>exactly</em> the anatomy you just decoded — set an option-set by its code, point a lookup at another row by GUID and table. This is where reading pays off.</div>
+</header>
+
+<p class="lead reveal">Today's win: run the full safe-write loop on a real contact — <em>preview → commit → verify → revert</em> — changing a text field, a choice, and a relationship, leaving the org exactly as you found it.</p>
+
+<section class="reveal">
+<h2><span class="n">01</span> Update is a surgical PATCH</h2>
+
+<p>Create was a <code>POST</code> — you hand the server a whole new row. Update is a <strong><code>PATCH</code></strong> — you hand it <em>only the keys that change</em>, against a record that already exists. Everything you don't mention is left untouched. Preview it first, exactly like any write (M01 L04):<sup><a href="#r-update">update</a></sup></p>
+
+<pre class="term"><span class="tag">agent-cloud · dry-run · exit 0</span><code>crm <span class="c-flag">--json</span> <span class="c-flag">--dry-run</span> entity update contacts a1b2c3d4-1111-2222-3333-00155d467b91 \
+    <span class="c-flag">--data</span> <span class="c-str">'{"jobtitle":"Senior Sales Manager","gendercode":1}'</span>
+
+<span class="c-punc">{</span> <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span> <span class="c-key">"data"</span><span class="c-punc">:</span> <span class="c-punc">{</span>
+  <span class="c-key">"_dry_run"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+  <span class="c-key">"method"</span><span class="c-punc">:</span> <span class="c-meth">"PATCH"</span><span class="c-punc">,</span>
+  <span class="c-key">"url"</span><span class="c-punc">:</span> <span class="c-str">"https://orgexample.crm.dynamics.com/api/data/v9.2/contacts(a1b2c3d4-…b91)"</span><span class="c-punc">,</span>
+  <span class="c-key">"headers"</span><span class="c-punc">:</span> <span class="c-punc">{</span> <span class="c-comment">… </span><span class="c-key">"If-Match"</span><span class="c-punc">:</span> <span class="c-str">"*"</span> <span class="c-punc">},</span>
+  <span class="c-key">"body"</span><span class="c-punc">:</span> <span class="c-punc">{</span> <span class="c-key">"jobtitle"</span><span class="c-punc">:</span> <span class="c-str">"Senior Sales Manager"</span><span class="c-punc">,</span> <span class="c-key">"gendercode"</span><span class="c-punc">:</span> <span class="c-num">1</span> <span class="c-punc">}</span>
+<span class="c-punc">} },</span> <span class="c-key">"meta"</span><span class="c-punc">:</span> <span class="c-punc">{</span> <span class="c-key">"dry_run"</span><span class="c-punc">:</span> <span class="c-true">true</span> <span class="c-punc">}</span> <span class="c-punc">}</span></code></pre>
+
+<p>Three things to read off that plan, all of which separate update from create:</p>
+<ul class="tight">
+  <li><strong><code>PATCH</code>, not <code>POST</code></strong> — the verb that says "modify this existing GUID," not "make a new one." (Sending a POST when you meant a PATCH was L04's duplicate footgun.)</li>
+  <li><strong>The <code>body</code> is only your two keys.</strong> A PATCH is a partial update — the other ~130 columns on the contact are <em>not</em> sent and <em>not</em> changed.</li>
+  <li><strong><code>If-Match: "*"</code></strong> appears for free — that's the safety net, next section.</li>
+</ul>
+
+<div class="callout tip"><span class="ic">✓</span><div><b>Update is silent.</b> Where <code>create</code> echoes the whole new row back by default, <code>update</code> returns just the record id — no row body. Add <code>--return-record</code> to get the updated row, or just <code>entity get</code> it afterward (you'll do that to verify).</div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">02</span> It won't create by accident</h2>
+
+<p>That <code>If-Match: "*"</code> header is doing real work. In the raw Web API, a <code>PATCH</code> to a record that <em>doesn't exist</em> will happily <strong>create</strong> it (an "upsert") — so a typo'd GUID could silently make a new row instead of editing the one you meant. <code>crm</code> blocks that by default: <code>If-Match: "*"</code> means "only proceed if a row with this id already exists."<sup><a href="#r-upsert">upsert</a></sup></p>
+
+<dl class="ginfo">
+  <dt>default</dt><dd><strong>Update-only.</strong> <code>If-Match: "*"</code> sent → a missing id fails (no accidental create). This is what you want 99% of the time.</dd>
+  <dt>--allow-create</dt><dd><strong>Opt into upsert.</strong> Drops the header → PATCH-creates if the id is absent. (Or use the dedicated <code>entity upsert</code> verb.)</dd>
+  <dt>--if-match 'W/"…"'</dt><dd><strong>Optimistic concurrency.</strong> Pass a specific etag (from L06) → the update only lands if the row hasn't changed since you read it; otherwise it's rejected.</dd>
+</dl>
+</section>
+
+<section class="reveal">
+<h2><span class="n">03</span> Writing each field shape</h2>
+
+<p>This is the L01 payoff. Each of the three field shapes is written a particular way — and the lookup is the one that trips everyone:</p>
+
+<div class="shapes">
+  <div class="row"><div class="tag2">Plain column</div><div class="body">Put it straight in <code>--data</code>: <code>"jobtitle": "Senior Sales Manager"</code>. The value is the value.</div></div>
+  <div class="row"><div class="tag2">Option-set</div><div class="body">Send the <strong>code, never the label</strong>: <code>"gendercode": 1</code> — not <code>"Male"</code>. (That's why L01 had you read the stored code.) The wrong shape is a common 400.</div></div>
+  <div class="row"><div class="tag2">Lookup</div><div class="body">You <strong>cannot</strong> write <code>_parentcustomerid_value</code> — it's read-only. You set the relationship through the <em>navigation property</em> with <code>@odata.bind</code>, naming the related <strong>set + GUID</strong>:<br><code>"parentcustomerid_account@odata.bind": "/accounts(&lt;guid&gt;)"</code>. <span class="lbl">GUID + table, never a name.</span><sup><a href="#r-bind">bind</a></sup></div></div>
+</div>
+
+<p>The lookup form is fiddly, so <code>crm</code> gives you two purpose-built verbs that build the <code>@odata.bind</code> PATCH (and the clear) for you — no hand-written JSON:<sup><a href="#r-skill">skill</a></sup></p>
+
+<pre class="term"><span class="tag">agent-cloud · exit 0</span><code><span class="c-comment"># set the lookup: contact → parent account, by nav-property + related set + id</span>
+crm <span class="c-flag">--json</span> entity set-lookup contacts <span class="c-guid">&lt;contact-id&gt;</span> parentcustomerid_account accounts <span class="c-guid">&lt;account-id&gt;</span>
+
+<span class="c-comment"># clear it again (DELETE on the /$ref)</span>
+crm <span class="c-flag">--json</span> entity clear-lookup contacts <span class="c-guid">&lt;contact-id&gt;</span> parentcustomerid_account
+<span class="c-punc">{</span> <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span> <span class="c-key">"data"</span><span class="c-punc">:</span> <span class="c-punc">{</span> <span class="c-key">"cleared"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span> <span class="c-key">"nav"</span><span class="c-punc">:</span> <span class="c-str">"parentcustomerid_account"</span> <span class="c-punc">} }</span></code></pre>
+
+<div class="callout warn"><span class="ic">!</span><div><b>Where does <code>parentcustomerid_account</code> come from?</b> It's the <em>navigation property</em> for that lookup — and you already saw it in L01: it's the <code>associatednavigationproperty</code> annotation the server returned when you read the lookup. <code>parentcustomerid</code> is a <em>customer</em> lookup (it can point at an account <em>or</em> a contact), so the nav property carries the target table as a suffix: <code>parentcustomerid_account</code> vs <code>parentcustomerid_contact</code>. Read the annotation to learn the name; don't guess it.</div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">04</span> The loop, for real</h2>
+
+<p>Here's the whole safe-write loop run live on agent-cloud — one contact, all three shapes at once, then put back. Same four beats as L05, now for an update:</p>
+
+<div class="loop">
+  <div class="step"><div class="k">1 · preview</div><div class="v">--dry-run</div><div class="d">read the PATCH plan (§01)</div></div>
+  <div class="step cur"><div class="k">2 · commit</div><div class="v">drop --dry-run</div><div class="d">silent — id only</div></div>
+  <div class="step"><div class="k">3 · verify</div><div class="v">entity get</div><div class="d">confirm it landed</div></div>
+  <div class="step"><div class="k">4 · revert</div><div class="v">restore</div><div class="d">leave org clean</div></div>
+</div>
+
+<pre class="term"><span class="tag">commit · exit 0</span><code>crm <span class="c-flag">--json</span> entity update contacts <span class="c-guid">a1b2c3d4-…b91</span> \
+    <span class="c-flag">--data</span> <span class="c-str">'{"jobtitle":"Senior Sales Manager","gendercode":1,
+            "parentcustomerid_account@odata.bind":"/accounts(0c1d2e3f-…cf0)"}'</span>
+
+<span class="c-punc">{</span> <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span> <span class="c-key">"data"</span><span class="c-punc">:</span> <span class="c-punc">{</span> <span class="c-key">"_entity_id"</span><span class="c-punc">:</span> <span class="c-guid">"a1b2c3d4-…b91"</span> <span class="c-punc">} }</span>   <span class="c-comment"># silent: id only</span></code></pre>
+
+<pre class="term"><span class="tag">verify · exit 0</span><code>crm <span class="c-flag">--json</span> entity get contacts <span class="c-guid">a1b2c3d4-…b91</span> <span class="c-flag">--annotations</span> \
+    <span class="c-flag">--select</span> jobtitle,gendercode,_parentcustomerid_value
+
+<span class="c-punc">{</span> <span class="c-key">"jobtitle"</span><span class="c-punc">:</span> <span class="c-str">"Senior Sales Manager"</span><span class="c-punc">,</span>                          <span class="c-comment"># ✓ text changed</span>
+  <span class="c-key">"gendercode"</span><span class="c-punc">:</span> <span class="c-num">1</span><span class="c-punc">,</span> <span class="c-ann">"gendercode@…FormattedValue"</span><span class="c-punc">:</span> <span class="c-str">"Male"</span><span class="c-punc">,</span>             <span class="c-comment"># ✓ choice flipped 2→1</span>
+  <span class="c-key">"_parentcustomerid_value"</span><span class="c-punc">:</span> <span class="c-guid">"0c1d2e3f-…cf0"</span><span class="c-punc">,</span>                       <span class="c-comment"># ✓ lookup now set</span>
+  <span class="c-ann">"_parentcustomerid_value@…FormattedValue"</span><span class="c-punc">:</span> <span class="c-str">"Contoso Ltd"</span><span class="c-punc">,</span>
+  <span class="c-ann">"_parentcustomerid_value@…lookuplogicalname"</span><span class="c-punc">:</span> <span class="c-str">"account"</span> <span class="c-punc">}</span></code></pre>
+
+<p>The verify read is the proof: the option-set code moved and its label tracked, and the lookup resolved to the right row <em>in the right table</em> (<code>lookuplogicalname: "account"</code>). Then revert — restore the two scalars and clear the lookup — so the org ends exactly where it started:</p>
+
+<pre class="term"><span class="tag">revert · exit 0</span><code>crm <span class="c-flag">--json</span> entity clear-lookup contacts <span class="c-guid">a1b2c3d4-…b91</span> parentcustomerid_account
+crm <span class="c-flag">--json</span> entity update contacts <span class="c-guid">a1b2c3d4-…b91</span> <span class="c-flag">--data</span> <span class="c-str">'{"jobtitle":"Sales Manager","gendercode":2}'</span></code></pre>
+
+<div class="callout tip"><span class="ic">✓</span><div><b>Revert is just another update.</b> There's no "undo" in Dataverse — you put a record back by writing the old values over the new ones (and clearing what you set). Which is exactly why step 1 reads the originals <em>before</em> you touch anything.</div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">05</span> Do it yourself <span class="pill">~5 min</span></h2>
+
+<p>A real, fully reversible round-trip on a seed contact. Read the originals first so you can restore them:</p>
+
+<pre><code><span class="c-comment"># 0 · pick a contact + READ ORIGINALS (write these down)</span>
+crm <span class="c-flag">--json</span> query odata contacts <span class="c-flag">--top</span> 3 <span class="c-flag">--select</span> fullname,jobtitle,gendercode
+crm <span class="c-flag">--json</span> entity get contacts <span class="c-guid">&lt;id&gt;</span> <span class="c-flag">--select</span> jobtitle,gendercode
+
+<span class="c-comment"># 1 · PREVIEW the change (no write yet)</span>
+crm <span class="c-flag">--json</span> <span class="c-flag">--dry-run</span> entity update contacts <span class="c-guid">&lt;id&gt;</span> <span class="c-flag">--data</span> <span class="c-str">'{"jobtitle":"Lead Analyst","gendercode":1}'</span>
+
+<span class="c-comment"># 2 · COMMIT (same command, --dry-run removed)</span>
+crm <span class="c-flag">--json</span> entity update contacts <span class="c-guid">&lt;id&gt;</span> <span class="c-flag">--data</span> <span class="c-str">'{"jobtitle":"Lead Analyst","gendercode":1}'</span>
+
+<span class="c-comment"># 3 · VERIFY it landed</span>
+crm <span class="c-flag">--json</span> entity get contacts <span class="c-guid">&lt;id&gt;</span> <span class="c-flag">--annotations</span> <span class="c-flag">--select</span> jobtitle,gendercode
+
+<span class="c-comment"># 4 · REVERT to the values from step 0</span>
+crm <span class="c-flag">--json</span> entity update contacts <span class="c-guid">&lt;id&gt;</span> <span class="c-flag">--data</span> <span class="c-str">'{"jobtitle":"&lt;original&gt;","gendercode":&lt;original&gt;}'</span></code></pre>
+
+<p>Then answer, from your own output:</p>
+<ol class="steps">
+  <li>In step 1's preview, what <code>method</code> and what <code>If-Match</code> header? What's in the <code>body</code> — all the contact's columns, or just your two?</li>
+  <li>Step 2's response — does it contain the updated row, or only the id? Why? (What flag would return the row?)</li>
+  <li>Bonus: set a lookup with <code>entity set-lookup contacts &lt;id&gt; parentcustomerid_account accounts &lt;account-id&gt;</code>, verify with <code>entity get … --annotations</code>, then <code>entity clear-lookup</code> it. What does <code>lookuplogicalname</code> read?</li>
+</ol>
+</section>
+
+<section class="reveal">
+<h2><span class="n">06</span> Check yourself</h2>
+<div class="quiz" id="quiz">
+  <p class="qh">Four questions, instant feedback</p>
+  <p class="qhs">tap an answer — no penalty for a wrong first try</p>
+
+  <div class="q" data-correct="1">
+    <div class="stem">1 · You <code>entity update</code> a contact that has 40+ columns, sending <code>--data '{"jobtitle":"Lead Analyst"}'</code>. What's in the PATCH <b>body</b>?</div>
+    <button class="opt"><span class="mk">A</span> All 40+ columns — PATCH replaces the whole row</button>
+    <button class="opt"><span class="mk">B</span> Just <code>jobtitle</code> — PATCH is a partial update; only named keys are sent</button>
+    <button class="opt"><span class="mk">C</span> <code>jobtitle</code> plus every column that's non-null</button>
+    <button class="opt"><span class="mk">D</span> Nothing — you must use <code>--data-file</code> for updates</button>
+    <div class="fb ok">Correct. A PATCH sends only the keys you name; the other columns are neither sent nor changed. That's why update is "surgical" — you can't accidentally blank a field you didn't mention.</div>
+    <div class="fb no">Not quite. PATCH is a <em>partial</em> update — the body is exactly the keys in your <code>--data</code> (here, just <code>jobtitle</code>). Unmentioned columns are untouched, not resent and not wiped.</div>
+  </div>
+
+  <div class="q" data-correct="2">
+    <div class="stem">2 · <code>crm entity update</code> sends <code>If-Match: "*"</code> by default. What does that buy you, and what removes it?</div>
+    <button class="opt"><span class="mk">A</span> Response caching; <code>--no-cache</code> removes it</button>
+    <button class="opt"><span class="mk">B</span> It's mandatory in OData and can't be removed</button>
+    <button class="opt"><span class="mk">C</span> Update-only — a missing id fails instead of silently creating a row; <code>--allow-create</code> (or <code>entity upsert</code>) removes it</button>
+    <button class="opt"><span class="mk">D</span> It impersonates the record owner; <code>--as-user</code> removes it</button>
+    <div class="fb ok">Correct. A raw PATCH will create a row if the id is missing (upsert). <code>If-Match: "*"</code> says "only if it already exists," so a typo'd GUID errors instead of spawning a stray record. Opt into create with <code>--allow-create</code> or the <code>upsert</code> verb.</div>
+    <div class="fb no">Re-read §02. <code>If-Match: "*"</code> makes the update <em>update-only</em> — it blocks the accidental create-if-missing (upsert) that a bare PATCH would do. You opt back into create with <code>--allow-create</code> or <code>entity upsert</code>.</div>
+  </div>
+
+  <div class="q" data-correct="0">
+    <div class="stem">3 · You want to set a contact's <b>parent account</b> (a lookup). Which payload is correct?</div>
+    <button class="opt"><span class="mk">A</span> <code>"parentcustomerid_account@odata.bind": "/accounts(&lt;guid&gt;)"</code></button>
+    <button class="opt"><span class="mk">B</span> <code>"_parentcustomerid_value": "&lt;guid&gt;"</code></button>
+    <button class="opt"><span class="mk">C</span> <code>"parentcustomerid": "Contoso Ltd"</code></button>
+    <button class="opt"><span class="mk">D</span> <code>"parentcustomerid_account": "&lt;guid&gt;"</code></button>
+    <div class="fb ok">Correct. Lookups are written through the navigation property with <code>@odata.bind</code>, pointing at the related <em>set + GUID</em>. The <code>_x_value</code> field is read-only; you never set it directly, and never by display name. (Or skip the JSON entirely: <code>entity set-lookup</code>.)</div>
+    <div class="fb no">No — <code>_parentcustomerid_value</code> is read-only, and a lookup is never set by name or by a bare GUID. The correct shape is the nav property + <code>@odata.bind</code> → <code>"/accounts(&lt;guid&gt;)"</code> (or use <code>entity set-lookup</code>).</div>
+  </div>
+
+  <div class="q" data-correct="3">
+    <div class="stem">4 · After a successful <code>entity update</code> you get <code>{ "ok": true, "data": { "_entity_id": "…" } }</code> — no <code>jobtitle</code>, no row. Something wrong?</div>
+    <button class="opt"><span class="mk">A</span> Yes — the update silently failed</button>
+    <button class="opt"><span class="mk">B</span> Yes — you forgot <code>--select</code></button>
+    <button class="opt"><span class="mk">C</span> Yes — the row was deleted by the PATCH</button>
+    <button class="opt"><span class="mk">D</span> No — update is silent by default (returns just the id); use <code>--return-record</code>, or <code>entity get</code> to see the row</button>
+    <div class="fb ok">Correct. <code>ok:true</code> means it landed; update just doesn't echo the row back the way create does. Ask for it with <code>--return-record</code>, or read it with <code>entity get</code> — which is your verify step anyway.</div>
+    <div class="fb no">It worked — <code>ok:true</code>. Unlike create, update is <em>silent</em>: it returns only the id, no row body. Add <code>--return-record</code> to get the row, or <code>entity get</code> to verify. <code>--select</code> is a read option, not a write one.</div>
+  </div>
+
+  <div class="score" id="score"></div>
+</div>
+</section>
+
+<div class="ask reveal">
+  <b>Stuck or curious?</b> I'm your teacher for this — ask me anything in the chat. Good follow-ups right now:
+  <ul class="tight" style="margin-bottom:0">
+    <li>"How do I find a lookup's navigation-property name when I don't have a record to read the annotation off?"</li>
+    <li>"When would I actually <em>want</em> <code>--allow-create</code> / <code>entity upsert</code> instead of update?"</li>
+    <li>"How do I use the etag from L06 with <code>--if-match</code> to avoid clobbering someone else's edit?"</li>
+  </ul>
+</div>
+
+<div class="next reveal">
+  <span class="pill t">next up</span>
+  <h2>Lesson 03 — Querying deeper: filtering on the real values</h2>
+  <p style="margin:0">You can now read <em>and</em> write a record in its true vocabulary. Next we turn that on whole sets: <code>query odata</code> in earnest — <code>$filter</code> on option-set codes and lookup GUIDs, ordering, and paging past the first page. The codes and <code>_x_value</code>s you've been handling are exactly what you filter on. <span class="live-only">Just say <strong>"next lesson"</strong>.</span></p>
+</div>
+
+<footer class="reveal">
+  <p><strong>Sources</strong> — grounded in, not guessed from:</p>
+  <ol class="refs">
+    <li id="r-update"><a href="https://learn.microsoft.com/power-apps/developer/data-platform/webapi/update-delete-entities-using-web-api">Update and delete table rows using the Web API</a> — Microsoft Learn. PATCH semantics, partial update, and that update returns no content by default.</li>
+    <li id="r-upsert"><a href="https://learn.microsoft.com/power-apps/developer/data-platform/webapi/perform-conditional-operations-using-web-api#bkmk_limitUpsertOperations">Conditional operations — limit upsert (If-Match / If-None-Match)</a> — Microsoft Learn. Why a bare PATCH can create, and how <code>If-Match: *</code> makes it update-only.</li>
+    <li id="r-bind"><a href="https://learn.microsoft.com/power-apps/developer/data-platform/webapi/associate-disassociate-entities-using-web-api">Associate and disassociate rows using the Web API</a> — Microsoft Learn. Setting a single-valued navigation property with <code>@odata.bind</code>, and removing it via <code>DELETE …/$ref</code>.</li>
+    <li id="r-skill"><strong>crm agent skill</strong> — <code>~/.claude/skills/crm/reference/records.md</code> &amp; <code>crm entity update / set-lookup / clear-lookup --help</code> (<code>--allow-create</code>, <code>--return-record</code>, <code>--if-match</code>; the lookup verbs). Mirrored on the <a href="https://crm-cli-docs.pages.dev/">crm docs site</a>.</li>
+  </ol>
+  <p class="ft">M02 · L02 · lessons/0015-update-a-record.html · live preview→commit→verify→revert round-trip captured from agent-cloud on 2026-06-15; org left clean (host, ids &amp; the bound account shown as the example env)</p>
+</footer>
+
+</div>
+
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 2, "name": "Records & Queries"},
+  "lesson": 2,
+  "title": "Update a Record",
+  "slug": "update-a-record",
+  "topics": ["entity-update","patch","odata-bind","option-set-write","safe-write-loop"],
+  "summary": "Change a record with PATCH — scalar, option-set by code, and lookup via @odata.bind / set-lookup — run as a live preview→commit→verify→revert loop.",
+  "order": 2,
+  "status": "published" }
+</script>
+</body>
+</html>

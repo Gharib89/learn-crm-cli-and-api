@@ -52,6 +52,84 @@ envelope → dry-run → create → read → discover. (Update/delete shown in p
 preview, L05 delete, L07 help — not their own lessons; revisit as M01.5 if user wants
 dedicated CRUD-write drills.)
 
+## M02 lesson sequence (started 2026-06-15)
+
+Milestone: **Records & queries** (issue #2). "Done when": create→read→update→delete a contact
+end-to-end + one OData + one FetchXML query. M01 already covered create/read/delete mechanically,
+so M02 = the **record mental model first**, then the not-yet-taught verbs (update, deeper query,
+FetchXML).
+
+- **L01** — **Anatomy of a Record** (the GUI→API mapping). `lessons/0014-anatomy-of-a-record.html`.
+  One skill: read a record's JSON and map every field back to the form. Covers entity-set vs
+  logical name (formalizes L06's count trap), the four field shapes (PK GUID · plain/datetime ·
+  option-set code+FormattedValue · lookup `_x_value`+3 annotations), and annotated vs `--minimal`
+  (form view vs storage view). **Shipped + built 2026-06-15.** Mission rule honored: platform
+  mental model before CLI mechanics.
+- **L02** — **Update a Record** (`entity update` PATCH). `lessons/0015-update-a-record.html`.
+  One skill: change a record safely via PATCH — scalar + option-set (by code) + lookup (by
+  GUID+table). Covers PATCH-is-partial/silent, `If-Match:*` default (update-only) vs `--allow-create`,
+  the three write shapes, the `set-lookup`/`clear-lookup` verbs, and the full live loop. **Shipped +
+  built 2026-06-15.** Verified by a real reversible round-trip on seed contact Sara Mitchell
+  (jobtitle, gendercode 2→1, parentcustomerid→account bind), org left clean.
+- **L03** — **Querying Deeper: OData $filter** (`lessons/0016-querying-deeper-odata.html`).
+  Filter sets on stored values (option-set code, lookup `_x_value` GUID), `--orderby`/`--count`,
+  `--top` vs `--page-size`/`meta.next_link` (5000-row page cap). **Shipped + built 2026-06-15.**
+- **L04** — **FetchXML: the other query language** (`lessons/0017-fetchxml-query.html`).
+  `query fetchxml --xml/--file`; the aggregate/groupby superpower OData lacks; OData-vs-FetchXML
+  decision; `query saved`/`user` run views by GUID. **Shipped + built 2026-06-15.**
+
+**✅ M02 COMPLETE — 4 lessons** (L01–L04, lessons 0014–0017; shipped 2026-06-15). Spine: anatomy →
+update → query-deeper → fetchxml. Milestone "Done when" satisfied across M01+M02: create (M01 L05),
+read (M01 L06), update (M02 L02), delete (M01 L05), one OData (L03) + one FetchXML (L04).
+
+### ⚠️ Drift to fix: M01 L06 query result shape
+
+L03 live-verified that **v3.12.6 `query odata` returns `data` as a bare array** (unwraps OData's
+`value`); `meta` carries `entity_set`/`count`/`next_link`. The older **M01 L06** lesson (and its
+quiz) shows `data.value` — the pre-3.12 shape. Not fixed (out of this task's scope); flag for a
+surgical L06 fix-up pass. L03 §01 calls out the current shape explicitly so learners aren't lost.
+
+### L03/L04 live-CLI facts (read-only, all captured from agent-cloud)
+
+- `query odata` flags: `--select/--filter/--top/--orderby/--expand/--count/--page-size/--annotations/
+  --minimal`. NO inline `?`/`$` (rejected client-side); options via flags only. `--count` →
+  `meta.count` (exact, filtered). `--page-size N` → `meta.next_link` (@odata.nextLink + skiptoken).
+- Filter on code: `gendercode eq 1`. On lookup: `_ownerid_value eq <guid>` (bare GUID, no quotes).
+- `query fetchxml --xml '<fetch>…'` or `--file`. `<entity name="contact">` = logical name → crm
+  resolves to entity-set via 1 metadata GET (or pass set positionally). Aggregate verified:
+  `<fetch aggregate="true">` + `groupby="true"` + `aggregate="count"` + `alias` → `[{num:3,gender:2},
+  {num:2,gender:1}]` (3 Female / 2 Male in agent-cloud seed). Also `query saved`/`user` (views by GUID).
+
+### Live-CLI facts caught while authoring L01 (v3.12.6 — note: CLI bumped from 3.9.x)
+
+- `crm --version` now reports **3.12.6** (was 3.9.0/3.9.1 in earlier notes).
+- **`entity get` is annotated by DEFAULT.** `--annotations / --no-annotations` toggles; default ON.
+  `--minimal` drops every `@`-key (etag, FormattedValues, lookup annotations) but keeps business
+  fields, `_*_value` GUIDs, primary id. Also new on `entity get`: `--expand`, `--expect ATTR=VALUE`.
+- Live anatomy captured from agent-cloud contact "Sara Mitchell": `gendercode 2 → "Female"`,
+  `statecode 0`/`statuscode 1 → "Active"`, `_ownerid_value` → `lookuplogicalname: "systemuser"`,
+  `associatednavigationproperty: "ownerid"`. Real host `orgd080ee1e…` + owner id/name **scrubbed**
+  to the example env in the published lesson (privacy rule).
+- Seed contacts in agent-cloud use the same placeholder-looking GUIDs as the L06 lesson
+  (`a1b2c3d4-…`) — convenient, reuse them. No contacts currently have `_parentcustomerid_value`
+  set; used the always-populated `ownerid` lookup to demo the foreign-key shape instead.
+
+L02 (`entity update`) facts, all server-confirmed by the live round-trip:
+- `entity update` = PATCH, **silent by default** (returns only `_entity_id`); `--return-record`
+  asks for the row. Sends **`If-Match: "*"` by default** → update-only (blocks accidental upsert);
+  `--allow-create` drops the header, or use the `entity upsert` verb.
+- Lookup write: read-only `_x_value` can't be set; use nav-property `@odata.bind`:
+  `"parentcustomerid_account@odata.bind":"/accounts(<id>)"`. Server echoed
+  `associatednavigationproperty: parentcustomerid_account`, `lookuplogicalname: account` — bind
+  syntax **confirmed** (dry-run alone wouldn't prove this; the real PATCH did).
+- crm has dedicated lookup verbs: `entity set-lookup ES ID NAV RELATED_SET RELATED_ID` and
+  `entity clear-lookup ES ID NAV` (→ `{cleared:true}`, DELETE /$ref). Also `entity associate`,
+  `disassociate`, `clone`, `children`, `upsert` exist (seen in `crm entity --help`).
+- Available accounts in agent-cloud for lookup demos: ITWorx, Reliance, Contoso Ltd. Published
+  lesson scrubs the bound account to "Contoso Ltd" + placeholder guid (example-env convention).
+- Write grant: user re-created `.claude/settings.local.json` (`allow: ["Bash(crm:*)"]`) this
+  session so real writes run; still gitignored, agent still can't self-write the rule.
+
 ## M11 (appendix) — "Under the Hood: how crm works" (decided 2026-06-13)
 
 User pivoted: wants a **dedicated milestone on the crm codebase itself** — architecture, structure,
