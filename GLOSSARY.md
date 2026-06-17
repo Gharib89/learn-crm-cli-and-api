@@ -496,3 +496,70 @@ Permanently delete a custom table (+ all its rows) or a global option set — **
 `--yes` required in JSON mode (else `"aborted by user"`). Preview with `delete-entity --dry-run
 --check-dependencies` → `{would_delete, can_delete, blockers[]}` (empty blockers = safe). Deleting
 a table does NOT delete the global option sets it used. _Met: M04 L05._
+
+## Relationships (write side) — *M05*
+
+**1:N / N:1 / N:N — two real types**
+There are only **two** relationship types to *create*: **1:N** (one-to-many) and **N:N**
+(many-to-many). **N:1** (many-to-one) is not a third type — it's a 1:N *viewed from the child*.
+A 1:N is physically a **lookup column on the referencing (N/child) side**; an N:N is a hidden
+**intersect table** of GUID pairs. Hence two create verbs. _Met: M05 L01._
+
+**`create-one-to-many` (atomic 1:N + lookup)**
+One call creates the relationship metadata **and** its lookup column atomically (POST to
+`RelationshipDefinitions`). Required: `--schema-name` (the relationship), `--referenced-entity`
+(the "1"/parent), `--referencing-entity` (the "N"/child, gets the lookup), `--lookup-schema`,
+`--lookup-display`. Both tables must already exist. Envelope: `{created, kind:"OneToMany",
+schema_name, referenced_entity, referencing_entity, referencing_attribute, relationship_id,
+solution, published}`. `referencing_attribute` = the lookup column logical name (lowercase of
+`--lookup-schema`). Supports global `--dry-run` (prints full body + `references[]` existence
+check). _Met: M05 L02 — crm v4.12.0._
+
+**Cascade behaviors (parental vs referential)**
+Six actions decide what happens to children when the parent changes: **Delete, Assign, Reparent,
+Share, Unshare, Merge** (CLI `--cascade-*`). Cascade types: `NoCascade, Cascade, Active,
+UserOwned` (+ `RemoveLink, Restrict` for Delete only; Merge only `Cascade`/`NoCascade`). Named
+bundles: **Parental** (all Cascade — children die/move with parent), **Referential** (Delete=
+RemoveLink, rest NoCascade — independent), **Referential, Restrict Delete** (Delete=Restrict —
+blocks parent delete while children exist). **CLI default = referential** (`Delete:RemoveLink`,
+rest `NoCascade`). Limits: a custom table can't be the cascading *parent* of a system table; one
+parental rel per table pair. _Met: M05 L03._
+
+**`update-relationship` (retrieve-merge-write)**
+Change cascade behaviors (or menu config) on an existing relationship in place — reads current
+definition, applies only the `--cascade-*` flags you pass, writes back. Envelope `{updated, path,
+schema_name, published}`. Reversible (set `--cascade-delete RemoveLink` to demote to referential).
+Publishes by default. _Met: M05 L03._
+
+**A lookup's three runtime names**
+Same lookup, three forms: **logical name** (`ag_accountid` — what metadata shows), **navigation
+property** (`ag_AccountId` = the lookup schema name — what you *write/bind/expand* with,
+**case-sensitive**), and the **read form** (`_ag_accountid_value` — how the GUID comes back in
+query results). Write through the nav property; read the GUID from `_..._value`. _Met: M05 L04._
+
+**Set a 1:N link · `@odata.bind` / `set-lookup` / `clear-lookup`**
+Set the lookup on **create** by binding the nav property: `"ag_AccountId@odata.bind":
+"/accounts(<guid>)"` (path = entity *set* + GUID, never a name). On an **existing** row use
+`entity set-lookup ENTITY_SET ID NAV RELATED_SET RELATED_ID` (PATCH @odata.bind) / `clear-lookup
+ENTITY_SET ID NAV` (DELETE /$ref). Read the link via `$expand` on the nav property (returns one
+object). _Met: M05 L04._
+
+**`create-many-to-many` (N:N) · `entity associate`**
+N:N create: `--schema-name --entity1 --entity2 --intersect-entity`. **No** lookup, **no** cascade
+(rows are peers); `entity1`/`entity2` interchangeable. Envelope `{created, kind:"ManyToMany",
+schema_name, intersect_entity, relationship_id, …}`. Link rows with **`entity associate
+TARGET_SET TARGET_ID NAV RELATED_SET RELATED_ID`** where **NAV = the relationship schema name**
+(Dataverse writes the intersect pair); `disassociate` removes one link. `$expand` the nav property
+returns an **array**. If the link must carry data (role, %), use a **manual intersect** — a real
+table with two 1:N lookups — not a stock N:N. _Met: M05 L05._
+
+**`entity children` (parent-side counts)**
+Per-relationship related-row counts for the 1:N relationships where a record is the parent:
+`entity children ENTITY_SET ID [--filter-entities REGEX] [--non-empty]`. Each row: child entity,
+referencing attribute, child set, count. Read-only (chunked `$batch`). _Met: M05 L04._
+
+**`delete-relationship` (clean teardown)**
+Delete a 1:N or N:N by schema name; for a 1:N it **also removes the lookup column**. `--yes`
+required in JSON mode. Preview with `--dry-run --check-dependencies` → `{would_delete, can_delete,
+blockers[]}` (empty blockers = safe; a non-empty list, e.g. lookup on a form, must be cleared
+first). Teardown order: **relationships before the tables** they connect. _Met: M05 L05._

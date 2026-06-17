@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M05 · L05 — N:N & Clean Up: many-to-many, associate, delete-relationship</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-false{color:#ff8f7a}.c-num{color:#ffd479}.c-meth{color:#ffd479;font-weight:700}.c-ann{color:#7fb0c9}
+  .c-xtag{color:#8cc0ff}.c-xattr{color:#ffd479}.c-xval{color:#a7e6a0}
+
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+
+  table.ops{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--card);
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.ops th,table.ops td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.ops th{background:var(--guid-soft);color:var(--guid);font-family:"Roboto Mono",monospace;
+    font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  table.ops tr:last-child td{border-bottom:none}
+  table.ops code{font-size:12.5px}
+  table.ops .pk{color:var(--teal-deep);font-weight:700}
+
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-false,pre .c-num,pre .c-meth,pre .c-flag,pre .c-ann,pre .c-xtag,pre .c-xattr,pre .c-xval{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+<header class="top reveal">
+  <div class="eyebrow">Milestone 05 <span class="dot">/</span> Relationships <span class="dot">/</span> Lesson 05</div>
+  <h1>Many ↔ many,<br>then <em>tidy up</em></h1>
+  <p class="sub">The capstone: build an N:N, link rows through it, choose the right type for a requirement — and tear it all down cleanly.</p>
+  <div class="livechip"><span class="led"></span> target&nbsp; <b>agent-cloud</b> &nbsp;·&nbsp; orgexample.crm.dynamics.com</div>
+  <div class="rule"></div>
+  <div class="why"><b>Why now.</b> You've done 1:N end-to-end. The second real relationship type — N:N — needs a different create verb, a different way to link rows (you <em>associate</em>, you don't bind), and a clear sense of <em>when</em> to reach for it. Then comes the part every milestone owes you: removing what you made without leaving orphans. Get this and you can model <em>any</em> connection a requirement throws at you.</div>
+</header>
+
+<p class="lead reveal">Today's win — the M05 done-when, all of it: a 1:N to account (✓ L02), an N:N, a child row through the lookup (✓ L04), and a clean teardown.</p>
+
+<section class="reveal">
+<h2><span class="n">01</span> Create the N:N: <code>create-many-to-many</code></h2>
+
+<p>A project uses many skills; a skill serves many projects. That's N:N — and Dataverse stores it in an <strong>intersect table</strong> (L01). The verb names both ends and the intersect table; there's no lookup, because neither side owns the other:<sup><a href="#r-nn">create-many-to-many</a></sup></p>
+
+<pre class="term"><span class="tag">agent-cloud · exit 0</span><code>crm <span class="c-flag">--json</span> metadata create-many-to-many \
+    <span class="c-flag">--schema-name</span> ag_ag_project_ag_skill \
+    <span class="c-flag">--entity1</span> ag_project <span class="c-flag">--entity2</span> ag_skill \
+    <span class="c-flag">--intersect-entity</span> ag_project_skill
+
+<span class="c-punc">{</span> <span class="c-key">"ok"</span>: <span class="c-true">true</span>, <span class="c-key">"data"</span>: <span class="c-punc">{</span>
+    <span class="c-key">"created"</span>: <span class="c-true">true</span>, <span class="c-key">"kind"</span>: <span class="c-str">"ManyToMany"</span>,
+    <span class="c-key">"schema_name"</span>: <span class="c-str">"ag_ag_project_ag_skill"</span>,
+    <span class="c-key">"intersect_entity"</span>: <span class="c-str">"ag_project_skill"</span>,   <span class="c-comment"># the hidden join table</span>
+    <span class="c-key">"relationship_id"</span>: <span class="c-guid">"27175ea1-926a-…"</span>,
+    <span class="c-key">"solution"</span>: <span class="c-str">"itworx_dev"</span>, <span class="c-key">"published"</span>: <span class="c-true">true</span> <span class="c-punc">}</span> <span class="c-punc">}</span></code></pre>
+
+<p>Note what's <em>missing</em> vs L02: no <code>--lookup-schema</code>, no <code>CascadeConfiguration</code>. N:N rows are peers — there's no parent to cascade from, and no single column could hold "many." <code>entity1</code> and <code>entity2</code> are interchangeable; the relationship is reciprocal.</p>
+</section>
+
+<section class="reveal">
+<h2><span class="n">02</span> Link two rows: <code>entity associate</code></h2>
+
+<p>You don't insert into the intersect table by hand, and there's no <code>@odata.bind</code> on create (that's for single lookups). For N:N you <strong>associate</strong> two existing rows — Dataverse writes the GUID pair for you:<sup><a href="#r-assoc">associate</a></sup></p>
+
+<pre class="term"><span class="tag">agent-cloud · exit 0</span><code>crm <span class="c-flag">--json</span> entity associate \
+    ag_projects <span class="c-guid">44b3e97b-…</span> \
+    ag_ag_project_ag_skill \              <span class="c-comment"># NAV = the relationship schema name</span>
+    ag_skills <span class="c-guid">af368db2-…</span>
+<span class="c-comment">#   args: TARGET_SET TARGET_ID  NAV  RELATED_SET RELATED_ID</span>
+
+<span class="c-punc">{</span> <span class="c-key">"ok"</span>: <span class="c-true">true</span>, <span class="c-key">"data"</span>: <span class="c-punc">{</span> <span class="c-key">"associated"</span>: <span class="c-true">true</span>,
+    <span class="c-key">"target"</span>: <span class="c-guid">"44b3e97b-…"</span>, <span class="c-key">"related"</span>: <span class="c-guid">"af368db2-…"</span> <span class="c-punc">}</span> <span class="c-punc">}</span></code></pre>
+
+<p>Verify by expanding the collection-valued nav property — note it returns an <em>array</em> (many), unlike the single object a 1:N lookup expand returned in L04:</p>
+
+<pre class="term"><span class="tag">agent-cloud · exit 0</span><code>crm <span class="c-flag">--json</span> query odata ag_projects <span class="c-flag">--select</span> ag_name \
+    <span class="c-flag">--expand</span> <span class="c-str">"ag_ag_project_ag_skill(\$select=ag_name)"</span>
+
+<span class="c-punc">[</span> <span class="c-punc">{</span> <span class="c-key">"ag_name"</span>: <span class="c-str">"Apollo Migration"</span>,
+    <span class="c-key">"ag_ag_project_ag_skill"</span>: <span class="c-punc">[</span> <span class="c-punc">{</span> <span class="c-key">"ag_name"</span>: <span class="c-str">"Data Migration"</span> <span class="c-punc">}</span> <span class="c-punc">]</span> <span class="c-punc">}</span> <span class="c-punc">]</span></code></pre>
+
+<div class="callout tip"><span class="ic">✓</span><div><b><code>disassociate</code> is the inverse.</b> Same arguments — it deletes the one intersect row (the link), never the records themselves. Associating and disassociating only ever touch the join table.</div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">03</span> Choose: 1:N or N:N?</h2>
+
+<p>This is the judgment the whole milestone was for. The deciding question is simple: <em>can a child belong to more than one parent at once?</em></p>
+
+<table class="ops">
+  <tr><th>Ask</th><th>1:N (lookup)</th><th>N:N (intersect)</th></tr>
+  <tr><td>Child belongs to…</td><td><strong>one</strong> parent at a time</td><td><strong>many</strong> peers at once</td></tr>
+  <tr><td>Physical structure</td><td>a lookup column on the child</td><td>a hidden intersect table</td></tr>
+  <tr><td>Set the link by</td><td><code>@odata.bind</code> / <code>set-lookup</code></td><td><code>entity associate</code></td></tr>
+  <tr><td>Cascade / ownership</td><td>yes — parental/referential (L03)</td><td>none — rows are peers</td></tr>
+  <tr><td>Can carry extra data on the link?</td><td>n/a</td><td>no — pure join (use a manual intersect table if you need data)</td></tr>
+  <tr><td>Example</td><td>project → account</td><td>project ↔ skills</td></tr>
+</table>
+
+<div class="callout warn"><span class="ic">!</span><div><b>If the link itself needs data, neither stock type fits.</b> "Project ↔ employee <em>with a role and an allocation %</em>" can't live on a peer-only N:N intersect table. The pattern is a <em>manual</em> intersect: a real custom table (e.g. <code>ag_assignment</code>) with two 1:N lookups — back to L02. Plain N:N is for pure "which connects to which," nothing more.</div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">04</span> Tear it down without orphans</h2>
+
+<p>Cleanup is a first-class skill, not an afterthought. <code>delete-relationship</code> removes a 1:N or N:N by schema name — and for a 1:N it also removes the lookup column. Preview first with <code>--dry-run --check-dependencies</code> to see whether anything blocks the delete:<sup><a href="#r-del">delete-relationship</a></sup></p>
+
+<pre class="term"><span class="tag">agent-cloud · exit 0 · dry-run</span><code>crm <span class="c-flag">--json --dry-run</span> metadata delete-relationship \
+    ag_account_ag_project <span class="c-flag">--check-dependencies</span> <span class="c-flag">--yes</span>
+
+<span class="c-punc">{</span> <span class="c-key">"ok"</span>: <span class="c-true">true</span>, <span class="c-key">"data"</span>: <span class="c-punc">{</span>
+    <span class="c-key">"would_delete"</span>: <span class="c-true">true</span>, <span class="c-key">"schema_name"</span>: <span class="c-str">"ag_account_ag_project"</span>,
+    <span class="c-key">"can_delete"</span>: <span class="c-true">true</span>, <span class="c-key">"blockers"</span>: <span class="c-punc">[]</span> <span class="c-punc">}</span> <span class="c-punc">}</span></code></pre>
+
+<p><code>can_delete: true</code> and an empty <code>blockers[]</code> mean it's safe. A non-empty <code>blockers</code> list (e.g. the lookup is on a form, or a dependency exists) tells you what to remove first. Then the real teardown — order matters: relationships before the tables they connect:</p>
+
+<pre class="term"><span class="tag">agent-cloud · exit 0</span><code>crm <span class="c-flag">--json</span> metadata delete-relationship ag_ag_project_ag_skill <span class="c-flag">--yes</span>   <span class="c-comment"># N:N first</span>
+crm <span class="c-flag">--json</span> metadata delete-relationship ag_account_ag_project <span class="c-flag">--yes</span>  <span class="c-comment"># then 1:N</span>
+crm <span class="c-flag">--json</span> metadata delete-entity ag_project <span class="c-flag">--yes</span>   <span class="c-comment"># then the tables</span>
+crm <span class="c-flag">--json</span> metadata delete-entity ag_skill   <span class="c-flag">--yes</span>
+
+<span class="c-comment"># each returns {deleted: true, schema_name|logical_name, solution}</span></code></pre>
+
+<div class="callout warn"><span class="ic">!</span><div><b>In JSON mode, deletes need <code>--yes</code>.</b> Without it the CLI returns <code>"aborted by user"</code> — there's no interactive prompt to answer in an agent flow. (Same rule you met for <code>delete-entity</code> in M04 L05.)</div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">05</span> Capstone — the full M05 round-trip <span class="pill">~12 min</span> <span class="pill t">writes</span></h2>
+<p>Two tables, both relationship types, real links, then a clean org. This <em>is</em> the milestone's done-when:</p>
+<pre><code><span class="c-comment"># 1 · two custom tables to relate</span>
+crm <span class="c-flag">--json</span> metadata create-entity <span class="c-flag">--display</span> <span class="c-str">"Project"</span>
+crm <span class="c-flag">--json</span> metadata create-entity <span class="c-flag">--display</span> <span class="c-str">"Skill"</span>
+
+<span class="c-comment"># 2 · 1:N account → project (L02)</span>
+crm <span class="c-flag">--json</span> metadata create-one-to-many \
+    <span class="c-flag">--schema-name</span> ag_account_ag_project <span class="c-flag">--referenced-entity</span> account \
+    <span class="c-flag">--referencing-entity</span> ag_project \
+    <span class="c-flag">--lookup-schema</span> ag_AccountId <span class="c-flag">--lookup-display</span> <span class="c-str">"Account"</span>
+
+<span class="c-comment"># 3 · N:N project ↔ skill (this lesson)</span>
+crm <span class="c-flag">--json</span> metadata create-many-to-many \
+    <span class="c-flag">--schema-name</span> ag_ag_project_ag_skill \
+    <span class="c-flag">--entity1</span> ag_project <span class="c-flag">--entity2</span> ag_skill <span class="c-flag">--intersect-entity</span> ag_project_skill
+
+<span class="c-comment"># 4 · a project bound to an account (L04) + a skill row</span>
+crm <span class="c-flag">--json</span> entity create ag_projects <span class="c-flag">--data</span> \
+  <span class="c-str">'{"ag_name":"Apollo","ag_AccountId@odata.bind":"/accounts(ACCT-GUID)"}'</span>
+crm <span class="c-flag">--json</span> entity create ag_skills <span class="c-flag">--data</span> <span class="c-str">'{"ag_name":"Data Migration"}'</span>
+
+<span class="c-comment"># 5 · link the project to the skill via N:N</span>
+crm <span class="c-flag">--json</span> entity associate ag_projects PROJ-GUID \
+    ag_ag_project_ag_skill ag_skills SKILL-GUID
+
+<span class="c-comment"># 6 · verify both links</span>
+crm <span class="c-flag">--json</span> query odata ag_projects <span class="c-flag">--select</span> ag_name \
+    <span class="c-flag">--expand</span> <span class="c-str">"ag_AccountId(\$select=name)"</span>
+crm <span class="c-flag">--json</span> query odata ag_projects <span class="c-flag">--select</span> ag_name \
+    <span class="c-flag">--expand</span> <span class="c-str">"ag_ag_project_ag_skill(\$select=ag_name)"</span>
+
+<span class="c-comment"># 7 · clean up: relationships, then tables (preview the 1:N delete first)</span>
+crm <span class="c-flag">--json --dry-run</span> metadata delete-relationship ag_account_ag_project <span class="c-flag">--check-dependencies --yes</span>
+crm <span class="c-flag">--json</span> metadata delete-relationship ag_ag_project_ag_skill <span class="c-flag">--yes</span>
+crm <span class="c-flag">--json</span> metadata delete-relationship ag_account_ag_project <span class="c-flag">--yes</span>
+crm <span class="c-flag">--json</span> metadata delete-entity ag_project <span class="c-flag">--yes</span>
+crm <span class="c-flag">--json</span> metadata delete-entity ag_skill <span class="c-flag">--yes</span></code></pre>
+<ol class="steps">
+  <li>In step 3's envelope, find <code>intersect_entity</code>. Why is there no <code>referencing_attribute</code> like there was for the 1:N?</li>
+  <li>Compare the two expands in step 6: one returns an object, one returns an array. Which is which, and why?</li>
+  <li>In step 7's dry-run, is <code>can_delete</code> true even though a project row still uses the lookup? What does that tell you about the default cascade?</li>
+  <li>After cleanup, run <code>metadata entities</code> and confirm <code>ag_project</code>/<code>ag_skill</code> are gone — the org is exactly as you found it.</li>
+</ol>
+</section>
+
+<section class="reveal">
+<h2><span class="n">06</span> Check yourself</h2>
+<div class="quiz" id="quiz">
+  <p class="qh">Five questions, instant feedback</p>
+  <p class="qhs">tap an answer — no penalty for a wrong first try</p>
+
+  <div class="q" data-correct="3">
+    <div class="stem">1 · <code>create-many-to-many</code> needs which argument that <code>create-one-to-many</code> does not?</div>
+    <button class="opt"><span class="mk">A</span> <code>--lookup-schema</code></button>
+    <button class="opt"><span class="mk">B</span> <code>--cascade-delete</code></button>
+    <button class="opt"><span class="mk">C</span> <code>--referenced-entity</code></button>
+    <button class="opt"><span class="mk">D</span> <code>--intersect-entity</code></button>
+    <div class="fb ok">Correct. N:N is stored in an intersect (join) table, so you name it with <code>--intersect-entity</code>. There's no lookup column and no cascade — those are 1:N concepts.</div>
+    <div class="fb no">N:N needs <code>--intersect-entity</code> (the join table). It has no lookup or cascade; <code>--referenced-entity</code> is a 1:N flag.</div>
+  </div>
+
+  <div class="q" data-correct="1">
+    <div class="stem">2 · To link an existing project and skill through the N:N, you…</div>
+    <button class="opt"><span class="mk">A</span> Insert a row into the intersect table directly</button>
+    <button class="opt"><span class="mk">B</span> <code>entity associate</code> the two rows via the relationship schema name</button>
+    <button class="opt"><span class="mk">C</span> Use <code>@odata.bind</code> on the project's create</button>
+    <button class="opt"><span class="mk">D</span> <code>set-lookup</code> on the project</button>
+    <div class="fb ok">Correct. N:N links are made with <code>entity associate</code> (collection-valued nav = the relationship schema name); Dataverse writes the intersect pair. Bind/set-lookup are for single 1:N lookups.</div>
+    <div class="fb no"><code>associate</code> is the N:N tool — it writes the intersect pair for you. <code>@odata.bind</code> and <code>set-lookup</code> only set a single 1:N lookup.</div>
+  </div>
+
+  <div class="q" data-correct="0">
+    <div class="stem">3 · A project must belong to exactly one account; an account has many projects. Which type?</div>
+    <button class="opt"><span class="mk">A</span> 1:N — a lookup on project</button>
+    <button class="opt"><span class="mk">B</span> N:N — an intersect table</button>
+    <button class="opt"><span class="mk">C</span> Two N:N relationships</button>
+    <button class="opt"><span class="mk">D</span> No relationship is needed</button>
+    <div class="fb ok">Correct. "Child belongs to exactly one parent" is the textbook 1:N — a single lookup column on the child. N:N is for many-on-both-sides.</div>
+    <div class="fb no">One parent per child = 1:N (a lookup). N:N is only when both sides can have many.</div>
+  </div>
+
+  <div class="q" data-correct="2">
+    <div class="stem">4 · "Assign employees to projects, each assignment with a role and an allocation %." What do you build?</div>
+    <button class="opt"><span class="mk">A</span> A plain N:N between project and employee</button>
+    <button class="opt"><span class="mk">B</span> A 1:N from project to employee</button>
+    <button class="opt"><span class="mk">C</span> A manual intersect: an <code>ag_assignment</code> table with two 1:N lookups</button>
+    <button class="opt"><span class="mk">D</span> A picklist column</button>
+    <div class="fb ok">Correct. The link carries data (role, %), which a peer-only N:N intersect table can't hold. Make a real table with two lookups — a manual intersect.</div>
+    <div class="fb no">A stock N:N intersect can't store role/%. When the link itself has attributes, build a custom table with two 1:N lookups (a manual intersect).</div>
+  </div>
+
+  <div class="q" data-correct="3">
+    <div class="stem">5 · Before deleting a 1:N relationship, what does <code>--dry-run --check-dependencies</code> give you?</div>
+    <button class="opt"><span class="mk">A</span> It deletes the relationship but keeps the lookup</button>
+    <button class="opt"><span class="mk">B</span> A backup of the relationship</button>
+    <button class="opt"><span class="mk">C</span> Nothing — it's the same as a real delete</button>
+    <button class="opt"><span class="mk">D</span> <code>{would_delete, can_delete, blockers[]}</code> — a safe preview of what would block it</button>
+    <div class="fb ok">Correct. The dry-run reports whether the delete can proceed and lists any blockers (forms, dependencies) — no write. Empty <code>blockers</code> + <code>can_delete: true</code> means go.</div>
+    <div class="fb no">It previews the delete: <code>would_delete</code>, <code>can_delete</code>, and a <code>blockers[]</code> list — nothing is removed. You fix blockers, then delete for real.</div>
+  </div>
+
+  <div class="score" id="score"></div>
+</div>
+</section>
+
+<div class="ask reveal">
+  <b>Milestone done — and curious?</b> You can now model any connection a requirement needs. Ask me to:
+  <ul class="tight" style="margin-bottom:0">
+    <li>"Throw me a requirement and let me pick 1:N vs N:N vs manual intersect."</li>
+    <li>"Show a self-referential N:N (e.g. account ↔ related accounts)."</li>
+    <li>"Build all of M05's relationships declaratively with <code>apply -f</code> instead of imperative verbs." (M04 L04 callback)</li>
+  </ul>
+</div>
+
+<div class="next reveal">
+  <span class="pill">milestone complete</span>
+  <h2>You can wire the model now</h2>
+  <p style="margin:0">M05 done: you read relationships, built a 1:N to account, tuned its cascade, pointed a row at its parent, built an N:N, linked rows, and cleaned up — the full done-when. Next milestone, <strong>M06 — Solutions &amp; ALM</strong>: the container every change you've made has been landing in, and how to move it dev → test → prod. <span class="live-only">Just say <strong>"next lesson"</strong>.</span></p>
+</div>
+
+<footer class="reveal">
+  <p><strong>Sources</strong> — grounded in, not guessed from:</p>
+  <ol class="refs">
+    <li id="r-nn"><strong>crm agent skill</strong> — <code>crm metadata create-many-to-many --help</code> (<code>--schema-name</code>, <code>--entity1</code>, <code>--entity2</code>, <code>--intersect-entity</code>, <code>--if-exists</code>). Create envelope <code>{created, kind:ManyToMany, intersect_entity, …}</code> verified on agent-cloud, crm v4.12.0 (2026-06-18).</li>
+    <li id="r-assoc"><strong>crm agent skill</strong> — <code>crm entity associate --help</code> / <code>disassociate --help</code> (collection-valued nav = relationship schema name). Associate envelope <code>{associated, target, related}</code> + N:N <code>$expand</code> array verified on agent-cloud, crm v4.12.0.</li>
+    <li id="r-del"><strong>crm agent skill</strong> — <code>crm metadata delete-relationship --help</code> (<code>--yes</code>, <code>--check-dependencies</code> + <code>--dry-run</code>). Dry-run <code>{would_delete, can_delete, blockers[]}</code> and delete envelope <code>{deleted, schema_name, solution}</code> verified on agent-cloud, crm v4.12.0.</li>
+    <li><a href="https://learn.microsoft.com/power-apps/maker/data-platform/create-edit-entity-relationships#types-of-table-relationships">Microsoft Dataverse table relationships</a> (Microsoft Learn). N:N uses an intersect/relationship table; reciprocal peers; deleting a 1:N relationship removes its lookup column.</li>
+    <li><a href="https://learn.microsoft.com/power-apps/developer/data-platform/webapi/associate-disassociate-entities-using-web-api#associate-table-rows-on-create">Associate and disassociate table rows using the Web API</a> (Microsoft Learn). Collection-valued navigation properties and the associate/disassociate operations behind the CLI verbs.</li>
+  </ol>
+  <p class="ft">M05 · L05 · lessons/0032-n-to-n-and-cleanup.html · capstone; live round-trip captured from agent-cloud on 2026-06-18, crm v4.12.0 (host, prefix, solution &amp; GUIDs shown as the example env)</p>
+</footer>
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 5, "name": "Relationships"},
+  "lesson": 5,
+  "title": "N:N & Clean Up: many-to-many, associate, delete-relationship",
+  "slug": "n-to-n-and-cleanup",
+  "topics": ["create-many-to-many","intersect-entity","entity-associate","disassociate","many-to-many","1n-vs-nn","manual-intersect","delete-relationship","check-dependencies","cleanup"],
+  "summary": "M05 capstone. Create an N:N relationship with metadata create-many-to-many (intersect table, no lookup or cascade), link existing rows with entity associate via the relationship schema name, and verify with $expand (returns an array). Provides the 1:N vs N:N decision matrix and the manual-intersect pattern for links that carry data. Then a clean teardown: delete-relationship --dry-run --check-dependencies ({would_delete, can_delete, blockers}), deleting relationships before tables, and the --yes requirement in JSON mode. Satisfies the milestone done-when.",
+  "order": 5,
+  "status": "published" }
+</script>
+</body>
+</html>

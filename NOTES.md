@@ -329,3 +329,66 @@ since M05–M10 unbuilt — narrative names M05, button auto-rewires when M05 sh
 - **delete-entity**/`delete-optionset` need `--yes` in JSON mode (else `"aborted by user"`).
   `delete-entity --dry-run --check-dependencies` → `{would_delete, can_delete, blockers[]}`. Envelope
   `{deleted, logical_name|name, solution}`. Global optionset survives entity delete (delete separately).
+
+## M05 — Relationships (issue #5) — shipped 2026-06-18
+
+Milestone: **Relationships** (issue #5). "Done when": create a 1:N to account and an N:N, then
+create a child row via the lookup — all satisfied (L02 1:N, L05 N:N, L04 child-via-lookup;
+L05 capstone runs the full round-trip). All live-verified against **crm v4.12.0** on agent-cloud
+(full table→1:N→child-row→N:N→associate→cleanup, then org left clean).
+
+**5 lessons, 0028–0032:**
+- **L01** — **What a relationship is** (`0028`). Concept: only two real types (1:N, N:N); N:1 = 1:N
+  from the child. A lookup column *is* a 1:N on the referencing/child side; N:N = intersect table.
+  Read with `metadata relationships` → OneToMany/ManyToOne/ManyToMany; Referenced/Referencing/
+  ReferencingAttribute/NavigationProperty. Read-only. (Adds a `.diagram` CSS block — self-contained.)
+- **L02** — **Create a 1:N to account** (`0029`). `create-one-to-many` (atomic rel+lookup), four
+  required ideas mapped to referenced/referencing/lookup, `--dry-run` shows full RelationshipDefinitions
+  body + cascade defaults + `references[]` existence check, envelope `referencing_attribute`=lookup
+  logical name, verify with relationships/attribute.
+- **L03** — **Cascade behaviors** (`0030`). Six actions (Delete/Assign/Reparent/Share/Unshare/Merge),
+  cascade types, parental vs referential vs restrict-delete, CLI default = referential, set at create
+  with `--cascade-*`, change later with `update-relationship` (retrieve-merge-write).
+- **L04** — **Child row via the lookup** (`0031`). Lookup's three runtime names; `@odata.bind` on
+  create (nav property, case-sensitive, `/set(guid)`); `set-lookup`/`clear-lookup` on existing rows;
+  read back via `$expand` (child) + `entity children` (parent). Ties M05↔M02.
+- **L05** — **N:N + clean up** (`0032`, capstone). `create-many-to-many` + intersect (no lookup/cascade);
+  `entity associate` (NAV = relationship schema name); 1:N-vs-N:N matrix + manual-intersect pattern;
+  `delete-relationship --dry-run --check-dependencies`; teardown order. Full done-when round-trip.
+
+**✅ M05 COMPLETE — 5 lessons** (L01–L05, lessons 0028–0032; shipped 2026-06-18). Build green
+(32 lessons). Next-link chain 0027→0028→…→0032 verified; **0027's auto-Continue rewired from 0008
+(M11 L01) → 0028 (M05 L01)** automatically once M05 shipped (the predicted behaviour). 0032 has no
+Continue yet (M06 unbuilt) — narrative names M06, button auto-rewires when M06 ships.
+
+### M05 live-CLI facts (crm v4.12.0, captured from agent-cloud 2026-06-18)
+
+- **create-one-to-many** required: `--schema-name --referenced-entity --referencing-entity
+  --lookup-schema --lookup-display`. Atomic (one POST to `RelationshipDefinitions`). Both tables
+  must pre-exist (dry-run `references[]._exists` pre-checks). Default `CascadeConfiguration` =
+  `{Assign:NoCascade, Delete:RemoveLink, Reparent:NoCascade, Share:NoCascade, Unshare:NoCascade,
+  Merge:NoCascade}` (referential). Default `AssociatedMenuConfiguration` = `{Behavior:UseCollectionName,
+  Group:Details, Order:10000}`. Envelope: `created, kind:"OneToMany", schema_name, referenced_entity,
+  referencing_entity, referencing_attribute (=lookup logical, lowercased), relationship_id, solution,
+  published`. `--dry-run` is **global** (no per-command flag) and works.
+- **lookup nav property** = the lookup **schema name** (`ag_AccountId`), returned as
+  `ReferencingEntityNavigationPropertyName` in `metadata relationships` (under the child's `ManyToOne`).
+  Lookup logical = `ag_accountid`; read form = `_ag_accountid_value`.
+- **@odata.bind on create**: `"ag_AccountId@odata.bind":"/accounts(<guid>)"` → record returns with
+  `_ag_accountid_value` populated. `$expand=ag_AccountId($select=name)` resolves parent inline (object).
+  `entity set-lookup SET ID NAV REL_SET REL_ID` / `clear-lookup SET ID NAV` are the existing-row twins.
+- **entity children** `accounts <id> --filter-entities ag_ --non-empty` → `[{entity, attribute, set,
+  count}]` (1:N where the record is parent; chunked $batch).
+- **create-many-to-many** required: `--schema-name --entity1 --entity2 --intersect-entity`. No lookup,
+  no cascade. Envelope: `created, kind:"ManyToMany", schema_name, intersect_entity, relationship_id,
+  solution, published`. **N:N nav property names came back `null`** in `metadata relationships`
+  (Entity1/2NavigationPropertyName=null) but **`entity associate` works using the relationship
+  SCHEMA NAME as the NAV arg**. Associate envelope `{associated, target, related}`; `$expand`
+  schema-name → **array** of related rows. `disassociate` = inverse.
+- **update-relationship** `<schema> --cascade-*` → `{updated, path, schema_name, published}`
+  (retrieve-merge-write; only passed flags change). cascade enum: `NoCascade|Cascade|Active|UserOwned|
+  RemoveLink|Restrict` (Delete-only: RemoveLink/Restrict; Merge-only: Cascade/NoCascade).
+- **delete-relationship** `<schema> --yes` (required in JSON mode). `--dry-run --check-dependencies`
+  → `{would_delete, schema_name, solution, can_delete, blockers[]}`. Deleting a 1:N also drops its
+  lookup column. Real delete envelope `{deleted, schema_name|logical_name, solution}`. Teardown order:
+  relationships before the tables.
