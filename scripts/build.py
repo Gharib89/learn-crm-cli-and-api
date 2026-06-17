@@ -67,17 +67,26 @@ def group_by_milestone(lessons):
     return ordered
 
 
-def nav_html(lessons, prefix):
-    items = []
+def nav_html(lessons, prefix, current_ms=None):
+    """Render the shared navbar. `current_ms` (milestone num) is expanded by default;
+    pass None on Home/Glossary so every milestone starts collapsed."""
+    groups = []
     for g in group_by_milestone(lessons):
-        items.append(f'<div class="navmenu-label">M{g["num"]:02d} · {g["name"]}</div>')
-        for L in g["lessons"]:
-            items.append(
-                f'<a href="{prefix}lessons/{L["file"]}">'
-                f'<span class="navmenu-no">L{L["lesson"]:02d}</span>'
-                f'<span class="navmenu-t">{L["title"]}</span></a>'
-            )
-    menu = "\n      ".join(items)
+        open_cls = " open" if g["num"] == current_ms else ""
+        links = "\n        ".join(
+            f'<a href="{prefix}lessons/{L["file"]}">'
+            f'<span class="navmenu-no">L{L["lesson"]:02d}</span>'
+            f'<span class="navmenu-t">{L["title"]}</span></a>'
+            for L in g["lessons"]
+        )
+        groups.append(
+            f'<div class="ms-group{open_cls}">'
+            f'<button class="ms-head" type="button" aria-expanded="{"true" if open_cls else "false"}">'
+            f'<span class="ms-head-t">M{g["num"]:02d} · {g["name"]}</span>'
+            f'<span class="ms-chev">▸</span></button>'
+            f'<div class="ms-body"><div class="ms-body-in">{links}</div></div></div>'
+        )
+    menu = "\n      ".join(groups)
     return f"""<nav class="site-nav">
   <a class="brand" href="{prefix}index.html"><span class="brand-gem">c</span>crm·learn</a>
   <span class="nav-spacer"></span>
@@ -91,7 +100,20 @@ def nav_html(lessons, prefix):
   <a class="navlink" href="{prefix}glossary.html">Glossary</a>
   <a class="navlink" href="{RESOURCES_URL}">Resources</a>
   <a class="navlink nav-gh" href="{REPO_URL}">GitHub ↗</a>
-</nav>"""
+</nav>
+<script>
+(function(){{
+  document.querySelectorAll('.ms-head').forEach(function(h){{
+    h.addEventListener('click',function(){{
+      var g=h.parentNode,wasOpen=g.classList.contains('open');
+      g.parentNode.querySelectorAll('.ms-group.open').forEach(function(o){{
+        o.classList.remove('open');o.querySelector('.ms-head').setAttribute('aria-expanded','false');
+      }});
+      if(!wasOpen){{g.classList.add('open');h.setAttribute('aria-expanded','true');}}
+    }});
+  }});
+}})();
+</script>"""
 
 
 def inject_nav(html, nav):
@@ -249,11 +271,11 @@ def main():
     md_text = GLOSSARY_MD.read_text(encoding="utf-8")
     (OUT / "glossary.html").write_text(render_glossary(md_text, lessons), encoding="utf-8")
 
-    lesson_nav = nav_html(lessons, "../")
     flat = order_lessons(lessons)
     next_by_file = {L["file"]: (flat[i + 1] if i + 1 < len(flat) else None) for i, L in enumerate(flat)}
     for L in lessons:
-        html = inject_nav(L["html"], lesson_nav)
+        nav = nav_html(lessons, "../", current_ms=L["milestone"]["num"])
+        html = inject_nav(L["html"], nav)
         html = wire_next(html, next_by_file[L["file"]])
         (OUT / "lessons" / L["file"]).write_text(html, encoding="utf-8")
 

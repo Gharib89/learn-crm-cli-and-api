@@ -34,10 +34,18 @@ a{color:var(--indigo-royal)}
 .navdrop{position:relative}
 .navmenu{position:absolute;top:32px;right:0;width:320px;background:#fff;color:var(--ink);
   border:1px solid var(--line2);border-radius:12px;box-shadow:0 14px 36px -12px rgba(18,21,107,.5);
-  padding:8px;display:none}
+  padding:8px;display:none;max-height:78vh;overflow-y:auto}
 .navdrop:hover .navmenu,.navdrop:focus-within .navmenu{display:block}
-.navmenu-label{font-family:"Roboto Mono",monospace;font-size:9.5px;letter-spacing:.13em;
-  text-transform:uppercase;color:var(--ink-mute);padding:8px 9px 4px}
+.ms-head{display:flex;width:100%;align-items:center;gap:9px;padding:8px 9px;border:0;
+  background:none;cursor:pointer;border-radius:8px;text-align:left;color:var(--ink-mute);
+  font-family:"Roboto Mono",monospace;font-size:9.5px;letter-spacing:.13em;text-transform:uppercase}
+.ms-head:hover{background:var(--surface2)}
+.ms-head-t{flex:1}
+.ms-chev{transition:transform .22s ease}
+.ms-group.open>.ms-head .ms-chev{transform:rotate(90deg)}
+.ms-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .22s ease}
+.ms-group.open>.ms-body{grid-template-rows:1fr}
+.ms-body-in{overflow:hidden}
 .navmenu a{display:flex;gap:9px;align-items:baseline;padding:7px 9px;border-radius:8px;
   text-decoration:none;color:var(--ink)}
 .navmenu a:hover{background:var(--surface2)}
