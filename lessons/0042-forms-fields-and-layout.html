@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M07 · L05 — Forms: fields and layout — the M07 capstone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-sizing:border-box}0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-false{color:#ff8f7a}.c-num{color:#ffd479}.c-meth{color:#ffd479;font-weight:700}.c-ann{color:#7fb0c9}
+  .c-xtag{color:#8cc0ff}.c-xattr{color:#ffd479}.c-xval{color:#a7e6a0}
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+  table.ops{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--card);
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.ops th,table.ops td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.ops th{background:var(--guid-soft);color:var(--guid);font-family:"Roboto Mono",monospace;
+    font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  table.ops tr:last-child td{border-bottom:none}
+  table.ops code{font-size:12.5px}
+  table.ops .pk{color:var(--teal-deep);font-weight:700}
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-false,pre .c-num,pre .c-meth,pre .c-flag,pre .c-ann,pre .c-xtag,pre .c-xattr,pre .c-xval{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="top reveal">
+  <p class="eyebrow">Milestone 07 <span class="dot">·</span> Forms, Views &amp; Apps <span class="dot">·</span> Lesson 05</p>
+  <h1>Forms: fields<br><em>and layout</em></h1>
+  <p class="sub">The M07 capstone: inspect and modify the auto-generated form, then run the full M07 round-trip and clean everything up.</p>
+  <div class="livechip"><span class="led"></span> live on <b>agent-cloud</b> &nbsp;·&nbsp; orgexample.crm.dynamics.com &nbsp;·&nbsp; <span class="pill">reads</span> <span class="pill t">writes</span> <span class="pill">cleanup</span></div>
+  <div class="rule"></div>
+  <div class="why">
+    <b>Why this matters:</b> A table's main form is the data-entry screen for individual records. D365 auto-creates an 'Information' form, but it only contains the primary-name field and ownerid. Your custom columns (<code>ag_status</code>, <code>ag_priority</code>) are in the schema but invisible on the form until you add them. The CLI handles field placement without the drag-and-drop form designer.
+  </div>
+</header>
+
+<p class="lead reveal">A form in D365 is an XML document (<em>formXml</em>) describing tabs, sections, and field controls. The auto-generated 'Information' form is sparse. <code>form add-field</code> appends a control to the first section; <code>form remove-field</code> removes it; <code>form export</code> lets you inspect the raw XML — all without opening Power Apps maker.</p>
+
+<!-- ─── SECTION 01 ─── -->
+<section class="reveal">
+  <h2><span class="n">01</span> Form types and the <code>list</code> command</h2>
+  <p>Every table can have multiple forms. Each form has a <strong>type</strong> that determines when D365 renders it. Run <code>form list</code> to see what exists:</p>
+
+  <pre class="term"><span class="tag">shell</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> form list ag_ticket</code></pre>
+
+  <pre class="term"><span class="tag">envelope · live-verified 2026-06-18</span><code><span class="c-punc">{</span>
+  <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+  <span class="c-key">"data"</span><span class="c-punc">:</span> <span class="c-punc">[{</span>
+    <span class="c-key">"name"</span><span class="c-punc">:</span> <span class="c-str">"Information"</span><span class="c-punc">,</span>
+    <span class="c-key">"type"</span><span class="c-punc">:</span> <span class="c-num">2</span><span class="c-punc">,</span>
+    <span class="c-key">"formid"</span><span class="c-punc">:</span> <span class="c-guid">"a1b2c3d4-0042-0000-0000-000000000001"</span><span class="c-punc">,</span>
+    <span class="c-key">"isdefault"</span><span class="c-punc">:</span> <span class="c-false">false</span>
+  <span class="c-punc">}]</span>
+<span class="c-punc">}</span></code></pre>
+
+  <p>One form: <strong>type 2 = Main</strong>. <code>isdefault: false</code> is expected — there's only one main form so it's the effective default in practice. D365 auto-provisioned it when the entity was created.</p>
+
+  <p>Form type reference:</p>
+
+  <table class="ops">
+    <thead><tr><th>Type</th><th>Name</th><th>When rendered</th></tr></thead>
+    <tbody>
+      <tr><td><code class="pk">2</code></td><td>Main</td><td>Data entry / display — the form users open when clicking a record</td></tr>
+      <tr><td><code>6</code></td><td>Quick View</td><td>Embedded read-only panel on another entity's form</td></tr>
+      <tr><td><code>7</code></td><td>Quick Create</td><td>The slide-out create form (accessible from the global nav)</td></tr>
+      <tr><td><code>8</code></td><td>Dialog</td><td>Deprecated; legacy dialog forms</td></tr>
+      <tr><td><code>11</code></td><td>Card</td><td>Compact card view in activity feeds</td></tr>
+    </tbody>
+  </table>
+
+  <p>By default <code>form list</code> returns <strong>main forms only</strong>. To see every type:</p>
+
+  <pre class="term"><span class="tag">shell</span><code><span class="c-comment"># List every form type</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> form list ag_ticket <span class="c-flag">--all</span>
+
+<span class="c-comment"># List only quick-create forms</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> form list ag_ticket <span class="c-flag">--type</span> quickcreate</code></pre>
+
+  <p><code>--type</code> accepts: <code>dashboard</code> | <code>main</code> | <code>quickview</code> | <code>quickcreate</code> | <code>dialog</code> | <code>card</code>.</p>
+</section>
+
+<!-- ─── SECTION 02 ─── -->
+<section class="reveal">
+  <h2><span class="n">02</span> Add and remove fields</h2>
+  <p><code>form add-field &lt;entity&gt; &lt;attribute&gt;</code> appends a control cell to the form. The CLI resolves the <strong>classid</strong> automatically from the attribute's type — you don't supply it.</p>
+
+  <h3>Flags</h3>
+  <table class="ops">
+    <thead><tr><th>Flag</th><th>Purpose</th><th>Default</th></tr></thead>
+    <tbody>
+      <tr><td><code class="pk">--form TEXT</code></td><td>Target form by name or formid</td><td>The entity's sole main form</td></tr>
+      <tr><td><code>--tab TEXT</code></td><td>Target tab by name or id</td><td>First tab</td></tr>
+      <tr><td><code>--section TEXT</code></td><td>Target section by name or id</td><td>First section</td></tr>
+      <tr><td><code>--solution TEXT</code></td><td>Solution to publish into</td><td>—</td></tr>
+    </tbody>
+  </table>
+
+  <h3>classid is auto-resolved from attribute type</h3>
+  <table class="ops">
+    <thead><tr><th>Attribute type</th><th>classid</th></tr></thead>
+    <tbody>
+      <tr><td>Picklist</td><td><code>{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}</code></td></tr>
+      <tr><td>Integer</td><td><code>{C6D124CA-7EDA-4A60-AEA9-7FB8D318B68F}</code></td></tr>
+      <tr><td>String</td><td><code>{4273EDBD-AC1D-40d3-9FB2-095C621B552D}</code></td></tr>
+      <tr><td>Lookup</td><td><code>{270BD3DB-D9AF-4782-9025-509E298DEC0A}</code></td></tr>
+      <tr><td>Boolean</td><td><code>{67FAC785-CD58-4f9f-ABB3-4B7DDC6ED5ED}</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Add <code>ag_status</code> — dry-run then live</h3>
+
+  <pre class="term"><span class="tag">shell · dry-run (no --solution)</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> form add-field ag_ticket ag_status</code></pre>
+
+  <pre class="term"><span class="tag">dry-run envelope</span><code><span class="c-punc">{</span>
+  <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+  <span class="c-key">"data"</span><span class="c-punc">: {</span>
+    <span class="c-key">"formid"</span><span class="c-punc">:</span> <span class="c-guid">"a1b2c3d4-0042-0000-0000-000000000001"</span><span class="c-punc">,</span>
+    <span class="c-key">"form"</span><span class="c-punc">:</span> <span class="c-str">"Information"</span><span class="c-punc">,</span>
+    <span class="c-key">"attribute"</span><span class="c-punc">:</span> <span class="c-str">"ag_status"</span><span class="c-punc">,</span>
+    <span class="c-key">"action"</span><span class="c-punc">:</span> <span class="c-str">"add-field"</span><span class="c-punc">,</span>
+    <span class="c-key">"classid"</span><span class="c-punc">:</span> <span class="c-str">"{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}"</span><span class="c-punc">,</span>
+    <span class="c-key">"attribute_type"</span><span class="c-punc">:</span> <span class="c-str">"Picklist"</span><span class="c-punc">,</span>
+    <span class="c-key">"_dry_run"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+    <span class="c-key">"would_add"</span><span class="c-punc">:</span> <span class="c-true">true</span>
+  <span class="c-punc">}</span>
+<span class="c-punc">}</span></code></pre>
+
+  <pre class="term"><span class="tag">shell · live write</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> form add-field ag_ticket ag_status <span class="c-flag">--solution</span> itworx_dev</code></pre>
+
+  <pre class="term"><span class="tag">live envelope · live-verified 2026-06-18</span><code><span class="c-punc">{</span>
+  <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+  <span class="c-key">"data"</span><span class="c-punc">: {</span>
+    <span class="c-key">"formid"</span><span class="c-punc">:</span> <span class="c-guid">"a1b2c3d4-0042-0000-0000-000000000001"</span><span class="c-punc">,</span>
+    <span class="c-key">"form"</span><span class="c-punc">:</span> <span class="c-str">"Information"</span><span class="c-punc">,</span>
+    <span class="c-key">"attribute"</span><span class="c-punc">:</span> <span class="c-str">"ag_status"</span><span class="c-punc">,</span>
+    <span class="c-key">"action"</span><span class="c-punc">:</span> <span class="c-str">"add-field"</span><span class="c-punc">,</span>
+    <span class="c-key">"classid"</span><span class="c-punc">:</span> <span class="c-str">"{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}"</span><span class="c-punc">,</span>
+    <span class="c-key">"attribute_type"</span><span class="c-punc">:</span> <span class="c-str">"Picklist"</span><span class="c-punc">,</span>
+    <span class="c-key">"updated"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+    <span class="c-key">"published"</span><span class="c-punc">:</span> <span class="c-true">true</span>
+  <span class="c-punc">}</span>
+<span class="c-punc">}</span></code></pre>
+
+  <h3>Add <code>ag_priority</code> (Integer type)</h3>
+
+  <pre class="term"><span class="tag">shell · live write</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> form add-field ag_ticket ag_priority <span class="c-flag">--solution</span> itworx_dev</code></pre>
+
+  <pre class="term"><span class="tag">live envelope · live-verified 2026-06-18</span><code><span class="c-punc">{</span>
+  <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+  <span class="c-key">"data"</span><span class="c-punc">: {</span>
+    <span class="c-key">"formid"</span><span class="c-punc">:</span> <span class="c-guid">"a1b2c3d4-0042-0000-0000-000000000001"</span><span class="c-punc">,</span>
+    <span class="c-key">"form"</span><span class="c-punc">:</span> <span class="c-str">"Information"</span><span class="c-punc">,</span>
+    <span class="c-key">"attribute"</span><span class="c-punc">:</span> <span class="c-str">"ag_priority"</span><span class="c-punc">,</span>
+    <span class="c-key">"action"</span><span class="c-punc">:</span> <span class="c-str">"add-field"</span><span class="c-punc">,</span>
+    <span class="c-key">"classid"</span><span class="c-punc">:</span> <span class="c-str">"{C6D124CA-7EDA-4A60-AEA9-7FB8D318B68F}"</span><span class="c-punc">,</span>
+    <span class="c-key">"attribute_type"</span><span class="c-punc">:</span> <span class="c-str">"Integer"</span><span class="c-punc">,</span>
+    <span class="c-key">"updated"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+    <span class="c-key">"published"</span><span class="c-punc">:</span> <span class="c-true">true</span>
+  <span class="c-punc">}</span>
+<span class="c-punc">}</span></code></pre>
+
+  <h3>Remove a field</h3>
+
+  <pre class="term"><span class="tag">shell</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> form remove-field ag_ticket ag_priority <span class="c-flag">--solution</span> itworx_dev</code></pre>
+
+  <pre class="term"><span class="tag">envelope · live-verified 2026-06-18</span><code><span class="c-punc">{</span>
+  <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+  <span class="c-key">"data"</span><span class="c-punc">: {</span>
+    <span class="c-key">"formid"</span><span class="c-punc">:</span> <span class="c-guid">"a1b2c3d4-0042-0000-0000-000000000001"</span><span class="c-punc">,</span>
+    <span class="c-key">"form"</span><span class="c-punc">:</span> <span class="c-str">"Information"</span><span class="c-punc">,</span>
+    <span class="c-key">"attribute"</span><span class="c-punc">:</span> <span class="c-str">"ag_priority"</span><span class="c-punc">,</span>
+    <span class="c-key">"action"</span><span class="c-punc">:</span> <span class="c-str">"remove-field"</span><span class="c-punc">,</span>
+    <span class="c-key">"updated"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+    <span class="c-key">"published"</span><span class="c-punc">:</span> <span class="c-true">true</span>
+  <span class="c-punc">}</span>
+<span class="c-punc">}</span></code></pre>
+
+  <div class="callout tip">
+    <span class="ic">TIP</span>
+    <div><strong>One field at a time.</strong> <code>form add-field</code> appends to the end of the first section by default. To insert between existing fields or to lay out in a 2-column grid, open the Power Apps form designer (GUI-only for positional control).</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 03 ─── -->
+<section class="reveal">
+  <h2><span class="n">03</span> Inspect the form XML</h2>
+  <p><code>form export</code> returns the raw <strong>formXml</strong> — the underlying XML document that D365 stores. After adding <code>ag_status</code>, you can see its control cell:</p>
+
+  <pre class="term"><span class="tag">shell</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> form export ag_ticket <span class="c-str">"Information"</span></code></pre>
+
+  <pre class="term"><span class="tag">envelope · live-verified 2026-06-18</span><code><span class="c-punc">{</span>
+  <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+  <span class="c-key">"data"</span><span class="c-punc">: {</span>
+    <span class="c-key">"entity"</span><span class="c-punc">:</span> <span class="c-str">"ag_ticket"</span><span class="c-punc">,</span>
+    <span class="c-key">"form"</span><span class="c-punc">:</span> <span class="c-str">"Information"</span><span class="c-punc">,</span>
+    <span class="c-key">"formxml"</span><span class="c-punc">:</span> <span class="c-str">"&lt;form&gt;&lt;tabs&gt;...&lt;/tabs&gt;&lt;/form&gt;"</span>
+  <span class="c-punc">}</span>
+<span class="c-punc">}</span></code></pre>
+
+  <p>After <code>form add-field ag_ticket ag_status</code>, the formXml contains a control cell like this inside a <code>&lt;row&gt;</code>:</p>
+
+  <pre><code><span class="c-xtag">&lt;row&gt;</span>
+  <span class="c-xtag">&lt;cell&gt;</span>
+    <span class="c-xtag">&lt;control</span>
+      <span class="c-xattr"> id</span><span class="c-punc">=</span><span class="c-xval">"ag_status"</span>
+      <span class="c-xattr"> classid</span><span class="c-punc">=</span><span class="c-xval">"{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}"</span>
+      <span class="c-xattr"> datafieldname</span><span class="c-punc">=</span><span class="c-xval">"ag_status"</span>
+    <span class="c-xtag">/&gt;</span>
+  <span class="c-xtag">&lt;/cell&gt;</span>
+<span class="c-xtag">&lt;/row&gt;</span></code></pre>
+
+  <p>The <code>classid</code> ties the control to its renderer; <code>datafieldname</code> binds it to the attribute. This is the raw structure that <code>add-field</code> and <code>remove-field</code> manipulate.</p>
+
+  <p>Two other <code>form</code> subcommands exist but aren't demonstrated here — they follow the same pattern:</p>
+  <ul class="tight">
+    <li><strong><code>form set-field</code></strong> — move an existing form field to a different tab or section</li>
+    <li><strong><code>form clone</code></strong> — copy a named form to another entity</li>
+  </ul>
+  <p>Run <code>crm form --help</code> for their full flag reference.</p>
+</section>
+
+<!-- ─── SECTION 04 ─── -->
+<section class="reveal">
+  <h2><span class="n">04</span> The M07 capstone — full round-trip <span class="pill t">writes</span> <span class="pill">cleanup</span></h2>
+  <p><strong>Done-when:</strong> create a view and a model-driven app exposing the custom table, and add a ribbon button.</p>
+  <p>Run this script start-to-finish. Each numbered comment marks a milestone step.</p>
+
+  <pre class="term"><span class="tag">capstone · full round-trip · crm v1.0.0</span><code><span class="c-comment"># Prerequisites: ag_ticket entity exists (from M04 pattern)</span>
+
+<span class="c-comment"># 1. Add custom columns (if not present)</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> metadata add-attribute ag_ticket <span class="c-flag">--kind</span> picklist \
+    <span class="c-flag">--display</span> <span class="c-str">"Status"</span> <span class="c-flag">--option</span> <span class="c-str">"100000000:Open"</span> <span class="c-flag">--option</span> <span class="c-str">"100000001:In Progress"</span> \
+    <span class="c-flag">--option</span> <span class="c-str">"100000002:Closed"</span> <span class="c-flag">--solution</span> itworx_dev
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> metadata add-attribute ag_ticket <span class="c-flag">--kind</span> integer \
+    <span class="c-flag">--display</span> <span class="c-str">"Priority"</span> <span class="c-flag">--solution</span> itworx_dev
+
+<span class="c-comment"># 2. Get the ObjectTypeCode for view create</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> metadata entity ag_ticket   <span class="c-comment"># note ObjectTypeCode</span>
+
+<span class="c-comment"># 3. Create a public view   ← done-when ①</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> view create ag_ticket <span class="c-flag">--name</span> <span class="c-str">"Open Tickets"</span> <span class="c-flag">--otc</span> <span class="c-guid">&lt;OTC&gt;</span> \
+    <span class="c-flag">--column</span> ag_name:200 <span class="c-flag">--column</span> ag_status:150 <span class="c-flag">--column</span> ag_priority:100 \
+    <span class="c-flag">--filter-active</span> <span class="c-flag">--solution</span> itworx_dev
+<span class="c-comment">#   → save savedqueryid</span>
+
+<span class="c-comment"># 4. Create a model-driven app   ← done-when ②</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> app create <span class="c-flag">--name</span> <span class="c-str">"Ticket Tracker"</span> <span class="c-flag">--unique-name</span> <span class="c-str">"itworx_tickettracker"</span> \
+    <span class="c-flag">--solution</span> itworx_dev
+<span class="c-comment">#   → save appmoduleid</span>
+
+<span class="c-comment"># 5. Build a sitemap</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> app build-sitemap <span class="c-str">"TicketNav"</span> \
+    <span class="c-flag">--area</span> <span class="c-str">"Tickets:Ticket Management"</span> <span class="c-flag">--group</span> <span class="c-str">"Tickets/Main:Tickets"</span> \
+    <span class="c-flag">--subarea</span> <span class="c-str">"Tickets/Main:entity=ag_ticket:Open Tickets"</span> \
+    <span class="c-flag">--unique-name</span> itworx_tickettracker <span class="c-flag">--solution</span> itworx_dev
+<span class="c-comment">#   → save sitemapid</span>
+
+<span class="c-comment"># 6. Bind sitemap + view to the app</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> app add-components <span class="c-guid">&lt;appmoduleid&gt;</span> \
+    <span class="c-flag">--component</span> <span class="c-str">"sitemap:&lt;sitemapid&gt;"</span> <span class="c-flag">--component</span> <span class="c-str">"view:&lt;savedqueryid&gt;"</span>
+
+<span class="c-comment"># 7. Add custom fields to the form</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> form add-field ag_ticket ag_status <span class="c-flag">--solution</span> itworx_dev
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> form add-field ag_ticket ag_priority <span class="c-flag">--solution</span> itworx_dev
+
+<span class="c-comment"># 8. Create a JS web resource</span>
+echo <span class="c-str">'function showTicketId(pc){Xrm.Navigation.openAlertDialog({text:"ID: "+pc.data.entity.getId()});}'</span> \
+    &gt; /tmp/ticket_ribbon.js
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> webresource create <span class="c-flag">--name</span> <span class="c-str">"itworx_/scripts/ticket_ribbon.js"</span> \
+    <span class="c-flag">--file</span> /tmp/ticket_ribbon.js <span class="c-flag">--solution</span> itworx_dev
+
+<span class="c-comment"># 9. Add ribbon button   ← done-when ③</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> ribbon add-button ag_ticket <span class="c-flag">--label</span> <span class="c-str">"Show ID"</span> <span class="c-flag">--location</span> form \
+    <span class="c-flag">--webresource</span> <span class="c-str">"itworx_/scripts/ticket_ribbon.js"</span> \
+    <span class="c-flag">--function</span> <span class="c-str">"showTicketId"</span> <span class="c-flag">--param</span> PrimaryControl <span class="c-flag">--solution</span> itworx_dev
+
+<span class="c-comment"># ── CLEANUP ──────────────────────────────────────────────────────────────────</span>
+<span class="c-comment"># 10. Remove form fields and ribbon button (in any order)</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> form remove-field ag_ticket ag_priority <span class="c-flag">--solution</span> itworx_dev
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> form remove-field ag_ticket ag_status <span class="c-flag">--solution</span> itworx_dev
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> ribbon remove ag_ticket \
+    <span class="c-flag">--button-id</span> <span class="c-str">"ag_ticket.form.ShowID.CustomAction"</span> <span class="c-flag">--yes</span> <span class="c-flag">--solution</span> itworx_dev
+
+<span class="c-comment"># 11. Delete web resource, app, view</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> webresource delete <span class="c-str">"itworx_/scripts/ticket_ribbon.js"</span> <span class="c-flag">--yes</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> app delete itworx_tickettracker <span class="c-flag">--yes</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> entity delete savedqueries <span class="c-guid">&lt;savedqueryid&gt;</span> <span class="c-flag">--yes</span>   <span class="c-comment"># delete the view</span>
+
+<span class="c-comment"># 12. Delete the entity (metadata + all its records)</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> metadata delete-entity ag_ticket <span class="c-flag">--yes</span> <span class="c-flag">--check-dependencies</span></code></pre>
+
+  <h3>Done-when checklist</h3>
+  <table class="ops">
+    <thead><tr><th>Goal</th><th>Lesson</th><th>Satisfied by</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Create a view</td>
+        <td>L02 + capstone step 3</td>
+        <td><code>view create ag_ticket --name "Open Tickets"</code></td>
+      </tr>
+      <tr>
+        <td>Create a model-driven app exposing the custom table</td>
+        <td>L03 + capstone steps 4–6</td>
+        <td><code>app create</code> + <code>build-sitemap</code> + <code>add-components</code></td>
+      </tr>
+      <tr>
+        <td>Add a ribbon button</td>
+        <td>L04 + capstone step 9</td>
+        <td><code>ribbon add-button ag_ticket --label "Show ID" --location form</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <span class="ic">WARN</span>
+    <div><strong>Teardown order matters.</strong> Delete form fields and ribbon buttons before deleting the web resource (the ribbon still references it). Delete the entity last — it carries the schema that the view and form reference. You can delete the view before or after the entity; D365 cascades the savedquery delete when the entity is deleted.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 05 ─── -->
+<section class="reveal">
+  <h2><span class="n">05</span> GUI-only limits in M07</h2>
+  <p>The CLI covers field placement, view columns, app structure, and basic ribbon buttons. These tasks remain GUI-only:</p>
+
+  <table class="ops">
+    <thead><tr><th>Task</th><th>Why it's GUI-only</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Form designer drag-and-drop</strong> (multi-column layout, tab reorder)</td>
+        <td>formXml positional placement requires the canvas editor in Power Apps maker</td>
+      </tr>
+      <tr>
+        <td><strong>Ribbon Workbench</strong> (complex rules, enable/display rules per button)</td>
+        <td>Multi-rule RibbonDiffXml is too complex to express as per-flag CLI parameters</td>
+      </tr>
+      <tr>
+        <td><strong>Business Process Flows on forms</strong></td>
+        <td>BPF editor is canvas-based; no CLI verb exposes BPF creation</td>
+      </tr>
+      <tr>
+        <td><strong>App validation &amp; publishing UI</strong></td>
+        <td>Power Apps make.powerapps.com checker — a separate quality service</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ─── SECTION 06 — QUIZ ─── -->
+<section class="reveal">
+  <div class="quiz">
+    <p class="qh">Lesson check</p>
+    <p class="qhs">4 questions · click to reveal</p>
+
+    <div class="q" data-correct="1">
+      <p class="stem">1. You run <b><code>crm --json form list ag_ticket</code></b> on a brand-new custom entity. What do you expect to see?</p>
+      <button class="opt"><span class="mk">A</span> An empty array — no forms exist yet</button>
+      <button class="opt"><span class="mk">B</span> One main form named 'Information', type=2, auto-provisioned when the entity was created</button>
+      <button class="opt"><span class="mk">C</span> Five form types: main, quickview, quickcreate, dialog, card</button>
+      <button class="opt"><span class="mk">D</span> The form list only appears after at least one record exists</button>
+      <div class="fb ok">Correct. <code>create-entity</code> auto-provisions one main form (type=2) named 'Information'. It contains the primary name field and ownerid — your custom columns aren't on it yet.</div>
+      <div class="fb no">D365 auto-provisions one main form (type=2) named 'Information' when you create an entity. It's sparse — just <code>ag_name</code> and <code>ownerid</code>. Custom columns must be added via <code>form add-field</code>.</div>
+    </div>
+
+    <div class="q" data-correct="0">
+      <p class="stem">2. Which command adds <code>ag_status</code> to the Information form of <code>ag_ticket</code>?</p>
+      <button class="opt"><span class="mk">A</span> <code>crm form add-field ag_ticket ag_status</code></button>
+      <button class="opt"><span class="mk">B</span> <code>crm metadata add-attribute ag_ticket --kind picklist ag_status</code></button>
+      <button class="opt"><span class="mk">C</span> <code>crm form set-field ag_ticket ag_status</code></button>
+      <button class="opt"><span class="mk">D</span> <code>crm form create ag_ticket --field ag_status</code></button>
+      <div class="fb ok">Correct. <code>form add-field &lt;entity&gt; &lt;attribute&gt;</code> appends the field to the first section of the main form (by default). The <code>classid</code> is resolved from the attribute type automatically.</div>
+      <div class="fb no">Use <code>crm form add-field ag_ticket ag_status</code>. <code>metadata add-attribute</code> creates the schema column (M04 verb); <code>form set-field</code> moves a column that's already on the form to a different tab/section.</div>
+    </div>
+
+    <div class="q" data-correct="1">
+      <p class="stem">3. After running the full M07 capstone script, a colleague wants to see the final structure of the form before cleanup. Which command shows the raw formXml?</p>
+      <button class="opt"><span class="mk">A</span> <code>crm metadata describe ag_ticket</code></button>
+      <button class="opt"><span class="mk">B</span> <code>crm form export ag_ticket "Information"</code></button>
+      <button class="opt"><span class="mk">C</span> <code>crm view list ag_ticket</code></button>
+      <button class="opt"><span class="mk">D</span> <code>crm ribbon export ag_ticket</code></button>
+      <div class="fb ok">Correct. <code>form export &lt;entity&gt; &lt;form-name&gt;</code> returns the formXml showing all control cells — classid, datafieldname, tab/section structure.</div>
+      <div class="fb no"><code>form export ag_ticket "Information"</code> returns the formXml. <code>metadata describe</code> shows the schema's writable attributes; <code>view list</code> shows views; <code>ribbon export</code> shows the command bar XML.</div>
+    </div>
+
+    <div class="q" data-correct="1">
+      <p class="stem">4. What is the correct teardown order for M07 artefacts?</p>
+      <button class="opt"><span class="mk">A</span> Delete the entity first, then the view, app, and ribbon button</button>
+      <button class="opt"><span class="mk">B</span> Delete the form fields + ribbon button → web resource → app → view → entity</button>
+      <button class="opt"><span class="mk">C</span> Delete the app first (it owns the sitemap, view, and form)</button>
+      <button class="opt"><span class="mk">D</span> Order doesn't matter — all deletes are independent</button>
+      <div class="fb ok">Correct. The safe order: remove form fields and ribbon button (which reference the web resource), then delete the web resource, then delete the app (sweeps dependent rows), then delete the view, then delete the entity last (it carries the schema).</div>
+      <div class="fb no">Order matters. Remove the ribbon button before deleting its web resource (the button still references it). Delete the entity last — it's the anchor everything else points to. The app delete doesn't cascade to the entity, views, or forms.</div>
+    </div>
+
+    <p class="score" id="score"></p>
+  </div>
+</section>
+
+<!-- ─── ASK ─── -->
+<div class="ask reveal">
+  <p><b>M07 complete.</b> Ask me to:</p>
+  <ul class="tight">
+    <li>"Show how to create a Quick Find view so searching by name works in the lookup."</li>
+    <li>"Explain how to add a BPF (Business Process Flow) to the ag_ticket form."</li>
+    <li>"Show how to export the entire M07 solution to a ZIP and import it to a staging org."</li>
+  </ul>
+</div>
+
+<!-- ─── NEXT ─── -->
+<div class="next reveal">
+  <span class="pill">milestone complete</span>
+  <h2>M08 — Automation &amp; Business Logic</h2>
+  <p>M07 done: views, app, forms, and ribbon — the full UI layer over your schema. Next milestone, <strong>M08 — Automation &amp; Business Logic</strong>: server-side logic (workflows, plugins, Power Automate cloud flows) — what the crm CLI exposes and where you hand off to other tools. <span class="live-only">Just say <strong>'next lesson'</strong>.</span></p>
+</div>
+
+<footer>
+  <p>Milestone 07 — Forms, Views &amp; Apps · <a href="https://gharib89.github.io/learn-crm-cli-and-api/">course home</a></p>
+  <p class="ft">M07 · L05 · lessons/0042-forms-fields-and-layout.html · capstone; form list/add-field/remove-field/export + full M07 round-trip; writes + cleanup; live-verified on agent-cloud 2026-06-18, crm v1.0.0</p>
+</footer>
+
+</div><!-- /wrap -->
+
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 7, "name": "Forms, Views & Apps"},
+  "lesson": 5,
+  "title": "Forms: fields and layout — the M07 capstone",
+  "slug": "forms-fields-and-layout",
+  "topics": ["form-list","form-add-field","form-remove-field","form-export","form-set-field","form-clone","formxml","classid","capstone","teardown"],
+  "summary": "M07 capstone. form list returns formid/type/name/isdefault; default: main forms (type=2). Auto-provisioned 'Information' form has ag_name + ownerid only. form add-field appends a control (classid auto-resolved from AttributeType); --form/--tab/--section target location. form remove-field removes it. form export returns raw formXml. form set-field moves a field; form clone copies form to another entity. Full M07 round-trip: columns → OTC → view create → app create → build-sitemap → add-components → form add-field (x2) → webresource create → ribbon add-button → [verify] → remove-field (x2) → ribbon remove → webresource delete → app delete → entity delete savedqueries (view) → delete-entity. Satisfies M07 done-when: view + app + ribbon.",
+  "order": 5,
+  "status": "published" }
+</script>
+</body>
+</html>

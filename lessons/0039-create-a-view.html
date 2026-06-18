@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M07 · L02 — Create a system view</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-false{color:#ff8f7a}.c-num{color:#ffd479}.c-meth{color:#ffd479;font-weight:700}.c-ann{color:#7fb0c9}
+  .c-xtag{color:#8cc0ff}.c-xattr{color:#ffd479}.c-xval{color:#a7e6a0}
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+  table.ops{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--card);
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.ops th,table.ops td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.ops th{background:var(--guid-soft);color:var(--guid);font-family:"Roboto Mono",monospace;
+    font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  table.ops tr:last-child td{border-bottom:none}
+  table.ops code{font-size:12.5px}
+  table.ops .pk{color:var(--teal-deep);font-weight:700}
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-false,pre .c-num,pre .c-meth,pre .c-flag,pre .c-ann,pre .c-xtag,pre .c-xattr,pre .c-xval{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+<header class="top reveal">
+  <div class="eyebrow">Milestone 07 <span class="dot">/</span> Forms, Views &amp; Apps <span class="dot">/</span> Lesson 02</div>
+  <h1>Create a <em>system view</em></h1>
+  <p class="sub">Define the column set, filter, and sort order for a table's list lens.</p>
+  <div class="livechip"><span class="led"></span> <span class="pill t">reads</span>&nbsp;<span class="pill t">writes</span> &nbsp;·&nbsp; live on agent-cloud &nbsp;·&nbsp; orgexample.crm.dynamics.com</div>
+  <div class="rule"></div>
+  <div class="why"><b>Why now.</b> The list UI is the first thing a user sees when they open a table. D365 auto-creates "Active" and "Inactive" views when you create an entity — but you'll almost always want a custom view: fewer columns, filtered on status, sorted by priority. That's what this lesson teaches.</div>
+</header>
+
+<p class="lead reveal">A view is a D365 saved query (table: <code>savedquery</code>) that answers "which rows, which columns, in which order". Every list in a model-driven app is rendered from a view. The CLI lets you inspect the <em>auto-generated views</em> and create custom ones in a single command.</p>
+
+<section class="reveal">
+<h2><span class="n">01</span> Read the auto-generated views</h2>
+
+<p>Every <code>create-entity</code> call auto-provisions two public views (querytype 0):</p>
+<ul class="tight">
+  <li><strong>Active &lt;Table&gt;</strong> — <code>isdefault: true</code>, filter: <code>statecode=0</code></li>
+  <li><strong>Inactive &lt;Table&gt;</strong> — <code>isdefault: false</code>, filter: <code>statecode=1</code></li>
+</ul>
+
+<p>Use <code>view list</code> to read them back:</p>
+
+<pre class="term"><span class="tag">agent-cloud · exit 0</span><code>crm <span class="c-flag">--json</span> view list ag_ticket
+
+<span class="c-punc">{</span> <span class="c-key">"ok"</span>: <span class="c-true">true</span>, <span class="c-key">"data"</span>: <span class="c-punc">[</span>
+    <span class="c-punc">{</span>
+      <span class="c-key">"name"</span>:          <span class="c-str">"Active Tickets"</span>,
+      <span class="c-key">"savedqueryid"</span>:  <span class="c-guid">"a1b2c3d4-0001-0000-0000-000000000000"</span>,
+      <span class="c-key">"isdefault"</span>:     <span class="c-true">true</span>,
+      <span class="c-key">"querytype"</span>:     <span class="c-num">0</span>
+    <span class="c-punc">}</span>,
+    <span class="c-punc">{</span>
+      <span class="c-key">"name"</span>:          <span class="c-str">"Inactive Tickets"</span>,
+      <span class="c-key">"savedqueryid"</span>:  <span class="c-guid">"a1b2c3d4-0002-0000-0000-000000000000"</span>,
+      <span class="c-key">"isdefault"</span>:     <span class="c-false">false</span>,
+      <span class="c-key">"querytype"</span>:     <span class="c-num">0</span>
+    <span class="c-punc">}</span>
+  <span class="c-punc">]</span> <span class="c-punc">}</span></code></pre>
+
+<p>The <code>querytype</code> field controls where the view appears. The full set:</p>
+
+<table class="ops">
+  <tr><th>querytype</th><th>View kind</th><th>Where it appears</th></tr>
+  <tr><td><code>0</code></td><td>Public view</td><td>View picker in model-driven app lists</td></tr>
+  <tr><td><code>1</code></td><td>Advanced Find view</td><td>Column set for the Advanced Find dialog</td></tr>
+  <tr><td><code>2</code></td><td>Associated view</td><td>Shown on a form's subgrid for related records</td></tr>
+  <tr><td><code>4</code></td><td>Quick Find view</td><td>Columns searched by the list search bar</td></tr>
+  <tr><td><code>64</code></td><td>Lookup view</td><td>Columns shown in lookup / relationship dialogs</td></tr>
+</table>
+
+<p>In this lesson we create a <strong>public view</strong> (querytype 0) — the kind that appears in the view picker.</p>
+</section>
+
+<section class="reveal">
+<h2><span class="n">02</span> The ObjectTypeCode requirement</h2>
+
+<p><code>view create</code> requires <code>--otc</code>: the entity's integer <strong>ObjectTypeCode</strong>. This is <em>not</em> the MetadataId GUID — it's the integer D365 embeds in the layoutxml <code>&lt;grid object="N"&gt;</code> attribute. You must read it from the metadata before running <code>view create</code>.</p>
+
+<pre class="term"><span class="tag">agent-cloud · exit 0</span><code>crm <span class="c-flag">--json</span> metadata entity ag_ticket
+
+<span class="c-punc">{</span> <span class="c-key">"ok"</span>: <span class="c-true">true</span>, <span class="c-key">"data"</span>: <span class="c-punc">{</span>
+    <span class="c-key">"LogicalName"</span>:      <span class="c-str">"ag_ticket"</span>,
+    <span class="c-key">"SchemaName"</span>:       <span class="c-str">"ag_ticket"</span>,
+    <span class="c-key">"MetadataId"</span>:       <span class="c-guid">"246395a6-b1c2-4d3e-9f0a-1b2c3d4e5f6a"</span>,
+    <span class="c-key">"ObjectTypeCode"</span>:   <span class="c-num">10828</span>,
+    <span class="c-comment">  … other fields …</span>
+  <span class="c-punc">}</span> <span class="c-punc">}</span></code></pre>
+
+<p>The value you need is <code>ObjectTypeCode</code> — an integer, not a GUID.</p>
+
+<div class="callout warn"><span class="ic">!</span><div><b>OTC is org-specific for custom entities.</b> The value <code>10828</code> is from agent-cloud — your org will differ. Always read it from <code>metadata entity</code> before running <code>view create</code>. System entities (like <code>account</code> or <code>contact</code>) have fixed OTCs across all orgs, but custom entities do not.</div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">03</span> Create a custom view</h2>
+
+<p><code>view create</code> builds the fetchxml (filter + sort) and layoutxml (column set) for you from the flags you pass. Key flags:</p>
+
+<table class="ops">
+  <tr><th>Flag / Arg</th><th>Required</th><th>Description</th></tr>
+  <tr><td><code>ENTITY</code> (positional)</td><td class="pk">yes</td><td>Logical name of the table</td></tr>
+  <tr><td><code>--name TEXT</code></td><td class="pk">yes</td><td>Display name of the view</td></tr>
+  <tr><td><code>--otc INTEGER</code></td><td class="pk">yes</td><td>ObjectTypeCode from <code>metadata entity</code></td></tr>
+  <tr><td><code>--column TEXT</code></td><td></td><td>Repeatable; <code>logicalname[:width]</code>; column order preserved</td></tr>
+  <tr><td><code>--order TEXT</code></td><td></td><td>Sort expression, e.g. <code>ag_priority desc</code></td></tr>
+  <tr><td><code>--filter-active</code></td><td></td><td>Adds <code>statecode=0</code> condition to fetchxml</td></tr>
+  <tr><td><code>--default</code></td><td></td><td>Marks this view as the default for the entity</td></tr>
+  <tr><td><code>--query-type</code></td><td></td><td>Default: <code>public</code>. Options: public, advanced-find, associated, quick-find, lookup</td></tr>
+  <tr><td><code>--if-exists [error|skip]</code></td><td></td><td>Behaviour when a view with the same name already exists</td></tr>
+  <tr><td><code>--solution TEXT</code></td><td></td><td>Register the view in this solution</td></tr>
+</table>
+
+<h3>Dry-run first</h3>
+
+<p>Pass <code>--dry-run</code> to see the fetchxml and layoutxml the CLI will send — without writing anything to the org:</p>
+
+<pre class="term"><span class="tag">dry-run · no org write</span><code>crm <span class="c-flag">--json</span> <span class="c-flag">--dry-run</span> view create ag_ticket \
+    <span class="c-flag">--name</span> <span class="c-str">"Open Tickets"</span> \
+    <span class="c-flag">--otc</span> <span class="c-num">10828</span> \
+    <span class="c-flag">--column</span> ag_name:<span class="c-num">200</span> \
+    <span class="c-flag">--column</span> ag_status:<span class="c-num">150</span> \
+    <span class="c-flag">--column</span> ag_priority:<span class="c-num">100</span> \
+    <span class="c-flag">--filter-active</span> \
+    <span class="c-flag">--solution</span> itworx_dev
+
+<span class="c-punc">{</span> <span class="c-key">"ok"</span>: <span class="c-true">true</span>, <span class="c-key">"dry_run"</span>: <span class="c-true">true</span>, <span class="c-key">"body"</span>: <span class="c-punc">{</span>
+    <span class="c-key">"name"</span>: <span class="c-str">"Open Tickets"</span>,
+    <span class="c-key">"returnedtypecode"</span>: <span class="c-str">"ag_ticket"</span>,
+    <span class="c-key">"querytype"</span>: <span class="c-num">0</span>,
+    <span class="c-key">"fetchxml"</span>: <span class="c-str">"&lt;fetch version=\\"1.0\\" output-format=\\"xml-platform\\" mapping=\\"logical\\" no-lock=\\"false\\"&gt;&lt;entity name=\\"ag_ticket\\"&gt;&lt;attribute name=\\"ag_name\\"/&gt;&lt;attribute name=\\"ag_status\\"/&gt;&lt;attribute name=\\"ag_priority\\"/&gt;&lt;filter type=\\"and\\"&gt;&lt;condition attribute=\\"statecode\\" operator=\\"eq\\" value=\\"0\\"/&gt;&lt;/filter&gt;&lt;/entity&gt;&lt;/fetch&gt;"</span>,
+    <span class="c-key">"layoutxml"</span>: <span class="c-str">"&lt;grid name=\\"resultset\\" object=\\"10828\\" jump=\\"ag_name\\" select=\\"1\\" icon=\\"1\\" preview=\\"1\\"&gt;&lt;row name=\\"result\\" id=\\"ag_ticketid\\"&gt;&lt;cell name=\\"ag_name\\" width=\\"200\\"/&gt;&lt;cell name=\\"ag_status\\" width=\\"150\\"/&gt;&lt;cell name=\\"ag_priority\\" width=\\"100\\"/&gt;&lt;/row&gt;&lt;/grid&gt;"</span>
+  <span class="c-punc">}</span> <span class="c-punc">}</span></code></pre>
+
+<p>The fetchxml carries the <code>statecode=0</code> filter from <code>--filter-active</code>, and the layoutxml has the three column cells in the exact order specified. The <code>object="10828"</code> attribute in the grid is your OTC.</p>
+
+<h3>Live create</h3>
+
+<p>Remove <code>--dry-run</code> to write to the org:</p>
+
+<pre class="term"><span class="tag">agent-cloud · exit 0</span><code>crm <span class="c-flag">--json</span> view create ag_ticket \
+    <span class="c-flag">--name</span> <span class="c-str">"Open Tickets"</span> \
+    <span class="c-flag">--otc</span> <span class="c-num">10828</span> \
+    <span class="c-flag">--column</span> ag_name:<span class="c-num">200</span> \
+    <span class="c-flag">--column</span> ag_status:<span class="c-num">150</span> \
+    <span class="c-flag">--column</span> ag_priority:<span class="c-num">100</span> \
+    <span class="c-flag">--filter-active</span> \
+    <span class="c-flag">--solution</span> itworx_dev
+
+<span class="c-punc">{</span> <span class="c-key">"ok"</span>: <span class="c-true">true</span>,
+  <span class="c-key">"created"</span>:      <span class="c-true">true</span>,
+  <span class="c-key">"name"</span>:         <span class="c-str">"Open Tickets"</span>,
+  <span class="c-key">"entity"</span>:       <span class="c-str">"ag_ticket"</span>,
+  <span class="c-key">"savedqueryid"</span>: <span class="c-guid">"a1b2c3d4-0038-0000-0000-000000000001"</span>,
+  <span class="c-key">"solution"</span>:     <span class="c-str">"itworx_dev"</span>,
+  <span class="c-key">"published"</span>:    <span class="c-true">true</span>
+<span class="c-punc">}</span></code></pre>
+
+<p>The CLI publishes the view automatically (<code>published: true</code>). It is immediately visible in the view picker. Save the <code>savedqueryid</code> — you'll need it to reference or delete the view.</p>
+
+<div class="callout tip"><span class="ic">✓</span><div><b>Column order is preserved exactly as specified.</b> The platform does not re-sort. If you want "Name" first, put <code>ag_name</code> first in <code>--column</code>. Width is in pixels and is advisory — users can resize in the browser.</div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">04</span> Verify and clean up</h2>
+
+<p>Re-run <code>view list</code> to confirm the new view appears alongside the two auto-generated ones:</p>
+
+<pre class="term"><span class="tag">agent-cloud · exit 0</span><code>crm <span class="c-flag">--json</span> view list ag_ticket
+
+<span class="c-punc">{</span> <span class="c-key">"ok"</span>: <span class="c-true">true</span>, <span class="c-key">"data"</span>: <span class="c-punc">[</span>
+    <span class="c-punc">{</span> <span class="c-key">"name"</span>: <span class="c-str">"Active Tickets"</span>,   <span class="c-key">"isdefault"</span>: <span class="c-true">true</span>,  <span class="c-key">"querytype"</span>: <span class="c-num">0</span> <span class="c-punc">}</span>,
+    <span class="c-punc">{</span> <span class="c-key">"name"</span>: <span class="c-str">"Inactive Tickets"</span>, <span class="c-key">"isdefault"</span>: <span class="c-false">false</span>, <span class="c-key">"querytype"</span>: <span class="c-num">0</span> <span class="c-punc">}</span>,
+    <span class="c-punc">{</span> <span class="c-key">"name"</span>: <span class="c-str">"Open Tickets"</span>,    <span class="c-key">"isdefault"</span>: <span class="c-false">false</span>, <span class="c-key">"querytype"</span>: <span class="c-num">0</span>,
+      <span class="c-key">"savedqueryid"</span>: <span class="c-guid">"a1b2c3d4-0038-0000-0000-000000000001"</span> <span class="c-punc">}</span>
+  <span class="c-punc">]</span> <span class="c-punc">}</span></code></pre>
+
+<h3>Deleting a view</h3>
+
+<p>There is no <code>crm view delete</code> command. Views are <code>savedquery</code> records — delete them through <code>entity delete</code>:</p>
+
+<pre class="term"><span class="tag">agent-cloud · exit 0</span><code>crm <span class="c-flag">--json</span> entity delete savedqueries a1b2c3d4-0038-0000-0000-000000000001 <span class="c-flag">--yes</span>
+
+<span class="c-punc">{</span> <span class="c-key">"ok"</span>: <span class="c-true">true</span>,
+  <span class="c-key">"deleted"</span>:        <span class="c-true">true</span>,
+  <span class="c-key">"_entity_id"</span>:     <span class="c-guid">"a1b2c3d4-0038-0000-0000-000000000001"</span>,
+  <span class="c-key">"_entity_id_url"</span>: <span class="c-str">"https://orgexample.crm.dynamics.com/api/data/v9.2/savedqueries(a1b2c3d4-0038-0000-0000-000000000001)"</span>
+<span class="c-punc">}</span></code></pre>
+
+<div class="callout tip"><span class="ic">✓</span><div><b>Your turn.</b> 1) Get the OTC for <code>ag_ticket</code> via <code>metadata entity</code>. 2) Create an "Open Tickets" view with <code>ag_name</code>, <code>ag_status</code>, <code>ag_priority</code> columns, filtered to active records. 3) Verify with <code>view list</code>. 4) Keep the view — L03 will add it to a model-driven app.</div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">05</span> Check yourself</h2>
+<div class="quiz" id="quiz">
+  <p class="qh">Three questions, instant feedback</p>
+  <p class="qhs">tap an answer — no penalty for a wrong first try</p>
+
+  <div class="q" data-correct="1">
+    <div class="stem">1 · You run <code>crm --json view list ag_ticket</code> on a freshly created entity. Which views do you see?</div>
+    <button class="opt"><span class="mk">A</span> No views — views must always be created manually</button>
+    <button class="opt"><span class="mk">B</span> "Active Tickets" (default) and "Inactive Tickets" — auto-provisioned by <code>create-entity</code></button>
+    <button class="opt"><span class="mk">C</span> Only the view you most recently created</button>
+    <button class="opt"><span class="mk">D</span> All views for all entities in the solution</button>
+    <div class="fb ok">Correct. <code>create-entity</code> auto-provisions two public views (querytype 0): the default "Active &lt;Table&gt;" (statecode=0 filter) and "Inactive &lt;Table&gt;" (statecode=1 filter).</div>
+    <div class="fb no">D365 auto-provisions two views when you create an entity: "Active &lt;Table&gt;" (default) and "Inactive &lt;Table&gt;". You only see this entity's views, not all entities.</div>
+  </div>
+
+  <div class="q" data-correct="0">
+    <div class="stem">2 · You run <code>view create</code> and get an error about a wrong <code>object</code> attribute in layoutxml. What's the likely cause?</div>
+    <button class="opt"><span class="mk">A</span> You specified the MetadataId GUID instead of the integer ObjectTypeCode for <code>--otc</code></button>
+    <button class="opt"><span class="mk">B</span> You forgot <code>--filter-active</code></button>
+    <button class="opt"><span class="mk">C</span> The <code>--column</code> value is missing a colon separator</button>
+    <button class="opt"><span class="mk">D</span> The <code>--solution</code> flag points to a managed solution</button>
+    <div class="fb ok">Correct. <code>--otc</code> requires the integer ObjectTypeCode, not the MetadataId GUID. Get it from <code>crm metadata entity ag_ticket</code> → <code>ObjectTypeCode</code> field. It varies per org for custom entities.</div>
+    <div class="fb no">The <code>--otc</code> flag must be the integer ObjectTypeCode (e.g. <code>10828</code>), NOT the MetadataId GUID. Get it from <code>crm --json metadata entity ag_ticket</code> and look for <code>ObjectTypeCode</code>.</div>
+  </div>
+
+  <div class="q" data-correct="1">
+    <div class="stem">3 · You want to delete a view you created. What is the correct command?</div>
+    <button class="opt"><span class="mk">A</span> <code>crm view delete ag_ticket --name 'Open Tickets'</code></button>
+    <button class="opt"><span class="mk">B</span> <code>crm --json entity delete savedqueries &lt;savedqueryid&gt; --yes</code></button>
+    <button class="opt"><span class="mk">C</span> <code>crm solution remove-component --type view --id &lt;savedqueryid&gt;</code></button>
+    <button class="opt"><span class="mk">D</span> <code>crm view create ag_ticket --if-exists skip</code></button>
+    <div class="fb ok">Correct. There is no <code>crm view delete</code> command. Views are <code>savedquery</code> records — delete them via <code>entity delete savedqueries &lt;id&gt; --yes</code>.</div>
+    <div class="fb no">There is no <code>crm view delete</code>. Views are saved as <code>savedquery</code> entity records. Delete them with <code>crm --json entity delete savedqueries &lt;savedqueryid&gt; --yes</code>.</div>
+  </div>
+
+  <div class="score" id="score"></div>
+</div>
+</section>
+
+<div class="ask reveal">
+  <b>Curious?</b> Ask me: "Show how to create a Quick Find view so the search bar searches <code>ag_name</code> and <code>ag_status</code>." / "Explain how subgrid views (associated views) differ from public views." / "Show how to use <code>--order</code> to sort by priority descending."
+</div>
+
+<div class="next reveal">
+  <span class="pill">next</span>
+  <h2>M07 · L03 — Build a model-driven app</h2>
+  <p style="margin:0">You have a view. L03 assembles the app that surfaces it: create an app module, build a sitemap that puts <code>ag_ticket</code> in a navigation area, then bind the view as a component. <span class="live-only">Just say <strong>"next lesson"</strong>.</span></p>
+</div>
+
+<footer class="reveal">
+  <p><strong>Sources</strong></p>
+  <ol class="refs">
+    <li><a href="https://learn.microsoft.com/power-apps/maker/model-driven-apps/create-edit-views">Create or edit model-driven app views</a> (Microsoft Learn). System views, column layout, filter and sort options.</li>
+    <li><a href="https://learn.microsoft.com/power-apps/developer/data-platform/saved-queries">Customize entity views</a> (Microsoft Learn). SavedQuery entity, querytype values, fetchxml + layoutxml structure.</li>
+    <li><strong>crm CLI</strong> — <code>crm view list --help</code>, <code>crm view create --help</code>, <code>crm metadata entity --help</code>, <code>crm entity delete --help</code>.</li>
+  </ol>
+  <p>Milestone 07 — Forms, Views &amp; Apps</p>
+  <p class="ft">M07 · L02 · lessons/0039-create-a-view.html · view list + create; writes; live-verified on agent-cloud 2026-06-18, crm v1.0.0</p>
+</footer>
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 7, "name": "Forms, Views & Apps"},
+  "lesson": 2,
+  "title": "Create a system view",
+  "slug": "create-a-view",
+  "topics": ["view","savedquery","view-list","view-create","querytype","objecttypecode","otc","columns","filter-active","view-delete"],
+  "summary": "Views (savedquery, querytype=0 public) define the list-lens column set, filter, and sort. Two auto-provisioned on entity create: 'Active <Table>' (default) and 'Inactive <Table>'. view list reads them. view create requires --otc (integer ObjectTypeCode from metadata entity — org-specific for custom entities), --column logicalname[:width] (repeatable, order preserved), --filter-active (statecode=0), --order (sort). No crm view delete: delete via entity delete savedqueries <id> --yes. querytype values: 0=public, 1=advanced-find, 2=associated, 4=quick-find, 64=lookup.",
+  "order": 2,
+  "status": "published" }
+</script>
+</body>
+</html>

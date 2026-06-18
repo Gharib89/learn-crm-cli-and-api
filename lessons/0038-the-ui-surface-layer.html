@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M07 · L01 — The UI surface layer: forms, views, apps, ribbon, and web resources</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-false{color:#ff8f7a}.c-num{color:#ffd479}.c-meth{color:#ffd479;font-weight:700}.c-ann{color:#7fb0c9}
+  .c-xtag{color:#8cc0ff}.c-xattr{color:#ffd479}.c-xval{color:#a7e6a0}
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+  table.ops{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--card);
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.ops th,table.ops td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.ops th{background:var(--guid-soft);color:var(--guid);font-family:"Roboto Mono",monospace;
+    font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  table.ops tr:last-child td{border-bottom:none}
+  table.ops code{font-size:12.5px}
+  table.ops .pk{color:var(--teal-deep);font-weight:700}
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-false,pre .c-num,pre .c-meth,pre .c-flag,pre .c-ann,pre .c-xtag,pre .c-xattr,pre .c-xval{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+<header class="top reveal">
+  <div class="eyebrow">Milestone 07 <span class="dot">/</span> Forms, Views &amp; Apps <span class="dot">/</span> Lesson 01</div>
+  <h1>The UI <em>surface layer</em></h1>
+  <p class="sub">Forms, views, apps, ribbon, and web resources — the five artefacts that turn data into UX.</p>
+  <div class="livechip"><span class="led"></span> <span class="pill t">reads</span> &nbsp;·&nbsp; live on agent-cloud &nbsp;·&nbsp; orgexample.crm.dynamics.com</div>
+  <div class="rule"></div>
+  <div class="why"><b>Why now.</b> M01–M06 built the data layer: tables, columns, relationships, solutions. But users never see raw API payloads — they see forms to fill in, views to search, and apps to navigate. M07 teaches the five UI artefacts that sit between your schema and the end-user's browser.</div>
+</header>
+
+<p class="lead reveal">Every table you created in M04–M05 is already accessible through the Dataverse Web API. But D365 CE is a <em>model-driven</em> app — the platform reads your schema and renders a UI around it. That UI is built from five artefacts: forms, views, sitemaps, apps, and ribbon/web resources.</p>
+
+<section class="reveal">
+<h2><span class="n">01</span> The five UI artefacts</h2>
+
+<p>Each artefact has a distinct role in the UI stack. Together they form the complete surface layer between raw data and the end-user's browser.</p>
+
+<table class="ops">
+  <tr><th>Artefact</th><th>What it is</th></tr>
+  <tr><td class="pk">Form</td><td>Data entry / display screen for a single record. One form = one row view. A table can have many forms (main, quick-create, quick-view, card).</td></tr>
+  <tr><td class="pk">View (savedquery)</td><td>The list lens for a table — defines which columns appear and in what order. Each table has auto-created "Active" and "Inactive" system views out of the box.</td></tr>
+  <tr><td class="pk">Sitemap</td><td>The navigation tree (Areas → Groups → Subareas) that tells a model-driven app which tables to surface in the left-hand menu.</td></tr>
+  <tr><td class="pk">Model-driven app (appmodule)</td><td>Container that packages a sitemap, forms, and views into a first-class app. Users see this app in the D365 menu when they log in.</td></tr>
+  <tr><td class="pk">Ribbon / web resource</td><td>The command bar (ribbon) above forms and views, and the static JS/HTML/CSS assets (web resources) that power ribbon button logic and custom scripts.</td></tr>
+</table>
+
+<p>These artefacts layer on top of each other in a predictable stack:</p>
+
+<pre><code>  Web API / Dataverse
+      ↓  data
+  Forms &amp; Views ← render individual records and lists
+      ↓  grouped into
+  Sitemap ← navigation tree (areas/groups/subareas)
+      ↓  packaged as
+  Model-driven App ← what the user logs into
+  Ribbon / Web Resources → command-bar buttons &amp; scripts</code></pre>
+
+<div class="callout tip"><span class="ic">✓</span><div><b>Auto-provisioned:</b> every time you create a custom table with <code>create-entity</code>, D365 auto-creates an 'Information' main form, an <code>Active &lt;Table&gt;</code> default public view, and an <code>Inactive &lt;Table&gt;</code> view. M07 teaches you to inspect those defaults and add your own.</div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">02</span> The running example: ag_ticket</h2>
+
+<p>All M07 lessons build on the <code>ag_ticket</code> entity created in the M04 style. Here are its key properties:</p>
+
+<dl class="ginfo">
+  <dt>Logical name</dt><dd><code>ag_ticket</code></dd>
+  <dt>Schema name</dt><dd><code>ag_Ticket</code></dd>
+  <dt>Entity set (OData)</dt><dd><code>ag_tickets</code></dd>
+  <dt>Primary name column</dt><dd><code>ag_name</code> (string)</dd>
+  <dt>ag_status</dt><dd>Picklist — <code>100000000</code> Open · <code>100000001</code> In Progress · <code>100000002</code> Closed</dd>
+  <dt>ag_priority</dt><dd>Integer</dd>
+  <dt>Solution</dt><dd><code>itworx_dev</code> (example env; real org uses <code>agsol</code>)</dd>
+</dl>
+
+<p>Before proceeding, verify the entity is on your org:</p>
+
+<pre class="term"><span class="tag">shell</span><span class="c-meth">crm</span> <span class="c-flag">--json</span> metadata describe ag_ticket</pre>
+
+<p>You should see a JSON envelope with at least these top-level keys:</p>
+
+<pre class="term"><span class="tag">output</span><span class="c-punc">{</span>
+  <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+  <span class="c-key">"data"</span><span class="c-punc">: {</span>
+    <span class="c-key">"logical_name"</span><span class="c-punc">:</span>    <span class="c-str">"ag_ticket"</span><span class="c-punc">,</span>
+    <span class="c-key">"entity_set_name"</span><span class="c-punc">:</span> <span class="c-str">"ag_tickets"</span><span class="c-punc">,</span>
+    <span class="c-key">"primary_id"</span><span class="c-punc">:</span>      <span class="c-str">"ag_ticketid"</span><span class="c-punc">,</span>
+    <span class="c-key">"primary_name"</span><span class="c-punc">:</span>    <span class="c-str">"ag_name"</span><span class="c-punc">,</span>
+    <span class="c-key">"writable_attributes"</span><span class="c-punc">:</span> <span class="c-num">[ ... ]</span>
+  <span class="c-punc">}</span>
+<span class="c-punc">}</span></pre>
+
+<p>If the command errors with <code>404</code> or <code>EntityNotFound</code>, go back to M04 and create the entity before continuing.</p>
+</section>
+
+<section class="reveal">
+<h2><span class="n">03</span> CLI coverage map</h2>
+
+<p>The <code>crm</code> CLI covers the most common operations for all five artefacts. A few tasks — particularly visual designers and complex rule editors — remain GUI-only.</p>
+
+<table class="ops">
+  <tr><th>Artefact</th><th>CLI group</th><th>Key verbs</th><th>GUI-only tasks</th></tr>
+  <tr>
+    <td class="pk">Form</td>
+    <td><code>crm form</code></td>
+    <td><code>list</code>, <code>add-field</code>, <code>remove-field</code>, <code>set-field</code>, <code>clone</code>, <code>export</code></td>
+    <td>Form designer (drag-and-drop layout), form event scripting (OnLoad/OnSave) beyond field presence</td>
+  </tr>
+  <tr>
+    <td class="pk">View</td>
+    <td><code>crm view</code></td>
+    <td><code>list</code>, <code>create</code></td>
+    <td>Advanced filter builder (complex OR trees in the GUI), column resize persistence per user</td>
+  </tr>
+  <tr>
+    <td class="pk">Sitemap</td>
+    <td>(via <code>crm app build-sitemap</code>)</td>
+    <td><code>build-sitemap</code></td>
+    <td>Sitemap Editor canvas in Power Apps maker portal</td>
+  </tr>
+  <tr>
+    <td class="pk">App</td>
+    <td><code>crm app</code></td>
+    <td><code>create</code>, <code>build-sitemap</code>, <code>add-components</code>, <code>delete</code></td>
+    <td>App validation/publishing UI, icon uploads (beyond webresource)</td>
+  </tr>
+  <tr>
+    <td class="pk">Ribbon</td>
+    <td><code>crm ribbon</code></td>
+    <td><code>add-button</code>, <code>list</code>, <code>export</code>, <code>remove</code></td>
+    <td>Classic Ribbon Workbench (visual editor for complex multi-rule buttons)</td>
+  </tr>
+  <tr>
+    <td class="pk">Web resource</td>
+    <td><code>crm webresource</code></td>
+    <td><code>create</code>, <code>list</code>, <code>get</code>, <code>update</code>, <code>delete</code></td>
+    <td>Power Apps web resource editor UI</td>
+  </tr>
+</table>
+
+<div class="callout warn"><span class="ic">!</span><div><b>Ribbon add-button uses an export-modify-import cycle under the hood</b> (export solution ZIP → patch RibbonDiffXml → import ZIP back). This is why it's async and shows progress lines. You'll see this in M07 L04.</div></div>
+</section>
+
+<section class="reveal">
+<h2><span class="n">04</span> Check yourself</h2>
+<div class="quiz" id="quiz">
+  <p class="qh">Three questions, instant feedback</p>
+  <p class="qhs">tap an answer — no penalty for a wrong first try</p>
+
+  <div class="q" data-correct="1">
+    <div class="stem">1 · A user navigates to the 'Tickets' area of a model-driven app and sees a list of rows. Which artefact defines the columns displayed in that list?</div>
+    <button class="opt"><span class="mk">A</span> The main form — it defines fields on the record screen</button>
+    <button class="opt"><span class="mk">B</span> The view (savedquery) — it defines columns, filters, and sort for the list lens</button>
+    <button class="opt"><span class="mk">C</span> The sitemap — it defines navigation areas and subareas</button>
+    <button class="opt"><span class="mk">D</span> The ribbon — it controls command-bar buttons above the list</button>
+    <div class="fb ok">Correct. The view (saved query, <code>querytype=0</code> public) is the artefact that defines the column set, filter, and sort order for a table's list display.</div>
+    <div class="fb no">Not quite. The list-column layout is controlled by the view (savedquery). The form controls the single-record layout; the sitemap controls navigation; the ribbon controls command-bar buttons.</div>
+  </div>
+
+  <div class="q" data-correct="1">
+    <div class="stem">2 · You call <code>crm --json metadata create-entity --display 'Ticket' --solution itworx_dev</code>. Which UI artefacts does D365 auto-provision for you?</div>
+    <button class="opt"><span class="mk">A</span> Nothing — UI artefacts must always be created manually</button>
+    <button class="opt"><span class="mk">B</span> A main form called 'Information' and two public views: 'Active Tickets' and 'Inactive Tickets'</button>
+    <button class="opt"><span class="mk">C</span> A full model-driven app with a sitemap</button>
+    <button class="opt"><span class="mk">D</span> A ribbon button and a web resource</button>
+    <div class="fb ok">Correct. The platform auto-provisions an 'Information' main form plus 'Active &lt;Table&gt;' (default public view) and 'Inactive &lt;Table&gt;' views. You'll see this with <code>crm view list ag_ticket</code> in L02.</div>
+    <div class="fb no">The platform auto-provisions two things: an 'Information' main form and two public views ('Active Tickets' and 'Inactive Tickets'). The app, sitemap, ribbon, and web resources are not auto-created.</div>
+  </div>
+
+  <div class="q" data-correct="0">
+    <div class="stem">3 · You want to add a JavaScript 'Mark as Reviewed' button to the Ticket form's command bar — entirely from the CLI. Which TWO steps are required (in order)?</div>
+    <button class="opt"><span class="mk">A</span> <code>webresource create</code> then <code>ribbon add-button</code></button>
+    <button class="opt"><span class="mk">B</span> <code>ribbon add-button</code> — no web resource needed</button>
+    <button class="opt"><span class="mk">C</span> <code>form add-field</code> then <code>ribbon add-button</code></button>
+    <button class="opt"><span class="mk">D</span> <code>app add-components</code> then <code>ribbon add-button</code></button>
+    <div class="fb ok">Correct. You upload the JS file as a web resource first (<code>webresource create</code>), then reference it in <code>ribbon add-button --webresource ... --function ...</code>. The ribbon command calls the JS function at runtime.</div>
+    <div class="fb no">A ribbon button that runs JavaScript requires a web resource for the script. The two steps are: upload the JS file via <code>webresource create</code>, then <code>ribbon add-button</code> referencing it.</div>
+  </div>
+
+  <div class="score" id="score"></div>
+</div>
+</section>
+
+<div class="ask reveal">
+  <b>M07 L01 complete.</b> Ask me to:
+  <ul class="tight" style="margin:.6em 0 0">
+    <li>'Explain how model-driven apps differ from canvas apps.'</li>
+    <li>'Show what the auto-generated Information form XML looks like.'</li>
+    <li>'Describe the managed-layer impact on forms and views.'</li>
+  </ul>
+</div>
+
+<div class="next reveal">
+  <span class="pill">next</span>
+  <h2>M07 · L02 — Create a system view</h2>
+  <p style="margin:0">The data model is set; the UI layer is your next build target. Start with the list lens: in L02 you'll read the auto-generated views, then create your own 'Open Tickets' view with custom columns, a statecode filter, and a priority sort.</p>
+</div>
+
+<footer class="reveal">
+  <p>Milestone 07 — Forms, Views &amp; Apps · <a href="../index.html">course home</a></p>
+  <p class="ft">M07 · L01 · lessons/0038-the-ui-surface-layer.html · concept; no writes; live-verified ag_ticket entity on agent-cloud 2026-06-18, crm v1.0.0</p>
+</footer>
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 7, "name": "Forms, Views & Apps"},
+  "lesson": 1,
+  "title": "The UI surface layer",
+  "slug": "the-ui-surface-layer",
+  "topics": ["forms","views","savedquery","sitemap","model-driven-app","ribbon","webresource","ui-artefacts","automatable-vs-gui"],
+  "summary": "The five D365 UI artefacts: form (data entry screen), view (savedquery, list lens), sitemap (navigation tree), model-driven app (appmodule container), ribbon/web resource (command bar + static assets). CLI coverage: crm form / view / app / ribbon / webresource. Auto-provisioned on entity create: Information main form + Active/Inactive public views. Running example: ag_ticket (ag_name, ag_status picklist, ag_priority integer). CLI limits: form designer drag-drop, complex ribbon rules, sitemap canvas editor = GUI only.",
+  "order": 1,
+  "status": "published" }
+</script>
+</body>
+</html>

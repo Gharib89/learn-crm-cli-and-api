@@ -454,3 +454,65 @@ differences in this milestone.
 - **agsol current state**: 2 components (account + contact, both componenttype 1 from M05
   relationship work). m06sol was created+used for M06 lessons then cleaned up (m06_project deleted,
   m06sol uninstalled).
+
+## M07 lesson sequence (shipped 2026-06-18)
+
+Milestone: **Forms, Views & Apps** (issue #7). "Done when": create a view and a model-driven app
+exposing the custom table, and add a ribbon button. All 5 lessons live-verified against **crm v1.0.0**
+on agent-cloud. Running example: `ag_ticket` entity (ag_name, ag_status picklist, ag_priority integer).
+
+- **L01** — **The UI surface layer** (`0038`). The five UI artefacts: form (type=2 main), view
+  (savedquery), sitemap, model-driven app (appmodule), ribbon/web resource. CLI coverage map per
+  artefact. Auto-provisioned artefacts on entity create: Information main form + Active/Inactive
+  public views. GUI-only limits. Running example ag_ticket introduced.
+- **L02** — **Create a system view** (`0039`). `view list` (auto-created Active/Inactive views);
+  `view create` (`--otc` = integer ObjectTypeCode from `metadata entity` — org-specific for custom
+  entities, `--column logicalname[:width]`, `--filter-active`, `--order`, `--query-type`).
+  querytype values: 0=public, 1=advanced-find, 2=associated, 4=quick-find, 64=lookup.
+  No `crm view delete` → delete via `entity delete savedqueries <id> --yes`.
+- **L03** — **Build a model-driven app** (`0040`). `app create` (envelope includes `app_lookup_error`
+  read-back race warning — not a failure); `app build-sitemap` (`--area 'id[:Title]'`,
+  `--group 'areaId/groupId[:Title]'`, `--subarea 'areaId/groupId:entity=<logical>[:Title]'`,
+  `--unique-name` links sitemap to app); `app add-components <appmoduleid> --component kind:guid`
+  (kinds: view|chart|form|dashboard|sitemap|bpf); `app delete --yes` (sweeps FK dependents;
+  sitemap orphaned but not deleted).
+- **L04** — **Web resources & ribbon buttons** (`0041`). `webresource create/list/get/update/delete`;
+  type inferred from extension (3=JScript); naming `<prefix>_/path/file.js`. `ribbon add-button`
+  async (export-modify-import cycle ~60s); button_id = `entity.location.LabelNoSpaces.CustomAction`;
+  `--param PrimaryControl` (form) vs `SelectedControlSelectedItemIds` (grid); `ribbon list/export/remove`
+  (remove also async). `--dry-run` on add-button shows only ExportSolutionAsync step.
+- **L05** — **Forms: fields and layout** (`0042`, capstone). `form list` (type=2 main, auto-provisioned
+  'Information'); `form add-field <entity> <attr>` (classid auto from AttributeType; `--form/--tab/--section`
+  for targeting); `form remove-field`; `form export <entity> <form-name>` (returns formXml); `form set-field`
+  (move) and `form clone` (copy to other entity). Full 12-step capstone script. Done-when satisfied.
+  GUI-only limits: form designer, Ribbon Workbench, BPF editor, app validation UI.
+
+**✅ M07 COMPLETE — 5 lessons** (L01–L05, lessons 0038–0042; shipped 2026-06-18). Build green
+(42 lessons). 0037's auto-Continue rewired to 0038 automatically once M07 shipped.
+
+### M07 live-CLI facts (crm v1.0.0, captured from agent-cloud 2026-06-18)
+
+- **ag_ticket entity** created for M07 demos: logical `ag_ticket`, schema `ag_Ticket`, set `ag_tickets`,
+  OTC **10828** (agent-cloud; org-specific for custom entities), primary attr `ag_name`.
+  Columns added: `ag_status` (Picklist: 100000000=Open, 100000001=In Progress, 100000002=Closed),
+  `ag_priority` (Integer). Entity remains on agent-cloud (lessons tear it down in the capstone).
+- **view create** requires `--otc <integer>` (NOT MetadataId GUID). OTC from `metadata entity <logical>`.
+  Auto-provisioned views on create: "Active Tickets" (isdefault:true, querytype:0) + "Inactive Tickets"
+  (querytype:0). Column syntax: `logicalname[:width]`. No `crm view delete` command.
+- **app create** envelope includes `app_lookup_error` + `meta.warnings` when platform read-back races
+  the create — not a failure; appmoduleid is correct. `app delete` sweeps FK-blocking rows
+  (`dvtablesearch`, `appsetting`); `appmodulecomponent` rows listed as `dependents_skipped`.
+- **app build-sitemap** generates SiteMapXml; `--unique-name <app-uniquename>` links sitemap to app
+  at creation time. Sitemap is a separate record, NOT deleted by `app delete`.
+- **webresource create** infers webresourcetype from extension: .js → 3 (JScript). Types: 1=HTML,
+  2=CSS, 3=JScript, 4=XML, 5=PNG, 6=JPG, 7=GIF, 9=XSL, 10=ICO, 11=SVG, 12=RESX.
+  Naming: `<prefix>_/scripts/foo.js` (path-style). `webresource delete --yes` (no prompt in JSON mode).
+- **ribbon add-button** async (ExportSolutionAsync → patch RibbonDiffXml → ImportSolutionAsync);
+  ~60s; stderr progress lines. button_id = `<entity>.<location>.<LabelNoSpaces>.CustomAction`;
+  default group = `Mscrm.Form.<entity>.MainTab.Save` for form location. `ribbon remove --button-id
+  <id> --yes --solution <sol>` also async.
+- **form list** default: main forms only (type=2). `--all` lists every type. `--type` accepts:
+  dashboard|main|quickview|quickcreate|dialog|card. Auto-provisioned 'Information' form: ag_name +
+  ownerid only; custom columns not on it until `form add-field`. `form add-field` resolves classid
+  automatically from AttributeType (Picklist→`{3EF3...}`, Integer→`{C6D1...}`, String→`{4273...}`).
+  `form export <entity> <form-name>` (BOTH positional args required; missing FORM_NAME → exit 2).

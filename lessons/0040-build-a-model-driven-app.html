@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M07 · L03 — Build a model-driven app</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-sizing:border-box}0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-false{color:#ff8f7a}.c-num{color:#ffd479}.c-meth{color:#ffd479;font-weight:700}.c-ann{color:#7fb0c9}
+  .c-xtag{color:#8cc0ff}.c-xattr{color:#ffd479}.c-xval{color:#a7e6a0}
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+  table.ops{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--card);
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.ops th,table.ops td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.ops th{background:var(--guid-soft);color:var(--guid);font-family:"Roboto Mono",monospace;
+    font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  table.ops tr:last-child td{border-bottom:none}
+  table.ops code{font-size:12.5px}
+  table.ops .pk{color:var(--teal-deep);font-weight:700}
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+  .diagram{font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.7;
+    background:var(--card);border:1px solid var(--line2);border-radius:13px;
+    padding:20px 24px;margin:16px 0;color:var(--ink-soft)}
+  .diagram .d-root{color:var(--teal-deep);font-weight:700}
+  .diagram .d-leaf{color:var(--guid)}
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-false,pre .c-num,pre .c-meth,pre .c-flag,pre .c-ann,pre .c-xtag,pre .c-xattr,pre .c-xval{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="top reveal">
+  <p class="eyebrow">Milestone 07 <span class="dot">·</span> Forms, Views &amp; Apps <span class="dot">·</span> Lesson 03</p>
+  <h1>Build a <em>model-driven app</em></h1>
+  <p class="sub">Wire a table, its views, and a sitemap into a navigable D365 app — three CLI commands.</p>
+  <div class="livechip"><span class="led"></span> live on <b>agent-cloud</b> &nbsp;·&nbsp; orgexample.crm.dynamics.com &nbsp;·&nbsp; <span class="pill t">reads</span> <span class="pill t">writes</span> <span class="pill">cleanup</span></div>
+  <div class="rule"></div>
+  <div class="why">
+    <b>Why this matters:</b> A table and its views are invisible until you wire them into an app. A model-driven app is the container end-users log into — it bundles a sitemap (which areas to show), the forms, and the views into one navigable experience. Three CLI steps: create the app, build the sitemap, bind the components.
+  </div>
+</header>
+
+<p class="lead reveal">Model-driven apps are D365's answer to <em>'how do I put my tables in front of users?'</em> Unlike canvas apps (code-first, blank-canvas), model-driven apps are schema-driven: you declare which tables to expose and the platform renders the forms and views it already knows about.</p>
+
+<!-- ─── SECTION 01 ─── -->
+<section class="reveal">
+  <h2><span class="n">01</span> App anatomy</h2>
+  <p>A model-driven app is a layered container. From the outside in:</p>
+
+  <div class="diagram">
+<span class="d-root">App</span> (appmodule: <span class="d-leaf">ag_tickettracker</span>)
+ └── <span class="d-root">Sitemap</span> (M07Sitemap)
+      └── Area: <span class="d-leaf">Ticket Management</span>
+           └── Group: <span class="d-leaf">Tickets</span>
+                └── Subarea: <span class="d-leaf">ag_ticket</span> → "Open Tickets" view
+                     └── binds to: Main form, Public views
+  </div>
+
+  <p>The <strong>app</strong> (<code>appmodule</code>) is the top-level container — it's what appears in the D365 app-switcher. The <strong>sitemap</strong> defines what areas, groups, and subareas appear in the left navigation pane. Each <strong>subarea</strong> points to an entity; when a user clicks it, D365 renders the entity's default public view in the list pane and opens records in the main form.</p>
+
+  <p><code>add-components</code> binds specific views, forms, charts, or dashboards to the app. Without it the app uses the entity's default resources automatically — so binding the sitemap is usually the only required step.</p>
+</section>
+
+<!-- ─── SECTION 02 ─── -->
+<section class="reveal">
+  <h2><span class="n">02</span> Step 1 — Create the app</h2>
+  <p>Use <code>crm app create</code> to register a new <code>appmodule</code> record and publish it into a solution.</p>
+
+  <table class="ops">
+    <thead><tr><th>Flag</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code class="pk">--name</code></td><td>Display name shown in the app-switcher (e.g. "Ticket Tracker").</td></tr>
+      <tr><td><code class="pk">--unique-name</code></td><td>Publisher-prefixed schema name (e.g. <code>ag_tickettracker</code>). Used in all subsequent commands.</td></tr>
+      <tr><td><code>--description</code></td><td>Optional description string.</td></tr>
+      <tr><td><code>--if-exists</code></td><td><code>error</code> (default) or <code>skip</code>. Use <code>skip</code> in idempotent scripts.</td></tr>
+      <tr><td><code>--icon-webresource</code></td><td>Optional web resource logical name for the app icon. Defaults to the platform icon.</td></tr>
+      <tr><td><code>--solution</code></td><td>Target solution unique name. The app record is created inside this solution.</td></tr>
+    </tbody>
+  </table>
+
+  <pre class="term"><span class="tag">shell</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> app create \
+    <span class="c-flag">--name</span> <span class="c-str">"Ticket Tracker"</span> \
+    <span class="c-flag">--unique-name</span> <span class="c-str">"ag_tickettracker"</span> \
+    <span class="c-flag">--description</span> <span class="c-str">"M07 demo app"</span> \
+    <span class="c-flag">--solution</span> agsol</code></pre>
+
+  <pre class="term"><span class="tag">envelope · live-verified 2026-06-18, crm v1.0.0</span><code><span class="c-punc">{</span>
+  <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+  <span class="c-key">"data"</span><span class="c-punc">: {</span>
+    <span class="c-key">"created"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+    <span class="c-key">"name"</span><span class="c-punc">:</span> <span class="c-str">"Ticket Tracker"</span><span class="c-punc">,</span>
+    <span class="c-key">"uniquename"</span><span class="c-punc">:</span> <span class="c-str">"ag_tickettracker"</span><span class="c-punc">,</span>
+    <span class="c-key">"appmoduleid"</span><span class="c-punc">:</span> <span class="c-guid">"a1b2c3d4-0040-0000-0000-000000000001"</span><span class="c-punc">,</span>
+    <span class="c-key">"solution"</span><span class="c-punc">:</span> <span class="c-str">"agsol"</span><span class="c-punc">,</span>
+    <span class="c-key">"published"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+    <span class="c-key">"app_lookup_error"</span><span class="c-punc">:</span> <span class="c-str">"Read-back failed: Entity 'appmodule' With Id = a1b2c3d4... Does Not Exist"</span>
+  <span class="c-punc">}</span><span class="c-punc">,</span>
+  <span class="c-key">"meta"</span><span class="c-punc">: {</span>
+    <span class="c-key">"warnings"</span><span class="c-punc">:</span> <span class="c-punc">[</span><span class="c-str">"Read-back failed: Entity 'appmodule' With Id = a1b2c3d4... Does Not Exist"</span><span class="c-punc">]</span>
+  <span class="c-punc">}</span>
+<span class="c-punc">}</span></code></pre>
+
+  <div class="callout warn">
+    <span class="ic">WARN</span>
+    <div><strong>The <code>app_lookup_error</code> is a known read-back timing gap</strong> — the app was created (the POST succeeded), but the CLI's immediate GET to read it back raced the platform's replication. The <code>appmoduleid</code> in the envelope is still correct. Save it for the next two commands — there is nothing to re-run.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 03 ─── -->
+<section class="reveal">
+  <h2><span class="n">03</span> Step 2 — Build the sitemap</h2>
+  <p>The sitemap defines the left-nav structure. <code>app build-sitemap</code> generates and registers the <code>SiteMap</code> XML in one command. The three flag types map directly to the three nav levels:</p>
+
+  <table class="ops">
+    <thead><tr><th>Flag</th><th>Syntax</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>--area</code></td><td><code>"id[:Title]"</code></td><td>Top-level nav section. The id becomes the Area's XML attribute; Title is what's displayed.</td></tr>
+      <tr><td><code>--group</code></td><td><code>"areaId/groupId[:Title]"</code></td><td>A group within the given area. The slash-path says "this group lives under this area."</td></tr>
+      <tr><td><code>--subarea</code></td><td><code>"areaId/groupId:entity=&lt;logical&gt;[:Title]"</code></td><td>A table entry inside a group. <code>entity=</code> names the D365 logical entity name.</td></tr>
+      <tr><td><code>--unique-name</code></td><td><code>ag_tickettracker</code></td><td>Links the new sitemap to this app at creation time.</td></tr>
+      <tr><td><code>--solution</code></td><td><code>agsol</code></td><td>Registers the sitemap record in the solution.</td></tr>
+    </tbody>
+  </table>
+
+  <p>Pass <code>--dry-run</code> first to preview the generated <code>SiteMapXml</code> before committing:</p>
+
+  <pre class="term"><span class="tag">shell · dry-run (no write)</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> app build-sitemap <span class="c-str">"M07Sitemap"</span> \
+    <span class="c-flag">--area</span> <span class="c-str">"Tickets:Ticket Management"</span> \
+    <span class="c-flag">--group</span> <span class="c-str">"Tickets/Main:Tickets"</span> \
+    <span class="c-flag">--subarea</span> <span class="c-str">"Tickets/Main:entity=ag_ticket:Open Tickets"</span> \
+    <span class="c-flag">--unique-name</span> ag_tickettracker \
+    <span class="c-flag">--solution</span> agsol \
+    <span class="c-flag">--dry-run</span></code></pre>
+
+  <p>The dry-run shows the <code>sitemapxml</code> that will be sent to the API:</p>
+
+  <pre class="term"><span class="tag">dry-run · sitemapxml preview</span><code><span class="c-xtag">&lt;SiteMap&gt;</span>
+  <span class="c-xtag">&lt;Area</span> <span class="c-xattr">Id</span><span class="c-punc">=</span><span class="c-xval">"Tickets"</span> <span class="c-xattr">Title</span><span class="c-punc">=</span><span class="c-xval">"Ticket Management"</span><span class="c-xtag">&gt;</span>
+    <span class="c-xtag">&lt;Group</span> <span class="c-xattr">Id</span><span class="c-punc">=</span><span class="c-xval">"Main"</span> <span class="c-xattr">Title</span><span class="c-punc">=</span><span class="c-xval">"Tickets"</span><span class="c-xtag">&gt;</span>
+      <span class="c-xtag">&lt;SubArea</span> <span class="c-xattr">Id</span><span class="c-punc">=</span><span class="c-xval">"ag_ticket"</span> <span class="c-xattr">Entity</span><span class="c-punc">=</span><span class="c-xval">"ag_ticket"</span> <span class="c-xattr">Title</span><span class="c-punc">=</span><span class="c-xval">"Open Tickets"</span> <span class="c-xtag">/&gt;</span>
+    <span class="c-xtag">&lt;/Group&gt;</span>
+  <span class="c-xtag">&lt;/Area&gt;</span>
+<span class="c-xtag">&lt;/SiteMap&gt;</span></code></pre>
+
+  <p>Once the preview looks correct, run without <code>--dry-run</code>:</p>
+
+  <pre class="term"><span class="tag">shell · live</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> app build-sitemap <span class="c-str">"M07Sitemap"</span> \
+    <span class="c-flag">--area</span> <span class="c-str">"Tickets:Ticket Management"</span> \
+    <span class="c-flag">--group</span> <span class="c-str">"Tickets/Main:Tickets"</span> \
+    <span class="c-flag">--subarea</span> <span class="c-str">"Tickets/Main:entity=ag_ticket:Open Tickets"</span> \
+    <span class="c-flag">--unique-name</span> ag_tickettracker \
+    <span class="c-flag">--solution</span> agsol</code></pre>
+
+  <pre class="term"><span class="tag">envelope · live-verified 2026-06-18, crm v1.0.0</span><code><span class="c-punc">{</span>
+  <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+  <span class="c-key">"data"</span><span class="c-punc">: {</span>
+    <span class="c-key">"created"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+    <span class="c-key">"sitemapid"</span><span class="c-punc">:</span> <span class="c-guid">"a1b2c3d4-0040-0000-0000-000000000002"</span><span class="c-punc">,</span>
+    <span class="c-key">"sitemapname"</span><span class="c-punc">:</span> <span class="c-str">"M07Sitemap"</span><span class="c-punc">,</span>
+    <span class="c-key">"solution"</span><span class="c-punc">:</span> <span class="c-str">"agsol"</span><span class="c-punc">,</span>
+    <span class="c-key">"published"</span><span class="c-punc">:</span> <span class="c-true">true</span>
+  <span class="c-punc">}</span>
+<span class="c-punc">}</span></code></pre>
+
+  <p>Save the <code>sitemapid</code> — you'll pass it to <code>add-components</code> in the next step.</p>
+</section>
+
+<!-- ─── SECTION 04 ─── -->
+<section class="reveal">
+  <h2><span class="n">04</span> Step 3 — Bind components</h2>
+  <p>Use <code>app add-components</code> to pin specific components — sitemap, views, forms, charts, dashboards, or BPFs — to the app. Each <code>--component</code> flag takes the form <code>kind:guid</code>.</p>
+
+  <p>Supported component kinds: <code>view</code> | <code>chart</code> | <code>form</code> | <code>dashboard</code> | <code>sitemap</code> | <code>bpf</code></p>
+
+  <pre class="term"><span class="tag">shell</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> app add-components <span class="c-guid">&lt;appmoduleid&gt;</span> \
+    <span class="c-flag">--component</span> <span class="c-str">"sitemap:<span class="c-guid">&lt;sitemapid&gt;</span>"</span> \
+    <span class="c-flag">--component</span> <span class="c-str">"view:<span class="c-guid">&lt;savedqueryid&gt;</span>"</span></code></pre>
+
+  <pre class="term"><span class="tag">envelope · live-verified 2026-06-18, crm v1.0.0</span><code><span class="c-punc">{</span>
+  <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+  <span class="c-key">"data"</span><span class="c-punc">: {</span>
+    <span class="c-key">"added"</span><span class="c-punc">:</span> <span class="c-num">2</span><span class="c-punc">,</span>
+    <span class="c-key">"app_id"</span><span class="c-punc">:</span> <span class="c-guid">"a1b2c3d4-0040-0000-0000-000000000001"</span>
+  <span class="c-punc">}</span>
+<span class="c-punc">}</span></code></pre>
+
+  <div class="callout tip">
+    <span class="ic">TIP</span>
+    <div>You don't have to bind every view manually. Binding the sitemap is usually enough — the app will show all public views for the entity automatically. Use <code>--component view:&lt;id&gt;</code> to pin a specific view as the only visible option.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 05 ─── -->
+<section class="reveal">
+  <h2><span class="n">05</span> Clean up — app delete</h2>
+  <p>When you're done with a demo app, <code>app delete</code> removes the <code>appmodule</code> record and sweeps its FK-dependent rows in one pass. Pass the unique-name and <code>--yes</code> to skip the confirmation prompt.</p>
+
+  <pre class="term"><span class="tag">shell</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> app delete ag_tickettracker <span class="c-flag">--yes</span></code></pre>
+
+  <pre class="term"><span class="tag">envelope · live-verified 2026-06-18, crm v1.0.0</span><code><span class="c-punc">{</span>
+  <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+  <span class="c-key">"data"</span><span class="c-punc">: {</span>
+    <span class="c-key">"deleted"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+    <span class="c-key">"appmodule"</span><span class="c-punc">:</span> <span class="c-guid">"a1b2c3d4-0040-0000-0000-000000000001"</span><span class="c-punc">,</span>
+    <span class="c-key">"dependents_deleted"</span><span class="c-punc">:</span> <span class="c-punc">[</span>
+      <span class="c-punc">{</span> <span class="c-key">"entity"</span><span class="c-punc">:</span> <span class="c-str">"dvtablesearch"</span><span class="c-punc">,</span> <span class="c-key">"id"</span><span class="c-punc">:</span> <span class="c-guid">"a1b2c3d4-0040-0000-0000-000000000010"</span> <span class="c-punc">}</span><span class="c-punc">,</span>
+      <span class="c-punc">{</span> <span class="c-key">"entity"</span><span class="c-punc">:</span> <span class="c-str">"appsetting"</span><span class="c-punc">,</span> <span class="c-key">"id"</span><span class="c-punc">:</span> <span class="c-guid">"a1b2c3d4-0040-0000-0000-000000000011"</span> <span class="c-punc">}</span>
+    <span class="c-punc">]</span><span class="c-punc">,</span>
+    <span class="c-key">"dependents_skipped"</span><span class="c-punc">:</span> <span class="c-punc">[</span>
+      <span class="c-punc">{</span> <span class="c-key">"entity"</span><span class="c-punc">:</span> <span class="c-str">"appmodulecomponent"</span><span class="c-punc">,</span> <span class="c-key">"id"</span><span class="c-punc">:</span> <span class="c-guid">"a1b2c3d4-0040-0000-0000-000000000012"</span> <span class="c-punc">}</span>
+    <span class="c-punc">]</span>
+  <span class="c-punc">}</span>
+<span class="c-punc">}</span></code></pre>
+
+  <p><code>dependents_deleted</code> lists FK rows the CLI swept automatically (e.g. <code>dvtablesearch</code>, <code>appsetting</code>). <code>dependents_skipped</code> lists rows that were already gone — for example <code>appmodulecomponent</code> records that had already been unbound from the solution.</p>
+
+  <div class="callout warn">
+    <span class="ic">WARN</span>
+    <div><strong>Deleting the app does NOT delete the sitemap record.</strong> The sitemap becomes orphaned (no longer linked to any app) but remains in the org and is harmless. If you need a fully clean org, also delete the sitemap via <code>crm entity delete sitemaps &lt;sitemapid&gt; --yes</code>.</div>
+  </div>
+</section>
+
+<!-- ─── EXERCISE ─── -->
+<section class="reveal">
+  <div class="callout tip">
+    <span class="ic">YOUR TURN</span>
+    <div>
+      <p style="margin:.3em 0"><strong>Exercise:</strong></p>
+      <ol class="tight" style="margin:.4em 0;padding-left:1.4em">
+        <li>Create the "Ticket Tracker" app with unique-name <code>itworx_tickettracker</code> in your solution.</li>
+        <li>Build a sitemap named <code>TicketNav</code> pointing at <code>ag_ticket</code> — use <code>--dry-run</code> first to verify the XML.</li>
+        <li>Use <code>add-components</code> to bind the sitemap and your "Open Tickets" saved-query view.</li>
+        <li><strong>Keep the app</strong> — L05 (capstone) will clean everything up.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ─── SECTION 06 — QUIZ ─── -->
+<section class="reveal">
+  <div class="quiz">
+    <p class="qh">Lesson check</p>
+    <p class="qhs">3 questions · click to reveal</p>
+
+    <div class="q" data-correct="1">
+      <p class="stem">1. The <b><code>app_lookup_error</code></b> field appears in the create envelope. What does it mean?</p>
+      <button class="opt"><span class="mk">A</span> The app creation failed silently</button>
+      <button class="opt"><span class="mk">B</span> The app was created but the CLI's immediate read-back raced the platform — the <code>appmoduleid</code> is still correct</button>
+      <button class="opt"><span class="mk">C</span> You need to re-run the create command</button>
+      <button class="opt"><span class="mk">D</span> The solution doesn't exist yet</button>
+      <div class="fb ok">Correct. <code>app_lookup_error</code> is a read-back timing gap. The app was created (the POST succeeded); the CLI's GET to read the result back found the record not yet replicated. Use the <code>appmoduleid</code> from the envelope — it's correct.</div>
+      <div class="fb no">The app was created. <code>app_lookup_error</code> is a timing race between the POST succeeding and the GET read-back. The <code>appmoduleid</code> field is correct. There's nothing to re-run.</div>
+    </div>
+
+    <div class="q" data-correct="1">
+      <p class="stem">2. You want the left-nav to show "Ticket Management" as the area, "Tickets" as a group, and <code>ag_ticket</code> as a table entry. Which <b><code>build-sitemap</code></b> flags achieve this?</p>
+      <button class="opt"><span class="mk">A</span> <code>--area Tickets --group Main --subarea ag_ticket</code></button>
+      <button class="opt"><span class="mk">B</span> <code>--area "Tickets:Ticket Management" --group "Tickets/Main:Tickets" --subarea "Tickets/Main:entity=ag_ticket:Open Tickets"</code></button>
+      <button class="opt"><span class="mk">C</span> <code>--area "Ticket Management" --entity ag_ticket</code></button>
+      <button class="opt"><span class="mk">D</span> <code>--subarea "ag_ticket:Ticket Management"</code> only</button>
+      <div class="fb ok">Correct. The syntax is <code>id[:Title]</code> for areas, <code>areaId/groupId[:Title]</code> for groups, and <code>areaId/groupId:entity=&lt;logical&gt;[:Title]</code> for subareas. The dry-run shows the generated <code>SiteMapXml</code> so you can verify before committing.</div>
+      <div class="fb no">The sitemap flag syntax is: <code>--area 'id[:Title]'</code>, <code>--group 'areaId/groupId[:Title]'</code>, <code>--subarea 'areaId/groupId:entity=&lt;logical&gt;[:Title]'</code>. Each flag carries an id, the parent path, and an optional display title.</div>
+    </div>
+
+    <div class="q" data-correct="2">
+      <p class="stem">3. Which component kind would you use to pin a specific view as the only list view shown in an app?</p>
+      <button class="opt"><span class="mk">A</span> <code>--component form:&lt;id&gt;</code></button>
+      <button class="opt"><span class="mk">B</span> <code>--component bpf:&lt;id&gt;</code></button>
+      <button class="opt"><span class="mk">C</span> <code>--component view:&lt;id&gt;</code></button>
+      <button class="opt"><span class="mk">D</span> <code>--component sitemap:&lt;id&gt;</code></button>
+      <div class="fb ok">Correct. <code>--component view:&lt;savedqueryid&gt;</code> pins a specific saved query as a visible view in the app. Without it, the app shows all the entity's public views by default.</div>
+      <div class="fb no">Use <code>--component view:&lt;savedqueryid&gt;</code>. The <code>sitemap</code> kind binds the navigation tree; <code>bpf</code> is for Business Process Flows; <code>form</code> is for forms. Views are bound with <code>view:&lt;id&gt;</code>.</div>
+    </div>
+
+    <p class="score" id="score"></p>
+  </div>
+</section>
+
+<!-- ─── ASK ─── -->
+<div class="ask reveal">
+  <p style="margin:0 0 8px"><b>Want to go deeper? Ask me to:</b></p>
+  <ul class="tight" style="margin:0;padding-left:1.4em;font-size:15.5px">
+    <li>"Explain the difference between model-driven apps and canvas apps in D365."</li>
+    <li>"Show how to bind a specific main form to an app instead of all forms."</li>
+    <li>"Describe how to update a sitemap after the app exists (<code>crm app set-sitemap</code>)."</li>
+  </ul>
+</div>
+
+<!-- ─── NEXT ─── -->
+<div class="next reveal">
+  <span class="pill">next</span>
+  <h2>M07 · L04 — Web resources &amp; ribbon buttons</h2>
+  <p>App built, view bound. L04 adds interactivity: upload a JS web resource, then attach a command-bar button to the Ticket form's ribbon — entirely from the CLI. <span class="live-only">Just say <strong>'next lesson'</strong>.</span></p>
+</div>
+
+<footer>
+  <p>Milestone 07 — Forms, Views &amp; Apps · <a href="https://gharib89.github.io/learn-crm-cli-and-api/">course home</a></p>
+  <p class="ft">M07 · L03 · lessons/0040-build-a-model-driven-app.html · app create + build-sitemap + add-components; writes + cleanup; live-verified on agent-cloud 2026-06-18, crm v1.0.0</p>
+</footer>
+
+</div><!-- /wrap -->
+
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 7, "name": "Forms, Views & Apps"},
+  "lesson": 3,
+  "title": "Build a model-driven app",
+  "slug": "build-a-model-driven-app",
+  "topics": ["app-create","app-module","sitemap","build-sitemap","add-components","app-delete","model-driven-app","component-kinds"],
+  "summary": "Model-driven app = appmodule container. Three steps: app create (--name, --unique-name, --solution); app build-sitemap (--area 'id[:Title]', --group 'areaId/groupId[:Title]', --subarea 'areaId/groupId:entity=<logical>[:Title]', --unique-name to link to app); app add-components <appmoduleid> --component kind:guid (kinds: view|chart|form|dashboard|sitemap|bpf). app_lookup_error = read-back race, not a failure. app delete sweeps FK-dependent rows. Sitemap is a separate record — orphaned (not deleted) when app is deleted.",
+  "order": 3,
+  "status": "published" }
+</script>
+</body>
+</html>
