@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M06 · L03 — Build a Solution: create-publisher, create, add-component</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-sizing:border-box}0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-false{color:#ff8f7a}.c-num{color:#ffd479}.c-meth{color:#ffd479;font-weight:700}.c-ann{color:#7fb0c9}
+  .c-xtag{color:#8cc0ff}.c-xattr{color:#ffd479}.c-xval{color:#a7e6a0}
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+  table.ops{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--card);
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.ops th,table.ops td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.ops th{background:var(--guid-soft);color:var(--guid);font-family:"Roboto Mono",monospace;
+    font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  table.ops tr:last-child td{border-bottom:none}
+  table.ops code{font-size:12.5px}
+  table.ops .pk{color:var(--teal-deep);font-weight:700}
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-false,pre .c-num,pre .c-meth,pre .c-flag,pre .c-ann,pre .c-xtag,pre .c-xattr,pre .c-xval{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="top reveal">
+  <p class="eyebrow">Milestone 06 <span class="dot">·</span> Solutions &amp; ALM <span class="dot">·</span> Lesson 03</p>
+  <h1>From scratch: <em>publisher → solution → table</em></h1>
+  <p class="sub">Create the full stack in four commands, then wire the component in.</p>
+  <div class="livechip"><span class="led"></span> live on <b>agent-cloud</b> &nbsp;·&nbsp; orgexample.crm.dynamics.com &nbsp;·&nbsp; <span class="pill t">writes</span></div>
+  <div class="rule"></div>
+  <div class="why">
+    <b>Why this matters:</b> You've been using <code>agsol</code> (or <code>itworx_dev</code>) as a ready-made bucket. Now you'll build one from first principles — publisher, solution, table — and explicitly register the table as a solution component. This is the exact sequence an agent runs when setting up a new customization context on a fresh org.
+  </div>
+</header>
+
+<p class="lead reveal">Four commands. <em>Publisher first</em> — it's the source of the prefix every component inherits. Then the solution container. Then the table. Then <code>add-component</code> to register it.</p>
+
+<!-- ─── SECTION 01 ─── -->
+<section class="reveal">
+  <h2><span class="n">01</span> Create the publisher</h2>
+  <p>A publisher owns a <strong>customization prefix</strong> (e.g. <code>itworx_</code>) and an <strong>option-value prefix</strong> that namespaces picklist integers. Every component you create inherits the publisher's prefix — so the publisher must exist before the solution.</p>
+
+  <table class="ops">
+    <thead><tr><th>Flag</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code class="pk">--name</code></td><td>Unique name (internal key). Lowercase, no spaces.</td></tr>
+      <tr><td><code>--display</code></td><td>Human-readable friendly name shown in the UI.</td></tr>
+      <tr><td><code>--prefix</code></td><td>Schema prefix (2–8 chars, alphanumeric, starts with a letter, not <code>mscrm</code>). Columns, tables, and option sets get this prefix.</td></tr>
+      <tr><td><code>--option-value-prefix</code></td><td>Integer 10000–99999. Offsets picklist option values to avoid cross-publisher collisions.</td></tr>
+      <tr><td><code>--if-exists</code></td><td><code>skip</code> or <code>error</code> (default). Use <code>skip</code> for idempotent scripts.</td></tr>
+      <tr><td><code>--no-set-default</code></td><td>Don't overwrite <code>publisher_prefix</code> in the active CLI profile.</td></tr>
+    </tbody>
+  </table>
+
+  <pre class="term"><span class="tag">shell</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> solution create-publisher \
+    <span class="c-flag">--name</span> itworx \
+    <span class="c-flag">--display</span> <span class="c-str">"ITWorx Publisher"</span> \
+    <span class="c-flag">--prefix</span> itworx \
+    <span class="c-flag">--option-value-prefix</span> <span class="c-num">72000</span> \
+    <span class="c-flag">--if-exists</span> skip \
+    <span class="c-flag">--no-set-default</span></code></pre>
+
+  <pre class="term"><span class="tag">envelope · live-verified 2026-06-18</span><code><span class="c-punc">{</span>
+  <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+  <span class="c-key">"data"</span><span class="c-punc">: {</span>
+    <span class="c-key">"created"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+    <span class="c-key">"uniquename"</span><span class="c-punc">:</span> <span class="c-str">"itworx"</span><span class="c-punc">,</span>
+    <span class="c-key">"friendlyname"</span><span class="c-punc">:</span> <span class="c-str">"ITWorx Publisher"</span><span class="c-punc">,</span>
+    <span class="c-key">"customizationprefix"</span><span class="c-punc">:</span> <span class="c-str">"itworx"</span><span class="c-punc">,</span>
+    <span class="c-key">"customizationoptionvalueprefix"</span><span class="c-punc">:</span> <span class="c-num">72000</span><span class="c-punc">,</span>
+    <span class="c-key">"publisherid"</span><span class="c-punc">:</span> <span class="c-guid">"d7b2c38a-256b-f111-ab0c-70a8a5af9b7e"</span>
+  <span class="c-punc">}</span>
+<span class="c-punc">}</span></code></pre>
+
+  <div class="callout tip">
+    <span class="ic">TIP</span>
+    <div>If your profile already has a publisher (like <code>itworx</code>), skip <code>create-publisher</code> and pass <code>--publisher itworx</code> to <code>solution create</code>. The publisher only needs to exist once per org.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 02 ─── -->
+<section class="reveal">
+  <h2><span class="n">02</span> Create the solution container</h2>
+  <p>The solution is the versioned container that travels between orgs. It references the publisher you just created.</p>
+
+  <table class="ops">
+    <thead><tr><th>Flag</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code class="pk">--name</code></td><td>Unique name. Used as the ZIP filename base and import key.</td></tr>
+      <tr><td><code>--display</code></td><td>Friendly name shown in the Solutions UI.</td></tr>
+      <tr><td><code>--version</code></td><td>4-part version string (<code>major.minor.build.revision</code>). Start at <code>1.0.0.0</code>.</td></tr>
+      <tr><td><code>--publisher</code></td><td>Unique name of the publisher to bind this solution to.</td></tr>
+      <tr><td><code>--if-exists</code></td><td><code>skip</code> or <code>error</code>.</td></tr>
+      <tr><td><code>--no-set-default</code></td><td>Don't overwrite <code>default_solution</code> in your CLI profile. Important when creating a one-off solution without disrupting your working context.</td></tr>
+    </tbody>
+  </table>
+
+  <pre class="term"><span class="tag">shell</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> solution create \
+    <span class="c-flag">--name</span> itworx_dev \
+    <span class="c-flag">--display</span> <span class="c-str">"ITWorx Dev Solution"</span> \
+    <span class="c-flag">--version</span> 1.0.0.0 \
+    <span class="c-flag">--publisher</span> itworx \
+    <span class="c-flag">--if-exists</span> skip \
+    <span class="c-flag">--no-set-default</span></code></pre>
+
+  <pre class="term"><span class="tag">envelope · live-verified 2026-06-18</span><code><span class="c-punc">{</span>
+  <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+  <span class="c-key">"data"</span><span class="c-punc">: {</span>
+    <span class="c-key">"created"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+    <span class="c-key">"uniquename"</span><span class="c-punc">:</span> <span class="c-str">"itworx_dev"</span><span class="c-punc">,</span>
+    <span class="c-key">"friendlyname"</span><span class="c-punc">:</span> <span class="c-str">"ITWorx Dev Solution"</span><span class="c-punc">,</span>
+    <span class="c-key">"version"</span><span class="c-punc">:</span> <span class="c-str">"1.0.0.0"</span><span class="c-punc">,</span>
+    <span class="c-key">"publisherid"</span><span class="c-punc">:</span> <span class="c-guid">"d7b2c38a-256b-f111-ab0c-70a8a5af9b7e"</span><span class="c-punc">,</span>
+    <span class="c-key">"solutionid"</span><span class="c-punc">:</span> <span class="c-guid">"34b1d791-256b-f111-ab0c-70a8a5af9b7e"</span>
+  <span class="c-punc">}</span>
+<span class="c-punc">}</span></code></pre>
+</section>
+
+<!-- ─── SECTION 03 ─── -->
+<section class="reveal">
+  <h2><span class="n">03</span> Create a table inside the solution</h2>
+  <p>Pass <code>--solution itworx_dev</code> to <code>metadata create-entity</code> so Dataverse stamps the new entity with the solution context. The schema name automatically gets the publisher's prefix.</p>
+
+  <pre class="term"><span class="tag">shell</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> metadata create-entity \
+    <span class="c-flag">--schema-name</span> itworx_Project \
+    <span class="c-flag">--display</span> <span class="c-str">"ITWorx Project"</span> \
+    <span class="c-flag">--display-collection</span> <span class="c-str">"ITWorx Projects"</span> \
+    <span class="c-flag">--solution</span> itworx_dev</code></pre>
+
+  <pre class="term"><span class="tag">envelope · live-verified 2026-06-18</span><code><span class="c-punc">{</span>
+  <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+  <span class="c-key">"data"</span><span class="c-punc">: {</span>
+    <span class="c-key">"created"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+    <span class="c-key">"schema_name"</span><span class="c-punc">:</span> <span class="c-str">"itworx_Project"</span><span class="c-punc">,</span>
+    <span class="c-key">"logical_name"</span><span class="c-punc">:</span> <span class="c-str">"itworx_project"</span><span class="c-punc">,</span>
+    <span class="c-key">"entity_set_name"</span><span class="c-punc">:</span> <span class="c-str">"itworx_projects"</span><span class="c-punc">,</span>
+    <span class="c-key">"primary_attribute"</span><span class="c-punc">:</span> <span class="c-str">"itworx_name"</span><span class="c-punc">,</span>
+    <span class="c-key">"metadata_id_url"</span><span class="c-punc">:</span> <span class="c-str">"https://orgexample.crm.dynamics.com/api/data/v9.2/EntityDefinitions(<span class="c-guid">246395a6-256b-f111-ab0c-70a8a5af9b7e</span>)"</span><span class="c-punc">,</span>
+    <span class="c-key">"solution"</span><span class="c-punc">:</span> <span class="c-str">"itworx_dev"</span><span class="c-punc">,</span>
+    <span class="c-key">"published"</span><span class="c-punc">:</span> <span class="c-true">true</span>
+  <span class="c-punc">}</span>
+<span class="c-punc">}</span></code></pre>
+
+  <div class="callout tip">
+    <span class="ic">TIP</span>
+    <div><strong>The MetadataId lives in the URL.</strong> Look at <code>metadata_id_url</code>: the GUID at the end — <code>246395a6-256b-f111-ab0c-70a8a5af9b7e</code> — is the entity's MetadataId. That's the value you pass to <code>add-component --id</code> in the next step.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 04 ─── -->
+<section class="reveal">
+  <h2><span class="n">04</span> Register the component with <code>add-component</code></h2>
+  <p>Creating the entity with <code>--solution</code> stamps it with the solution context, but explicitly calling <code>add-component</code> makes it a <strong>root component</strong> — the thing that appears in <code>solution components</code> output and travels in the ZIP.</p>
+
+  <table class="ops">
+    <thead><tr><th>Flag</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code class="pk">--solution</code></td><td>Target solution unique name.</td></tr>
+      <tr><td><code>--type</code></td><td>Component type integer. <code>1</code> = Entity (table). See the component-type reference in L02.</td></tr>
+      <tr><td><code>--id</code></td><td>The component's MetadataId (for entities: extracted from <code>metadata_id_url</code>).</td></tr>
+      <tr><td><code>--no-add-required</code></td><td>Don't ask the server to automatically pull in required dependent components.</td></tr>
+      <tr><td><code>--no-subcomponents</code></td><td>Don't include subcomponents (columns, forms, views) of the entity.</td></tr>
+    </tbody>
+  </table>
+
+  <pre class="term"><span class="tag">shell</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> solution add-component \
+    <span class="c-flag">--solution</span> itworx_dev \
+    <span class="c-flag">--type</span> <span class="c-num">1</span> \
+    <span class="c-flag">--id</span> <span class="c-guid">246395a6-256b-f111-ab0c-70a8a5af9b7e</span></code></pre>
+
+  <pre class="term"><span class="tag">envelope · live-verified 2026-06-18</span><code><span class="c-punc">{</span>
+  <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+  <span class="c-key">"data"</span><span class="c-punc">: {</span>
+    <span class="c-key">"added"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+    <span class="c-key">"solution"</span><span class="c-punc">:</span> <span class="c-str">"itworx_dev"</span><span class="c-punc">,</span>
+    <span class="c-key">"component_id"</span><span class="c-punc">:</span> <span class="c-guid">"246395a6-256b-f111-ab0c-70a8a5af9b7e"</span><span class="c-punc">,</span>
+    <span class="c-key">"component_type"</span><span class="c-punc">:</span> <span class="c-num">1</span>
+  <span class="c-punc">}</span><span class="c-punc">,</span>
+  <span class="c-key">"meta"</span><span class="c-punc">: {</span>
+    <span class="c-key">"note"</span><span class="c-punc">:</span> <span class="c-str">"AddRequiredComponents was enabled: the server may have silently added required components beyond the requested entity; the response does not report them."</span>
+  <span class="c-punc">}</span>
+<span class="c-punc">}</span></code></pre>
+
+  <div class="callout tip">
+    <span class="ic">TIP</span>
+    <div>The <code>meta.note</code> says "may have silently added required components." That's normal — when you add an Entity, the server also pulls in its forms, views, and ribbon. These show up in <code>solution components</code> output but aren't listed in the <code>add-component</code> response.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 05 ─── -->
+<section class="reveal">
+  <h2><span class="n">05</span> Verify with <code>solution components</code></h2>
+  <p>Run <code>components</code> to confirm the entity (and its silently-pulled dependents) are registered in the solution. This is the same command covered in L02.</p>
+
+  <pre class="term"><span class="tag">shell</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> solution components itworx_dev</code></pre>
+
+  <p>The output will list the root component (type <code>1</code> — the entity) along with the dependent components the server added: forms (<code>type 60</code>), views (<code>type 26</code>), ribbons (<code>type 70</code>), and possibly the primary column (<code>type 9</code>). Together they represent everything that travels in the solution ZIP.</p>
+
+  <div class="callout tip">
+    <span class="ic">TIP</span>
+    <div>The root component count you see here is what ends up in <code>solution.xml</code> as <code>&lt;RootComponent&gt;</code> entries. Everything non-root is packed into <code>customizations.xml</code> but doesn't appear in the manifest's component list.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 06 — QUIZ ─── -->
+<section class="reveal">
+  <div class="quiz">
+    <p class="qh">Lesson check</p>
+    <p class="qhs">3 questions · click to reveal</p>
+
+    <div class="q" data-correct="2">
+      <p class="stem">1. What does <b><code>--option-value-prefix 72000</code></b> on <code>create-publisher</code> do?</p>
+      <button class="opt"><span class="mk">A</span> Sets the solution version to 7.2.0.0</button>
+      <button class="opt"><span class="mk">B</span> Adds 72000 rows of sample data to the org</button>
+      <button class="opt"><span class="mk">C</span> Offsets picklist option values to prevent cross-publisher collisions (e.g. a choice field's first option = 72000, then 72001 …)</button>
+      <button class="opt"><span class="mk">D</span> Limits the publisher to a maximum of 72000 components</button>
+      <div class="fb ok">Correct. The integer prefix namespaces all choice/picklist option values under this publisher — so two publishers' option integers never overlap in a merged org.</div>
+      <div class="fb no">Not quite. The option-value prefix is about picklist integer namespacing — it offsets choice field values so publishers don't collide. Nothing to do with version numbers, sample data, or component limits.</div>
+    </div>
+
+    <div class="q" data-correct="1">
+      <p class="stem">2. You ran <b><code>metadata create-entity --solution itworx_dev</code></b>. The entity is created. Do you still need <code>add-component</code>?</p>
+      <button class="opt"><span class="mk">A</span> No — <code>--solution</code> on create registers it as a root component automatically</button>
+      <button class="opt"><span class="mk">B</span> Yes — <code>--solution</code> routes creation into the solution context, but you still need to explicitly register it as a root component with <code>add-component</code></button>
+      <button class="opt"><span class="mk">C</span> Only if the entity has custom columns beyond the primary name</button>
+      <button class="opt"><span class="mk">D</span> Only when working with managed solutions</button>
+      <div class="fb ok">Correct. <code>--solution</code> stamps the entity's metadata with the solution context, but explicit root component registration via <code>add-component</code> is what makes it appear in <code>solution components</code> and travel in the ZIP as a root entry.</div>
+      <div class="fb no">Not quite. <code>--solution</code> routes creation but doesn't automatically call <code>AddSolutionComponent</code>. You need the separate <code>add-component</code> step to register it as a root component.</div>
+    </div>
+
+    <div class="q" data-correct="1">
+      <p class="stem">3. The <code>add-component</code> response includes a <b><code>meta.note</code></b> about "AddRequiredComponents". What did the server do?</p>
+      <button class="opt"><span class="mk">A</span> It created a backup snapshot of the component before adding it</button>
+      <button class="opt"><span class="mk">B</span> It automatically added the entity's required dependent components — forms, views, and ribbon — alongside the root entity</button>
+      <button class="opt"><span class="mk">C</span> It published the solution to all users on the org</button>
+      <button class="opt"><span class="mk">D</span> It incremented the solution version number automatically</button>
+      <div class="fb ok">Correct. When you add an Entity component, the server's <code>AddRequiredComponents</code> behavior silently pulls in everything the entity depends on — default forms, system views, and the ribbon XML. They appear in <code>solution components</code> even though the response only lists the one entity you added.</div>
+      <div class="fb no">Not quite. The note is about dependent component pull-in: the server added forms, views, and ribbon automatically alongside the entity you requested. No backup, publish, or version bump happens.</div>
+    </div>
+
+    <p class="score" id="score"></p>
+  </div>
+</section>
+
+<!-- ─── NEXT ─── -->
+<div class="next reveal">
+  <span class="pill">up next</span>
+  <h2>Export &amp; Import</h2>
+  <p>Next: export the solution to a ZIP and import it — completing the M06 done-when. <span class="live-only">Just say <strong>'next lesson'</strong>.</span></p>
+</div>
+
+<footer>
+  <p>Milestone 06 — Solutions &amp; ALM · <a href="https://gharib89.github.io/learn-crm-cli-and-api/">course home</a></p>
+  <p class="ft">M06 · L03 · lessons/0035-build-a-solution.html · writes: create-publisher, create, metadata create-entity, add-component; live-verified on agent-cloud 2026-06-18, crm v1.0.0</p>
+</footer>
+
+</div><!-- /wrap -->
+
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 6, "name": "Solutions & ALM"},
+  "lesson": 3,
+  "title": "Build a Solution: create-publisher, create, add-component",
+  "slug": "build-a-solution",
+  "topics": ["solution-create-publisher","solution-create","metadata-create-entity","add-component","customization-prefix","option-value-prefix","solution-components"],
+  "summary": "Write lesson. Create a solution stack from first principles: create-publisher (uniquename, prefix, option-value-prefix), solution create (bound to publisher, versioned), metadata create-entity (--solution routes to the right container), and add-component (--type 1, --id = entity MetadataId). The server's AddRequiredComponents silently pulls in forms/views/ribbon. solution components confirms registration.",
+  "order": 3,
+  "status": "published" }
+</script>
+</body>
+</html>

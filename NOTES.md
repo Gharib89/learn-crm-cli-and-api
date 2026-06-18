@@ -392,3 +392,65 @@ Continue yet (M06 unbuilt) — narrative names M06, button auto-rewires when M06
   → `{would_delete, schema_name, solution, can_delete, blockers[]}`. Deleting a 1:N also drops its
   lookup column. Real delete envelope `{deleted, schema_name|logical_name, solution}`. Teardown order:
   relationships before the tables.
+
+## M06 lesson sequence (shipped 2026-06-18)
+
+Milestone: **Solutions & ALM** (issue #6). "Done when": put a custom table into an unmanaged
+solution, export the zip, and re-import it. All 5 lessons live-verified against **crm v1.0.0**
+(version reset from pre-launch 4.31.1 — same binary, same commands). Cloud only; no on-prem
+differences in this milestone.
+
+- **L01** — **What is a solution?** (`0033`). Publisher → solution → component hierarchy;
+  managed vs unmanaged (table); ALM pipeline (dev unmanaged → export → import managed to prod);
+  automatable vs GUI-only tasks map (create-publisher/create/export/import = CLI; Solution
+  Checker/history UI = GUI only). Concept lesson, no CLI exercise.
+- **L02** — **Inspect solutions** (`0034`). `solution list` (ismanaged flag, version);
+  `solution info` (solutiontype, _publisherid_value); `solution components` (componenttype 1=Entity,
+  objectid=MetadataId); component type table (1/2/26/29/59/60/61/80/300). `--save inventory.json`
+  + `--diff` for CI drift detection.
+- **L03** — **Build a solution** (`0035`). `create-publisher` (prefix 2-8 chars, option-value-prefix
+  offsets picklist values); `solution create` (--no-set-default important); `metadata create-entity
+  --solution`; `add-component --type 1 --id <MetadataId from metadata_id_url>`. AddRequiredComponents
+  silently pulls forms/views/ribbon.
+- **L04** — **Export & import** (`0036`). `solution export` async (ExportSolutionAsync, polls);
+  ZIP = solution.xml + customizations.xml + [Content_Types].xml. `solution import` async with
+  progress lines; `components[]` array in result; `--overwrite` = OverwriteUnmanagedCustomizations;
+  `--yes` required in JSON mode. Done-when: re-imported same org.
+- **L05** — **Layers & what's not automatable** (`0037`, capstone). Managed/unmanaged layer stack;
+  `layer-conflicts --solution <managed> --unmanaged-solution <yours>` (live result: empty array for
+  AccessTeam vs itworx_dev); `set-version` (4-part version bump); GUI-only table (Solution Checker,
+  history, ZIP diff, patch mgmt); cleanup: `delete-entity` first, then `solution uninstall`
+  (removes container only, not components). Full 9-step round-trip capstone script.
+
+**✅ M06 COMPLETE — 5 lessons** (L01–L05, lessons 0033–0037; shipped 2026-06-18). Build green
+(37 lessons). 0032's auto-Continue rewired to 0033 automatically once M06 shipped.
+
+### M06 live-CLI facts (crm v1.0.0, captured from agent-cloud 2026-06-18)
+
+- **crm version reset**: `crm --version` now reports `1.0.0` (was auto-bumped to pre-launch
+  4.31.1, then reset). Same binary/commands as v4.12.0 sessions.
+- **create-publisher**: `--name --display --prefix --option-value-prefix` (required); `--if-exists
+  [error|skip]`; `--no-set-default` (don't write publisher_prefix back to profile). Envelope:
+  `{created, uniquename, friendlyname, customizationprefix, customizationoptionvalueprefix, publisherid}`.
+- **solution create**: `--name --publisher` (required; or `--publisher-id`); `--display --version
+  --if-exists --no-set-default`. Envelope: `{created, uniquename, friendlyname, version, publisherid, solutionid}`.
+- **add-component**: `--solution --type --id` (required). `--type 1` = Entity (integer or friendly
+  name). `--id` = component MetadataId (from `metadata_id_url` in create-entity envelope). Envelope:
+  `{added, solution, component_id, component_type}` + `meta.note` about AddRequiredComponents.
+  `--no-add-required` / `--no-subcomponents` to suppress.
+- **solution components --save**: writes `[{componenttype, objectid, rootcomponentbehavior}]` (no
+  solutioncomponentid). `--diff` compares live vs saved file, non-zero exit on drift.
+- **export**: `solution export <name> -o <file>` (async, ExportSolutionAsync). Envelope: `{output,
+  bytes, managed, solution, async_operation_id, export_job_id, duration_ms, action}`. ZIP = 3 files:
+  solution.xml (manifest), customizations.xml (component defs), [Content_Types].xml.
+- **import**: `solution import <zip> --overwrite --yes`. Async with stderr progress lines. Envelope:
+  `{import_job_id, async_operation_id, status, progress, started_on, completed_on, duration_ms,
+  managed, action, result, components[]}`. `components[]` = `[{name, type, result}]` for each
+  processed component (entity, savedQuery, formXml, entityRibbon, etc.).
+- **layer-conflicts**: `--solution <managed-name> --unmanaged-solution <yours>`. Returns
+  `[{...}]` per conflict; empty array = no conflicts. AccessTeam vs m06sol → `[]` (no conflicts).
+- **solution uninstall**: removes the solution container only (not its components). Components must
+  be deleted separately first.
+- **agsol current state**: 2 components (account + contact, both componenttype 1 from M05
+  relationship work). m06sol was created+used for M06 lessons then cleaned up (m06_project deleted,
+  m06sol uninstalled).
