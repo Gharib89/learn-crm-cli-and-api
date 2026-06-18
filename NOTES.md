@@ -516,3 +516,58 @@ on agent-cloud. Running example: `ag_ticket` entity (ag_name, ag_status picklist
   ownerid only; custom columns not on it until `form add-field`. `form add-field` resolves classid
   automatically from AttributeType (Picklist→`{3EF3...}`, Integer→`{C6D1...}`, String→`{4273...}`).
   `form export <entity> <form-name>` (BOTH positional args required; missing FORM_NAME → exit 2).
+
+## M08 lesson sequence (shipped 2026-06-18)
+
+Milestone: **Automation & business logic** (issue #8). "Done when": register a workflow (trigger it)
+and register a plug-in step, and articulate what needs other tools. All 5 lessons live-verified against
+**crm v1.0.0** on agent-cloud. Cloud only.
+
+- **L01** — **The automation landscape** (`0043`). Four automation tiers: business rule (cat 2), classic
+  workflow (cat 0), Power Automate flow (cat 5), plug-in/webhook (event pipeline). Category deep-dive
+  (0=workflow, 1=dialog, 2=businessrule, 3=action, 4=bpf, 5=flow). CLI coverage map per tier.
+- **L02** — **Classic workflows: lifecycle** (`0044`). `workflow list` (statecode 0/1, statuscode 1/2,
+  ondemand, --entity/--activated filters). `workflow activate/deactivate --yes`. `workflow export -o`/
+  `import --file [--activate]`. `workflow run <id> --target <guid>` (on-demand only; async_operation_id
+  null = normal). `migration-assess` (verdict: ready|blocked; blockers: custom_activity/real_time/
+  wait_condition). Live: ran "Reset Security Stamp" on Sara Mitchell (contact).
+- **L03** — **The event pipeline** (`0045`). Three stages: pre-validation (10, outside tx, sync only),
+  pre-operation (20, inside tx before DB write, sync only, can modify Target), post-operation (40,
+  inside/after tx, sync or async). Async requires postoperation (platform constraint). `plugin list-types`
+  [--assembly name]. `register-assembly PATH --isolation-mode sandbox|none (sandbox=2 default); --update`.
+  `register-step --message --plugin-type|--service-endpoint --entity --stage --mode --filtering-attributes
+  --async-auto-delete`. `register-image --step --type pre|post|both --alias --attributes`. `set-step-state
+  enable|disable`. `unregister-step/image/assembly --yes`. post-image requires postoperation step.
+- **L04** — **Webhooks: the no-DLL step** (`0046`). `register-webhook --name --url --auth
+  (webhookkey=4/httpheader=5/httpquerystring=6) --auth-value (write-only, never returned)`. Envelope:
+  created/name/url/auth_type/serviceendpointid/solution. `register-step --service-endpoint <webhook-name>`
+  (mutually exclusive with --plugin-type). Standard pattern: postoperation+async. Platform POSTs
+  RemoteExecutionContext JSON (MessageName, PrimaryEntityName, PrimaryEntityId, InputParameters.Target,
+  UserId, CorrelationId). NO `unregister-webhook` command: delete via `entity delete serviceendpoints
+  <id> --yes`. Teardown: unregister-step BEFORE entity delete serviceendpoints.
+- **L05** — **The automation boundary** (`0047`, capstone). `action function WhoAmI/RetrieveCurrentOrganization
+  [--params JSON] [--bind-set/--bind-id]` = OData GET. `action invoke NAME [--body JSON] [--bind-set --bind-id]`
+  = OData POST. `sla activate <id>` = activates backing workflows then SLA (creation/KPI = GUI-only). Full
+  automation decision matrix. GUI-only: flow designer, BPF, SLA KPI items, .NET build. Done-when satisfied.
+
+**✅ M08 COMPLETE — 5 lessons** (L01–L05, lessons 0043–0047; shipped 2026-06-18). Build green (47 lessons).
+0042's auto-Continue rewired to 0043 automatically once M08 shipped.
+
+### M08 live-CLI facts (crm v1.0.0, captured from agent-cloud 2026-06-18)
+
+- **workflow list** fields: workflowid, name, category, statecode (0=Draft, 1=Activated), statuscode
+  (1=Draft, 2=Activated), ondemand, primaryentity. Filters: `--category <name-or-int>`, `--entity <logical>`,
+  `--activated`, `--on-demand`.
+- **workflow run** POSTs to `workflows(<id>)/Microsoft.Dynamics.CRM.ExecuteWorkflow` with body
+  `{"EntityId":"<contactid>"}`. `async_operation_id: null` in envelope is normal — job queued. Live run
+  against Sara Mitchell (a1b2c3d4-1111-...) succeeded.
+- **migration-assess** live results on agent-cloud: "Reset Security Stamp" contact → blocked (custom_activity);
+  "ADX Sign Up Email" adx_invitation → ready. Verdict "blocked" ≠ impossible, means redesign needed.
+- **action function WhoAmI** → `{BusinessUnitId, UserId, OrganizationId}`. Live-verified.
+- **action function RetrieveCurrentOrganization** `--params '{"AccessType":"Default"}'` → org metadata
+  (OrganizationVersion, FriendlyName, Geo, EnvironmentId). Live-verified.
+- **slas query** on agent-cloud → empty array (no SLAs defined). `sla activate` explained conceptually.
+- **plugin list-types** → large list of platform-registered types (Microsoft.* assemblies). `--assembly` scopes.
+- **No crm workflow or SLA creation verb** — only management (activate/deactivate/run/export/import).
+- **No unregister-webhook** in `plugin` group — webhook service endpoint deleted via `entity delete
+  serviceendpoints <id> --yes`.

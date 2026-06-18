@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M08 · L05 — The automation boundary — the M08 capstone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-sizing:border-box}0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-false{color:#ff8f7a}.c-num{color:#ffd479}.c-meth{color:#ffd479;font-weight:700}.c-ann{color:#7fb0c9}
+  .c-xtag{color:#8cc0ff}.c-xattr{color:#ffd479}.c-xval{color:#a7e6a0}
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+  table.ops{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--card);
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.ops th,table.ops td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.ops th{background:var(--guid-soft);color:var(--guid);font-family:"Roboto Mono",monospace;
+    font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  table.ops tr:last-child td{border-bottom:none}
+  table.ops code{font-size:12.5px}
+  table.ops .pk{color:var(--teal-deep);font-weight:700}
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-false,pre .c-num,pre .c-meth,pre .c-flag,pre .c-ann,pre .c-xtag,pre .c-xattr,pre .c-xval{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="top reveal">
+  <p class="eyebrow">Milestone 08 <span class="dot">·</span> Automation &amp; Business Logic <span class="dot">·</span> Lesson 05</p>
+  <h1>The automation<br><em>boundary</em></h1>
+  <p class="sub">The M08 capstone: call OData actions, activate SLAs, assess workflows for migration, and draw the line between what the CLI owns and what other tools must handle.</p>
+  <div class="livechip"><span class="led"></span> live on <b>agent-cloud</b> &nbsp;·&nbsp; orgexample.crm.dynamics.com &nbsp;·&nbsp; <span class="pill">reads</span> <span class="pill t">writes</span> <span class="pill">cleanup</span></div>
+  <div class="rule"></div>
+  <div class="why">
+    <b>Why this matters:</b> The automation boundary is the most important thing an agentic D365 workflow needs to know. When a requirement lands — "send an email on record create", "validate a field before save", "route a ticket by SLA" — the right answer depends on knowing which tier owns it, whether the CLI can reach it, and what needs a designer, a .NET project, or another tool entirely. This lesson closes M08 with that map.
+  </div>
+</header>
+
+<p class="lead reveal">D365 automation spans five surfaces: <em>business rules</em>, <em>workflows</em>, <em>cloud flows</em>, <em>plug-ins/webhooks</em>, and <em>SLAs</em>. The crm CLI reaches all five — but in very different ways and to very different depths.</p>
+
+<!-- ─── SECTION 01 ─── -->
+<section class="reveal">
+  <h2><span class="n">01</span> <code>crm action</code> — call OData functions and actions</h2>
+  <p>The <code>action</code> group is the CLI's direct line to the Dataverse Web API's OData function and action layer. These are not the same as classic workflow actions (category 3) — they are HTTP GET/POST calls to named endpoints exposed by the platform.</p>
+
+  <h3>Functions (GET) — <code>action function</code></h3>
+  <p>OData <em>functions</em> are read-only (GET). The most useful unbound function is <code>WhoAmI</code> — it returns the calling user's GUIDs, and double-checks that your profile and OAuth token are wired to the right org:</p>
+
+  <pre class="term"><span class="tag">shell</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> action function WhoAmI</code></pre>
+
+  <pre class="term"><span class="tag">envelope · live-verified 2026-06-18</span><code><span class="c-punc">{</span>
+  <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+  <span class="c-key">"data"</span><span class="c-punc">: {</span>
+    <span class="c-key">"BusinessUnitId"</span><span class="c-punc">:</span> <span class="c-guid">"4a617aa7-0000-0000-0000-000d3a3b279b"</span><span class="c-punc">,</span>
+    <span class="c-key">"UserId"</span><span class="c-punc">:</span>         <span class="c-guid">"bf40e4d2-0000-0000-0000-6045bd001b10"</span><span class="c-punc">,</span>
+    <span class="c-key">"OrganizationId"</span><span class="c-punc">:</span>  <span class="c-guid">"9102ced1-0000-0000-0000-000d3a302819"</span>
+  <span class="c-punc">}</span>
+<span class="c-punc">}</span></code></pre>
+
+  <p>Functions that take parameters use <code>--params</code> as a JSON dict:</p>
+
+  <pre class="term"><span class="tag">shell · RetrieveCurrentOrganization</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> action function RetrieveCurrentOrganization \
+    <span class="c-flag">--params</span> <span class="c-str">'{"AccessType":"Default"}'</span></code></pre>
+
+  <p>Returns the org's metadata: <code>OrganizationVersion</code>, <code>FriendlyName</code>, <code>Geo</code>, <code>EnvironmentId</code>, and more. Useful for verifying which environment an agent is targeting.</p>
+
+  <h3>Bound functions — <code>--bind-set</code> and <code>--bind-id</code></h3>
+  <p>Pass <code>--bind-set</code> alone for collection-bound; add <code>--bind-id</code> for record-bound:</p>
+
+  <pre class="term"><span class="tag">shell · record-bound function</span><code><span class="c-comment"># Bound to a single record (set + id)</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> action function MyNamespace.SomeFunction \
+    <span class="c-flag">--bind-set</span> contacts \
+    <span class="c-flag">--bind-id</span> <span class="c-guid">a1b2c3d4-1111-2222-3333-00155d467b91</span></code></pre>
+
+  <h3>Actions (POST) — <code>action invoke</code></h3>
+  <p>OData <em>actions</em> have side effects (POST). The <code>workflow run</code> command you used in L02 is just a convenience wrapper around one: it POSTs to <code>workflows(&lt;id&gt;)/Microsoft.Dynamics.CRM.ExecuteWorkflow</code>. You can call any action directly:</p>
+
+  <pre class="term"><span class="tag">shell · unbound action</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> action invoke PublishAllXml \
+    <span class="c-flag">--body</span> <span class="c-str">'{"ParameterXml":"&lt;importexportxml /&gt;"}'</span></code></pre>
+
+  <pre class="term"><span class="tag">shell · bound action (record-level)</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> action invoke Microsoft.Dynamics.CRM.ExecuteWorkflow \
+    <span class="c-flag">--bind-set</span> workflows \
+    <span class="c-flag">--bind-id</span> <span class="c-guid">79fcb86b-0000-0000-0000-8d5fbb78b84e</span> \
+    <span class="c-flag">--body</span> <span class="c-str">'{"EntityId":"a1b2c3d4-1111-2222-3333-00155d467b91"}'</span></code></pre>
+
+  <div class="callout tip">
+    <span class="ic">TIP</span>
+    <div><strong>Function vs action:</strong> if the operation has side effects (creates, updates, triggers something), it's an <em>action</em> → use <code>invoke</code>. If it's read-only (returns data, no mutation), it's a <em>function</em> → use <code>function</code>. The <a href="https://learn.microsoft.com/en-us/power-apps/developer/data-platform/webapi/use-web-api-functions" target="_blank">Microsoft.Dynamics.CRM namespace</a> in the Web API reference lists all built-in bound/unbound actions and functions.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 02 ─── -->
+<section class="reveal">
+  <h2><span class="n">02</span> <code>crm sla activate</code> — unlock SLA enforcement</h2>
+  <p>An SLA (Service Level Agreement) in D365 enforces response-time KPIs — for example, "a case must be resolved within 4 hours." Each SLA has one or more <strong>KPI items</strong>, and each KPI item has a <strong>backing classic workflow</strong> that fires the warning/failure actions. The full SLA must be activated before it can enforce anything.</p>
+
+  <p>The complication: backing workflows must be activated before the SLA record itself. If you import an SLA as part of a solution (M06), the workflows land in Draft state and the SLA is inactive. The CLI activates the whole stack in one call:</p>
+
+  <pre class="term"><span class="tag">shell</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> sla activate <span class="c-guid">&lt;sla-id&gt;</span></code></pre>
+
+  <p>What happens internally:</p>
+  <ol class="steps">
+    <li>CLI reads the SLA's backing workflow IDs from <code>slaitem</code> records</li>
+    <li>Activates each backing workflow that is currently in Draft (already-active workflows are skipped — re-running is safe)</li>
+    <li>Sets the SLA record's statecode to Activated</li>
+  </ol>
+
+  <p>If any backing workflow fails to activate (compile errors after a solution import), the SLA is left untouched and the per-workflow error report tells you which workflow needs attention in the GUI.</p>
+
+  <div class="callout warn">
+    <span class="ic">WARN</span>
+    <div><strong>SLA creation and KPI definition are GUI-only.</strong> You cannot create an SLA record, define KPI items, or set warning/failure times via the CLI. <code>sla activate</code> manages the activation step only — the rest lives in the Customer Service Hub app. This is one of the clearest automation-boundary cases in D365.</div>
+  </div>
+
+  <h3>Finding SLA IDs</h3>
+  <pre class="term"><span class="tag">shell · read SLAs</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> query odata slas <span class="c-flag">--select</span> name,slaid,statecode,statuscode</code></pre>
+  <p>Returns a list of SLA records. Filter to inactive ones (<code>statecode eq 0</code>) to find candidates for activation.</p>
+</section>
+
+<!-- ─── SECTION 03 ─── -->
+<section class="reveal">
+  <h2><span class="n">03</span> <code>workflow migration-assess</code> — the full inventory</h2>
+  <p>Before migrating a classic workflow to a Power Automate cloud flow, you need to know which workflows have migration blockers. <code>migration-assess</code> inventories all category-0 workflows and reports a verdict per workflow.</p>
+
+  <pre class="term"><span class="tag">shell · assess all classic workflows</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> workflow migration-assess</code></pre>
+
+  <pre class="term"><span class="tag">live output (trimmed) · live-verified 2026-06-18</span><code><span class="c-punc">[</span>
+  <span class="c-punc">{</span>
+    <span class="c-key">"id"</span><span class="c-punc">:</span> <span class="c-guid">"79fcb86b-0000-0000-0000-8d5fbb78b84e"</span><span class="c-punc">,</span>
+    <span class="c-key">"name"</span><span class="c-punc">:</span> <span class="c-str">"Reset Security Stamp"</span><span class="c-punc">,</span>
+    <span class="c-key">"primaryentity"</span><span class="c-punc">:</span> <span class="c-str">"contact"</span><span class="c-punc">,</span>
+    <span class="c-key">"state"</span><span class="c-punc">:</span> <span class="c-str">"activated"</span><span class="c-punc">,</span>
+    <span class="c-key">"mode"</span><span class="c-punc">:</span> <span class="c-str">"background"</span><span class="c-punc">,</span>
+    <span class="c-key">"verdict"</span><span class="c-punc">:</span> <span class="c-str">"blocked"</span><span class="c-punc">,</span>
+    <span class="c-key">"blockers"</span><span class="c-punc">:</span> <span class="c-punc">[</span><span class="c-str">"custom_activity"</span><span class="c-punc">]</span>
+  <span class="c-punc">},</span>
+  <span class="c-punc">{</span>
+    <span class="c-key">"id"</span><span class="c-punc">:</span> <span class="c-guid">"5de74dca-0000-0000-0000-bd7a1bf4c825"</span><span class="c-punc">,</span>
+    <span class="c-key">"name"</span><span class="c-punc">:</span> <span class="c-str">"ADX Sign Up Email"</span><span class="c-punc">,</span>
+    <span class="c-key">"primaryentity"</span><span class="c-punc">:</span> <span class="c-str">"adx_invitation"</span><span class="c-punc">,</span>
+    <span class="c-key">"state"</span><span class="c-punc">:</span> <span class="c-str">"draft"</span><span class="c-punc">,</span>
+    <span class="c-key">"mode"</span><span class="c-punc">:</span> <span class="c-str">"background"</span><span class="c-punc">,</span>
+    <span class="c-key">"verdict"</span><span class="c-punc">:</span> <span class="c-str">"ready"</span><span class="c-punc">,</span>
+    <span class="c-key">"blockers"</span><span class="c-punc">:</span> <span class="c-punc">[]</span>
+  <span class="c-punc">}</span>
+<span class="c-punc">]</span></code></pre>
+
+  <p>Verdicts and what they mean:</p>
+  <table class="ops">
+    <thead><tr><th>Verdict</th><th>Blockers</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code class="pk">ready</code></td><td>(empty)</td><td>No blockers — safe to migrate as-is</td></tr>
+      <tr><td><code>blocked</code></td><td><code>custom_activity</code></td><td>Uses a custom .NET workflow activity — needs redesign (replace with plug-in, API call, or cloud flow action)</td></tr>
+      <tr><td><code>blocked</code></td><td><code>real_time</code></td><td>Runs synchronously — cloud flows are async-only; needs redesign or move to plug-in</td></tr>
+      <tr><td><code>blocked</code></td><td><code>wait_condition</code></td><td>Uses a wait step — cloud flow equivalent exists but needs manual mapping</td></tr>
+    </tbody>
+  </table>
+
+  <p><strong>Verdict "blocked" is not a final verdict</strong> — it means redesign is needed, not that migration is impossible.</p>
+</section>
+
+<!-- ─── SECTION 04 ─── -->
+<section class="reveal">
+  <h2><span class="n">04</span> The automation boundary — full decision matrix <span class="pill">capstone</span></h2>
+  <p>Given any automation requirement, use this matrix to decide which tier handles it and whether the crm CLI can reach it:</p>
+
+  <table class="ops">
+    <thead>
+      <tr>
+        <th>Requirement</th>
+        <th>Tier</th>
+        <th>crm CLI</th>
+        <th>Other tool needed</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Show/hide a field based on another field's value (client-side)</td>
+        <td>Business rule (cat 2)</td>
+        <td><code>workflow activate/deactivate</code> only</td>
+        <td>Power Apps form designer to create/edit</td>
+      </tr>
+      <tr>
+        <td>Send an email when a record is created (no code)</td>
+        <td>Classic workflow or cloud flow</td>
+        <td><code>workflow activate/run/export/import</code></td>
+        <td>Power Automate designer to create/edit logic</td>
+      </tr>
+      <tr>
+        <td>Validate a field before save and block if invalid</td>
+        <td>Plug-in (pre-operation, sync)</td>
+        <td><code>plugin register-assembly/step</code> (full CLI)</td>
+        <td>Visual Studio + .NET to build the .dll</td>
+      </tr>
+      <tr>
+        <td>Notify an external system on every contact create (no .NET)</td>
+        <td>Webhook (event pipeline step)</td>
+        <td><code>plugin register-webhook + register-step</code> (full CLI)</td>
+        <td>Nothing — webhook needs no code</td>
+      </tr>
+      <tr>
+        <td>Enforce a 4-hour response SLA on cases</td>
+        <td>SLA</td>
+        <td><code>sla activate</code> only</td>
+        <td>Customer Service Hub UI to define KPI items</td>
+      </tr>
+      <tr>
+        <td>Migrate classic workflows to Power Automate</td>
+        <td>Cloud flow (cat 5)</td>
+        <td><code>workflow migration-assess</code> (inventory only)</td>
+        <td>Power Automate designer to build the flow</td>
+      </tr>
+      <tr>
+        <td>Call a custom OData action or platform function</td>
+        <td>OData API</td>
+        <td><code>action invoke / action function</code> (full CLI)</td>
+        <td>Nothing — fully CLI-callable</td>
+      </tr>
+      <tr>
+        <td>Design a Business Process Flow (multi-stage form wizard)</td>
+        <td>BPF (cat 4)</td>
+        <td>None (not exposed)</td>
+        <td>Power Apps BPF designer (GUI-only)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>The automation-boundary rule</h3>
+  <p>A useful short rule for agentic workflows:</p>
+  <ul class="tight">
+    <li><strong>Register and manage</strong> existing automation → CLI</li>
+    <li><strong>Create or edit logic</strong> (workflow steps, BPF stages, SLA KPIs) → designer / IDE</li>
+    <li><strong>Register server-side event handlers</strong> (plug-ins, webhooks) → CLI (except the .NET code)</li>
+    <li><strong>Call the platform API</strong> (actions, functions) → CLI</li>
+  </ul>
+</section>
+
+<!-- ─── SECTION 05 ─── -->
+<section class="reveal">
+  <h2><span class="n">05</span> M08 capstone — full round-trip <span class="pill t">writes</span> <span class="pill">cleanup</span></h2>
+  <p><strong>Done-when:</strong> register a workflow (trigger it) OR register a plug-in step, and articulate what needs other tools.</p>
+
+  <pre class="term"><span class="tag">capstone · M08 full round-trip · crm v1.0.0 · live-verified 2026-06-18</span><code><span class="c-comment"># ── PART A: Classic workflow ─────────────────────────────────────────────────</span>
+
+<span class="c-comment"># 1. Inventory classic workflows on the contact entity</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> workflow list <span class="c-flag">--category</span> workflow <span class="c-flag">--entity</span> contact
+<span class="c-comment">#   → find an on-demand workflow (ondemand: true, statecode: 1)</span>
+<span class="c-comment">#   → note its workflowid</span>
+
+<span class="c-comment"># 2. Trigger it on-demand against a contact   ← done-when ①</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> workflow run <span class="c-guid">&lt;workflowid&gt;</span> <span class="c-flag">--target</span> <span class="c-guid">&lt;contactid&gt;</span>
+<span class="c-comment">#   async_operation_id: null is normal — system job queued</span>
+
+<span class="c-comment"># 3. Assess for cloud migration blockers</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> workflow migration-assess <span class="c-flag">--entity</span> contact
+<span class="c-comment">#   → check verdict + blockers[]</span>
+
+<span class="c-comment"># ── PART B: Webhook step ─────────────────────────────────────────────────────</span>
+
+<span class="c-comment"># 4. Register a webhook service endpoint</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> plugin register-webhook \
+    <span class="c-flag">--name</span> <span class="c-str">"itworx-m08-hook"</span> \
+    <span class="c-flag">--url</span> <span class="c-str">"https://webhook.site/&lt;your-token&gt;"</span> \
+    <span class="c-flag">--auth</span> httpheader \
+    <span class="c-flag">--auth-value</span> <span class="c-str">"X-Hook-Secret: m08-demo"</span> \
+    <span class="c-flag">--solution</span> itworx_dev
+<span class="c-comment">#   → note serviceendpointid</span>
+
+<span class="c-comment"># 5. Register a step on contact Create   ← done-when ②</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> plugin register-step \
+    <span class="c-flag">--message</span> Create \
+    <span class="c-flag">--service-endpoint</span> <span class="c-str">"itworx-m08-hook"</span> \
+    <span class="c-flag">--entity</span> contact \
+    <span class="c-flag">--stage</span> postoperation \
+    <span class="c-flag">--mode</span> async \
+    <span class="c-flag">--name</span> <span class="c-str">"M08 notify on contact create"</span> \
+    <span class="c-flag">--solution</span> itworx_dev
+<span class="c-comment">#   → note stepid</span>
+
+<span class="c-comment"># 6. Fire the step — create a test contact</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> entity create contacts \
+    <span class="c-flag">--data</span> <span class="c-str">'{"firstname":"M08","lastname":"TestContact"}'</span>
+<span class="c-comment">#   → platform queues the webhook POST to webhook.site</span>
+<span class="c-comment">#   → note contactid for cleanup</span>
+
+<span class="c-comment"># 7. Confirm identity and org (sanity check)</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> action function WhoAmI
+<span class="c-comment">#   → UserId, BusinessUnitId, OrganizationId</span>
+
+<span class="c-comment"># ── CLEANUP ──────────────────────────────────────────────────────────────────</span>
+
+<span class="c-comment"># 8. Unregister the step (before the webhook endpoint)</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> plugin unregister-step <span class="c-guid">&lt;stepid&gt;</span> <span class="c-flag">--yes</span>
+
+<span class="c-comment"># 9. Delete the webhook service endpoint (no unregister-webhook; use entity delete)</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> entity delete serviceendpoints <span class="c-guid">&lt;serviceendpointid&gt;</span> <span class="c-flag">--yes</span>
+
+<span class="c-comment"># 10. Delete the test contact</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> entity delete contacts <span class="c-guid">&lt;contactid&gt;</span> <span class="c-flag">--yes</span></code></pre>
+
+  <h3>Done-when checklist</h3>
+  <table class="ops">
+    <thead><tr><th>Goal</th><th>Lesson</th><th>Satisfied by</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Register a workflow (trigger it)</td>
+        <td>L02 + capstone step 2</td>
+        <td><code>workflow run &lt;id&gt; --target &lt;contactid&gt;</code></td>
+      </tr>
+      <tr>
+        <td>Register a plug-in step</td>
+        <td>L04 + capstone step 5</td>
+        <td><code>plugin register-step --service-endpoint "itworx-m08-hook" --message Create</code></td>
+      </tr>
+      <tr>
+        <td>Articulate what needs other tools</td>
+        <td>L01 + L05 §04</td>
+        <td>Automation boundary decision matrix — BPF, SLA KPI, flow logic, .NET build</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <span class="ic">WARN</span>
+    <div><strong>Teardown order for plug-in registrations:</strong> unregister steps before deleting the service endpoint (webhook) or unregistering the assembly. Steps reference the endpoint/assembly — deleting the endpoint while steps still point to it leaves orphaned registrations that can cause errors when the platform tries to fire them.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 06 ─── -->
+<section class="reveal">
+  <h2><span class="n">06</span> GUI-only limits in M08</h2>
+  <table class="ops">
+    <thead><tr><th>Task</th><th>Why it's GUI-only</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Create or edit classic workflow logic</strong> (steps, conditions, actions)</td>
+        <td>XAML-based logic designer in Power Apps maker; the CLI imports/exports the XAML but cannot generate it</td>
+      </tr>
+      <tr>
+        <td><strong>Power Automate cloud flow design</strong></td>
+        <td>Flow canvas lives at make.powerautomate.com; CLI reads the list (<code>workflow list --category flow</code>) but cannot create/edit flows</td>
+      </tr>
+      <tr>
+        <td><strong>Build the .NET plug-in assembly</strong></td>
+        <td>Compiled code (.dll) lives outside D365; the CLI uploads and registers it but cannot generate C# code</td>
+      </tr>
+      <tr>
+        <td><strong>SLA KPI item definition</strong> (warning time, failure time, actions)</td>
+        <td>Customer Service Hub app; the CLI activates the SLA but cannot create KPI items</td>
+      </tr>
+      <tr>
+        <td><strong>Business Process Flow design</strong></td>
+        <td>BPF designer in Power Apps maker; no CLI verb exposes BPF creation or stage editing</td>
+      </tr>
+      <tr>
+        <td><strong>Custom API definition</strong> (create a new custom API / custom process action)</td>
+        <td>customapi / customapirequestparameter entities can be CRUD'd via <code>entity create</code>, but the full Custom API setup flow has no dedicated CLI verb</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ─── SECTION 07 — QUIZ ─── -->
+<section class="reveal">
+  <div class="quiz">
+    <p class="qh">Lesson check</p>
+    <p class="qhs">4 questions · click to reveal</p>
+
+    <div class="q" data-correct="0">
+      <p class="stem">1. A requirement arrives: "Validate a contact's phone number before the record is saved, and block the save if the format is wrong." Which automation tier and CLI coverage applies?</p>
+      <button class="opt"><span class="mk">A</span> Plug-in (pre-operation, sync); full CLI for registration — .NET build is outside the CLI</button>
+      <button class="opt"><span class="mk">B</span> Classic workflow (category 0); full CLI including logic creation</button>
+      <button class="opt"><span class="mk">C</span> Business rule (category 2); fully CLI-automatable</button>
+      <button class="opt"><span class="mk">D</span> Webhook (postoperation, async); the HTTP endpoint handles the blocking</button>
+      <div class="fb ok">Correct. Pre-save validation that can block the operation requires a synchronous plug-in at pre-operation or pre-validation stage. The CLI registers the assembly and step. The .NET code (the blocking logic) must be built with Visual Studio — outside the CLI's scope. A webhook is async postoperation — it can't block the save.</div>
+      <div class="fb no">Pre-save blocking requires a synchronous plug-in at pre-operation (stage 20) or pre-validation (stage 10). Classic workflows and webhooks are async (or late-stage) — they can't veto the save. Business rules are client-side show/hide logic, not server-side validators. The CLI registers the plug-in step; building the .NET assembly requires Visual Studio.</div>
+    </div>
+
+    <div class="q" data-correct="2">
+      <p class="stem">2. What is the correct cleanup order after registering a webhook and attaching a step?</p>
+      <button class="opt"><span class="mk">A</span> Delete the service endpoint first, then unregister the step</button>
+      <button class="opt"><span class="mk">B</span> Order doesn't matter — steps and endpoints are independent</button>
+      <button class="opt"><span class="mk">C</span> Unregister the step first, then delete the service endpoint</button>
+      <button class="opt"><span class="mk">D</span> Use <code>crm plugin unregister-webhook</code> — it handles both in one call</button>
+      <div class="fb ok">Correct. Steps reference the service endpoint — if you delete the endpoint while steps still point to it, you leave orphaned references. Unregister steps first, then delete the endpoint. Also: there is no <code>unregister-webhook</code> command; delete the service endpoint via <code>entity delete serviceendpoints &lt;id&gt; --yes</code>.</div>
+      <div class="fb no">Steps reference the service endpoint. If you delete the endpoint first, steps are left with a broken reference and can cause errors when the platform tries to fire them. Always unregister steps before deleting their service endpoint.</div>
+    </div>
+
+    <div class="q" data-correct="1">
+      <p class="stem">3. Which command verifies your current user identity and the target org from the CLI?</p>
+      <button class="opt"><span class="mk">A</span> <code>crm --json workflow list --category workflow</code></button>
+      <button class="opt"><span class="mk">B</span> <code>crm --json action function WhoAmI</code></button>
+      <button class="opt"><span class="mk">C</span> <code>crm --json plugin list-types</code></button>
+      <button class="opt"><span class="mk">D</span> <code>crm --json sla activate &lt;id&gt;</code></button>
+      <div class="fb ok">Correct. <code>action function WhoAmI</code> is the OData <code>WhoAmI</code> function — returns <code>UserId</code>, <code>BusinessUnitId</code>, and <code>OrganizationId</code> for the calling user. It's the lightweight org-identity check (distinct from <code>connection test</code> which verifies host/version).</div>
+      <div class="fb no"><code>action function WhoAmI</code> returns the calling user's GUIDs and org ID. <code>workflow list</code> reads the workflow table; <code>plugin list-types</code> reads registered assemblies; <code>sla activate</code> is a write operation — none of those confirm identity.</div>
+    </div>
+
+    <div class="q" data-correct="0">
+      <p class="stem">4. <code>migration-assess</code> returns a workflow with <code>"verdict": "ready", "blockers": []</code>. What does this mean?</p>
+      <button class="opt"><span class="mk">A</span> No blockers detected — the workflow can be migrated to a cloud flow without redesign</button>
+      <button class="opt"><span class="mk">B</span> The workflow is activated and currently running</button>
+      <button class="opt"><span class="mk">C</span> The workflow has no steps defined yet</button>
+      <button class="opt"><span class="mk">D</span> The workflow already has a cloud flow equivalent</button>
+      <div class="fb ok">Correct. Verdict "ready" with empty blockers means the assess tool found no migration-blocking patterns (no custom activities, no real-time mode, no wait conditions). The workflow can be rebuilt in Power Automate without structural redesign — though you still need the Power Automate designer to do the actual migration.</div>
+      <div class="fb no">Verdict "ready" means the assess tool found no migration blockers — no custom activities, real-time mode, or wait conditions. The workflow can be migrated to a cloud flow without redesign. It does not mean the workflow is currently running or already migrated.</div>
+    </div>
+
+    <p class="score" id="score"></p>
+  </div>
+</section>
+
+<!-- ─── ASK ─── -->
+<div class="ask reveal">
+  <p><b>M08 complete.</b> Ask me to:</p>
+  <ul class="tight">
+    <li>"Show how to call a custom OData action (custom API) I built for my org."</li>
+    <li>"Explain how to register a pre-image on an existing plug-in step."</li>
+    <li>"Show how to use <code>workflow export</code> + <code>import</code> to move a workflow from dev to staging."</li>
+    <li>"How do I tell if a webhook step actually fired? Where do I see the system job?"</li>
+  </ul>
+</div>
+
+<!-- ─── NEXT ─── -->
+<div class="next reveal">
+  <span class="pill">milestone complete</span>
+  <h2>M09 — On-prem differences</h2>
+  <p>M08 done: workflows, plug-ins, webhooks, OData actions, SLA activation — the full automation surface and its boundaries. Next milestone, <strong>M09 — On-prem differences</strong>: what changes when you target <code>agent-on-prem</code> — NTLM auth, v9.1 API caps, the CRMWorx solution, and which M08 automation features are cloud-only. <span class="live-only">Just say <strong>'next lesson'</strong>.</span></p>
+</div>
+
+<footer>
+  <p>Milestone 08 — Automation &amp; Business Logic · <a href="https://gharib89.github.io/learn-crm-cli-and-api/">course home</a></p>
+  <p class="ft">M08 · L05 · lessons/0047-automation-boundary-capstone.html · capstone; action function/invoke, sla activate, workflow migration-assess, decision matrix, full M08 round-trip; writes + cleanup; live-verified on agent-cloud 2026-06-18, crm v1.0.0</p>
+</footer>
+
+</div><!-- /wrap -->
+
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 8, "name": "Automation & Business Logic"},
+  "lesson": 5,
+  "title": "The automation boundary — the M08 capstone",
+  "slug": "automation-boundary-capstone",
+  "topics": ["action-function","action-invoke","sla-activate","migration-assess","automation-boundary","capstone","webhook-cleanup","WhoAmI","decision-matrix"],
+  "summary": "action function NAME [--params JSON] [--bind-set set] [--bind-id id] = OData GET (read-only). action invoke NAME [--body JSON] [--bind-set set --bind-id id] = OData POST (side-effecting). WhoAmI = unbound function returning UserId/BusinessUnitId/OrganizationId. sla activate <id> = activates backing workflows (skips already-active) then the SLA; creation/KPI definition = GUI-only. migration-assess returns verdict(ready|blocked) + blockers(custom_activity/real_time/wait_condition) per classic workflow. Automation boundary: plug-in=pre-op-sync-blocking; workflow/flow=async-no-block; webhook=async-postop-external; sla=activate-only-CLI; BPF+flow-design=GUI-only. Teardown: unregister-step before entity delete serviceendpoints.",
+  "order": 5,
+  "status": "published" }
+</script>
+</body>
+</html>

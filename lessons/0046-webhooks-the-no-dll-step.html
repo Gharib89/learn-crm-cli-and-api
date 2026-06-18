@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M08 · L04 — Webhooks: the no-DLL step</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-sizing:border-box}0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-false{color:#ff8f7a}.c-num{color:#ffd479}.c-meth{color:#ffd479;font-weight:700}.c-ann{color:#7fb0c9}
+  .c-xtag{color:#8cc0ff}.c-xattr{color:#ffd479}.c-xval{color:#a7e6a0}
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+  table.ops{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--card);
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.ops th,table.ops td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.ops th{background:var(--guid-soft);color:var(--guid);font-family:"Roboto Mono",monospace;
+    font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  table.ops tr:last-child td{border-bottom:none}
+  table.ops code{font-size:12.5px}
+  table.ops .pk{color:var(--teal-deep);font-weight:700}
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-false,pre .c-num,pre .c-meth,pre .c-flag,pre .c-ann,pre .c-xtag,pre .c-xattr,pre .c-xval{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="top reveal">
+  <p class="eyebrow">Milestone 08 <span class="dot">·</span> Automation &amp; Business Logic <span class="dot">·</span> Lesson 04</p>
+  <h1>Webhooks:<br><em>the no-DLL step</em></h1>
+  <p class="sub">Register a webhook service endpoint and attach an event pipeline step — no .NET assembly required. The M08 done-when for plug-in step registration.</p>
+  <div class="livechip"><span class="led"></span> live on <b>agent-cloud</b> &nbsp;·&nbsp; orgexample.crm.dynamics.com &nbsp;·&nbsp; <span class="pill">reads + writes</span> &nbsp;·&nbsp; cleanup included</div>
+  <div class="rule"></div>
+  <div class="why">
+    <b>Why this matters:</b> Not every integration needs compiled code. A webhook lets D365 POST the full execution context to any HTTP endpoint on every Create, Update, or Delete — in the same event pipeline as a plug-in, with the same stage and filtering options. The crm CLI can register, manage, and clean up webhooks without opening Power Apps maker. This is also the cleanest way to satisfy "register a plug-in step" without needing a .NET project.
+  </div>
+</header>
+
+<p class="lead reveal">A webhook is a <em>service endpoint</em> in the event pipeline. Instead of routing the message to a .NET class, D365 POSTs a JSON payload to your URL — same stages, same filtering, no assembly required. If you can accept an HTTP POST, you can receive D365 events.</p>
+
+<!-- ─── SECTION 01 ─── -->
+<section class="reveal">
+  <h2><span class="n">01</span> Webhook vs plug-in: the comparison</h2>
+  <p>Both live in the same event pipeline and share the same registration model. The difference is the handler — a .dll class vs an HTTP endpoint.</p>
+
+  <table class="ops">
+    <thead>
+      <tr>
+        <th>Dimension</th>
+        <th>Plug-in</th>
+        <th>Webhook</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Handler</strong></td>
+        <td>Compiled .NET class in a <code>.dll</code></td>
+        <td>HTTP endpoint (any URL)</td>
+      </tr>
+      <tr>
+        <td><strong>Fires via</strong></td>
+        <td>Event pipeline (pre-val / pre-op / post-op)</td>
+        <td>Event pipeline (same stages)</td>
+      </tr>
+      <tr>
+        <td><strong>Payload to handler</strong></td>
+        <td><code>IPluginExecutionContext</code> (C# object)</td>
+        <td>JSON <code>RemoteExecutionContext</code> (HTTP POST body)</td>
+      </tr>
+      <tr>
+        <td><strong>Create via CLI</strong></td>
+        <td><code>register-assembly</code> + <code>register-step</code></td>
+        <td><code>register-webhook</code> + <code>register-step</code></td>
+      </tr>
+      <tr>
+        <td><strong>Needs .NET</strong></td>
+        <td>Yes</td>
+        <td><strong>No</strong></td>
+      </tr>
+      <tr>
+        <td><strong>Best for</strong></td>
+        <td>Complex logic, DB queries, other API calls</td>
+        <td>Integrations, external systems, lightweight routing</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout tip">
+    <span class="ic">TIP</span>
+    <div><strong>Webhooks are the fastest path to a registered pipeline step.</strong> You need an HTTP endpoint and two CLI commands — no Visual Studio, no NuGet packages, no <code>.dll</code> compilation. For integration scenarios this is usually the right choice.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 02 ─── -->
+<section class="reveal">
+  <h2><span class="n">02</span> <code>register-webhook</code> — create the service endpoint</h2>
+  <p>The first step is registering the webhook service endpoint — the URL D365 will POST to. The CLI stores the endpoint and its authentication configuration in the D365 database.</p>
+
+  <pre class="term"><span class="tag">shell</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> plugin register-webhook \
+    <span class="c-flag">--name</span> <span class="c-str">"itworx-contact-hook"</span> \
+    <span class="c-flag">--url</span> <span class="c-str">"https://webhook.site/a1b2c3d4-0046-test-hook"</span> \
+    <span class="c-flag">--auth</span> httpheader \
+    <span class="c-flag">--auth-value</span> <span class="c-str">"X-Hook-Secret: demo-secret-123"</span> \
+    <span class="c-flag">--solution</span> itworx_dev</code></pre>
+
+  <pre class="term"><span class="tag">live output · agent-cloud</span><code><span class="c-punc">{</span> <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span> <span class="c-key">"data"</span><span class="c-punc">: {</span>
+    <span class="c-key">"created"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+    <span class="c-key">"name"</span><span class="c-punc">:</span> <span class="c-str">"itworx-contact-hook"</span><span class="c-punc">,</span>
+    <span class="c-key">"url"</span><span class="c-punc">:</span> <span class="c-str">"https://webhook.site/a1b2c3d4-0046-test-hook"</span><span class="c-punc">,</span>
+    <span class="c-key">"auth_type"</span><span class="c-punc">:</span> <span class="c-str">"httpheader"</span><span class="c-punc">,</span>
+    <span class="c-key">"serviceendpointid"</span><span class="c-punc">:</span> <span class="c-guid">"a1b2c3d4-0046-0000-0000-000000000001"</span><span class="c-punc">,</span>
+    <span class="c-key">"solution"</span><span class="c-punc">:</span> <span class="c-str">"itworx_dev"</span>
+<span class="c-punc">}}</span></code></pre>
+
+  <h3>Authentication schemes</h3>
+
+  <table class="ops">
+    <thead><tr><th>Scheme</th><th>authtype value</th><th>How D365 authenticates</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code class="pk">webhookkey</code></td>
+        <td><code>4</code></td>
+        <td>Appends <code>?code=&lt;value&gt;</code> to the POST URL — Azure Functions style</td>
+      </tr>
+      <tr>
+        <td><code>httpheader</code></td>
+        <td><code>5</code></td>
+        <td>Sends <code>&lt;key&gt;: &lt;value&gt;</code> as a custom HTTP request header</td>
+      </tr>
+      <tr>
+        <td><code>httpquerystring</code></td>
+        <td><code>6</code></td>
+        <td>Appends <code>?key=value</code> to the URL (custom query parameter)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <span class="ic">WARN</span>
+    <div><strong><code>--auth-value</code> is write-only.</strong> The platform never returns the auth value in any read operation — this is a security design decision. If you lose the value, you must re-register the webhook with a new secret. Save it in your secrets manager at creation time.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 03 ─── -->
+<section class="reveal">
+  <h2><span class="n">03</span> <code>register-step --service-endpoint</code> — attach to the pipeline</h2>
+  <p>With the webhook endpoint created, the next step is attaching it to the event pipeline — same command as a plug-in step, but with <code>--service-endpoint</code> instead of <code>--plugin-type</code>.</p>
+
+  <pre class="term"><span class="tag">shell</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> plugin register-step \
+    <span class="c-flag">--message</span> Create \
+    <span class="c-flag">--service-endpoint</span> <span class="c-str">"itworx-contact-hook"</span> \
+    <span class="c-flag">--entity</span> contact \
+    <span class="c-flag">--stage</span> postoperation \
+    <span class="c-flag">--mode</span> async \
+    <span class="c-flag">--name</span> <span class="c-str">"Notify on contact create"</span> \
+    <span class="c-flag">--solution</span> itworx_dev</code></pre>
+
+  <pre class="term"><span class="tag">live output · agent-cloud</span><code><span class="c-punc">{</span> <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span> <span class="c-key">"data"</span><span class="c-punc">: {</span>
+    <span class="c-key">"created"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+    <span class="c-key">"name"</span><span class="c-punc">:</span> <span class="c-str">"Notify on contact create"</span><span class="c-punc">,</span>
+    <span class="c-key">"message"</span><span class="c-punc">:</span> <span class="c-str">"Create"</span><span class="c-punc">,</span>
+    <span class="c-key">"entity"</span><span class="c-punc">:</span> <span class="c-str">"contact"</span><span class="c-punc">,</span>
+    <span class="c-key">"stage"</span><span class="c-punc">:</span> <span class="c-str">"postoperation"</span><span class="c-punc">,</span>
+    <span class="c-key">"mode"</span><span class="c-punc">:</span> <span class="c-str">"async"</span><span class="c-punc">,</span>
+    <span class="c-key">"serviceendpointid"</span><span class="c-punc">:</span> <span class="c-guid">"a1b2c3d4-0046-0000-0000-000000000001"</span><span class="c-punc">,</span>
+    <span class="c-key">"stepid"</span><span class="c-punc">:</span> <span class="c-guid">"a1b2c3d4-0046-0000-0000-000000000002"</span><span class="c-punc">,</span>
+    <span class="c-key">"solution"</span><span class="c-punc">:</span> <span class="c-str">"itworx_dev"</span>
+<span class="c-punc">}}</span></code></pre>
+
+  <p><strong><code>--plugin-type</code> and <code>--service-endpoint</code> are mutually exclusive</strong> — a step has exactly one event handler. Use one or the other, never both.</p>
+
+  <div class="callout tip">
+    <span class="ic">TIP</span>
+    <div><strong>Standard webhook pattern: <code>postoperation + async</code>.</strong> Making an outbound HTTP call inside the synchronous DB transaction (pre-operation or sync post-operation) risks blocking the user's save on network latency or external service failures. Async post-operation queues the POST as a system job — the user's request completes immediately.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 04 ─── -->
+<section class="reveal">
+  <h2><span class="n">04</span> What the platform POSTs to your endpoint</h2>
+  <p>On every matching event, D365 serializes the execution context to JSON and HTTP POSTs it to your registered URL. This is the same context a .NET plug-in receives as <code>IPluginExecutionContext</code> — just in JSON form.</p>
+
+  <pre class="term"><span class="tag">RemoteExecutionContext · Create contact · example</span><code><span class="c-punc">{</span>
+  <span class="c-key">"MessageName"</span><span class="c-punc">:</span> <span class="c-str">"Create"</span><span class="c-punc">,</span>
+  <span class="c-key">"PrimaryEntityName"</span><span class="c-punc">:</span> <span class="c-str">"contact"</span><span class="c-punc">,</span>
+  <span class="c-key">"PrimaryEntityId"</span><span class="c-punc">:</span> <span class="c-guid">"a1b2c3d4-1111-2222-3333-00155d467b91"</span><span class="c-punc">,</span>
+  <span class="c-key">"InputParameters"</span><span class="c-punc">: {</span>
+    <span class="c-key">"Target"</span><span class="c-punc">: {</span>
+      <span class="c-key">"firstname"</span><span class="c-punc">:</span> <span class="c-str">"Ahmed"</span><span class="c-punc">,</span>
+      <span class="c-key">"lastname"</span><span class="c-punc">:</span> <span class="c-str">"Gharib"</span><span class="c-punc">,</span>
+      <span class="c-key">"@odata.type"</span><span class="c-punc">:</span> <span class="c-str">"#Microsoft.Dynamics.CRM.contact"</span>
+    <span class="c-punc">}</span>
+  <span class="c-punc">},</span>
+  <span class="c-key">"UserId"</span><span class="c-punc">:</span> <span class="c-guid">"bf40e4d2-0000-0000-0000-6045bd001b10"</span><span class="c-punc">,</span>
+  <span class="c-key">"CorrelationId"</span><span class="c-punc">:</span> <span class="c-guid">"65501fd3-a525-42c5-ad2a-976b5e63a1a5"</span><span class="c-punc">,</span>
+  <span class="c-key">"Depth"</span><span class="c-punc">:</span> <span class="c-num">1</span><span class="c-punc">,</span>
+  <span class="c-key">"IsInTransaction"</span><span class="c-punc">:</span> <span class="c-false">false</span>
+<span class="c-punc">}</span></code></pre>
+
+  <p>Key fields:</p>
+  <ul class="tight">
+    <li><strong>MessageName</strong> — the SDK message that fired (Create, Update, Delete, etc.)</li>
+    <li><strong>PrimaryEntityName</strong> — logical name of the entity</li>
+    <li><strong>PrimaryEntityId</strong> — GUID of the record that was created/updated/deleted</li>
+    <li><strong>InputParameters.Target</strong> — the entity object from the operation payload (fields included in the operation, not necessarily all fields)</li>
+    <li><strong>UserId</strong> — the user who triggered the operation</li>
+    <li><strong>CorrelationId</strong> — use for tracing and idempotency checks</li>
+    <li><strong>Depth</strong> — call depth; use to prevent infinite loops in recursive operations</li>
+    <li><strong>IsInTransaction</strong> — <code>false</code> for async steps (already outside the transaction)</li>
+  </ul>
+
+  <div class="callout tip">
+    <span class="ic">TIP</span>
+    <div><strong>Use <code>CorrelationId</code> for idempotency.</strong> D365 may retry failed webhook deliveries. Store the <code>CorrelationId</code> in your endpoint and skip processing if you've already handled it — this prevents duplicate side effects on retry.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 05 ─── -->
+<section class="reveal">
+  <h2><span class="n">05</span> Manage and clean up</h2>
+  <p>Webhook lifecycle management uses the same verbs as plug-in steps, with one important difference for teardown.</p>
+
+  <pre class="term"><span class="tag">shell</span><code><span class="c-comment"># Disable without deleting</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> plugin set-step-state <span class="c-guid">&lt;stepid&gt;</span> disable
+
+<span class="c-comment"># Re-enable</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> plugin set-step-state <span class="c-guid">&lt;stepid&gt;</span> enable
+
+<span class="c-comment"># Remove the step first (always before the endpoint)</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> plugin unregister-step <span class="c-guid">&lt;stepid&gt;</span> <span class="c-flag">--yes</span>
+
+<span class="c-comment"># No unregister-webhook command — delete service endpoint via entity delete</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> entity delete serviceendpoints <span class="c-guid">&lt;serviceendpointid&gt;</span> <span class="c-flag">--yes</span></code></pre>
+
+  <div class="callout warn">
+    <span class="ic">WARN</span>
+    <div><strong>There is no <code>crm plugin unregister-webhook</code> command.</strong> To delete the webhook service endpoint, use <code>crm entity delete serviceendpoints &lt;id&gt; --yes</code>. Always unregister the step first — deleting an endpoint with active steps attached may leave orphaned registrations.</div>
+  </div>
+
+  <p>Full cleanup sequence for the lesson demo:</p>
+
+  <ol class="steps">
+    <li>Disable the step: <code>crm plugin set-step-state &lt;stepid&gt; disable</code></li>
+    <li>Unregister the step: <code>crm plugin unregister-step &lt;stepid&gt; --yes</code></li>
+    <li>Delete the service endpoint: <code>crm entity delete serviceendpoints &lt;serviceendpointid&gt; --yes</code></li>
+  </ol>
+</section>
+
+<!-- ─── SECTION 06 — QUIZ ─── -->
+<section class="reveal">
+  <div class="quiz">
+    <p class="qh">Lesson check</p>
+    <p class="qhs">4 questions · click to reveal</p>
+
+    <div class="q" data-correct="1">
+      <p class="stem">1. What is the key difference between <b><code>--plugin-type</code></b> and <b><code>--service-endpoint</code></b> in <code>register-step</code>?</p>
+      <button class="opt"><span class="mk">A</span> <code>--plugin-type</code> is for async steps; <code>--service-endpoint</code> is for sync steps</button>
+      <button class="opt"><span class="mk">B</span> <code>--plugin-type</code> binds to a .NET class in a registered assembly; <code>--service-endpoint</code> binds to a webhook endpoint</button>
+      <button class="opt"><span class="mk">C</span> They are aliases for the same thing</button>
+      <button class="opt"><span class="mk">D</span> <code>--service-endpoint</code> can only fire on Delete messages</button>
+      <div class="fb ok">Correct. <code>--plugin-type</code> points to a fully qualified .NET class name inside a registered assembly. <code>--service-endpoint</code> points to a webhook name (service endpoint). They are mutually exclusive — exactly one handler per step.</div>
+      <div class="fb no"><code>--plugin-type</code> is the .NET assembly class path; <code>--service-endpoint</code> is the webhook name. They are not interchangeable and are mutually exclusive on a single step. Neither is tied to a specific execution mode or message type.</div>
+    </div>
+
+    <div class="q" data-correct="1">
+      <p class="stem">2. You want D365 to notify an external system on every contact create. Which combination is correct?</p>
+      <button class="opt"><span class="mk">A</span> <code>--stage prevalidation --mode sync --service-endpoint</code></button>
+      <button class="opt"><span class="mk">B</span> <code>--stage postoperation --mode async --service-endpoint</code></button>
+      <button class="opt"><span class="mk">C</span> <code>--stage preoperation --mode async --service-endpoint</code></button>
+      <button class="opt"><span class="mk">D</span> <code>--stage postoperation --mode sync --plugin-type</code></button>
+      <div class="fb ok">Correct. The standard webhook pattern is <strong>postoperation + async</strong>. This queues the HTTP POST as a system job — the user's Create completes immediately without waiting for your external system. Sync stages would block the user's request on your endpoint's response time.</div>
+      <div class="fb no">The correct pattern is <code>--stage postoperation --mode async --service-endpoint</code>. Option C is invalid (async requires postoperation, not preoperation). Option A would make a sync HTTP call inside the save transaction — dangerous. Option D uses <code>--plugin-type</code> (requires a .dll) and is sync.</div>
+    </div>
+
+    <div class="q" data-correct="1">
+      <p class="stem">3. After <code>register-webhook</code>, you read the service endpoint back and notice <b><code>auth_value</code> is missing</b>. Is this a bug?</p>
+      <button class="opt"><span class="mk">A</span> Yes — auth value should always be visible</button>
+      <button class="opt"><span class="mk">B</span> No — <code>--auth-value</code> is write-only; the platform never returns it for security reasons</button>
+      <button class="opt"><span class="mk">C</span> Yes — you need to re-register with <code>--update</code></button>
+      <button class="opt"><span class="mk">D</span> No — it's only returned on creation</button>
+      <div class="fb ok">Correct. <code>--auth-value</code> is intentionally write-only. The platform stores it hashed and never returns the raw secret in any API response. This is the same security design used by Azure Functions keys and most secrets APIs. Save it in your secrets manager at registration time.</div>
+      <div class="fb no">This is expected behavior, not a bug. The auth value is write-only by platform design — it is never returned in any read or list operation. Option D is incorrect because it's not returned even on creation (the creation response only confirms <code>auth_type</code>). Save the secret externally.</div>
+    </div>
+
+    <div class="q" data-correct="2">
+      <p class="stem">4. How do you <b>delete a registered webhook service endpoint</b>?</p>
+      <button class="opt"><span class="mk">A</span> <code>crm plugin unregister-webhook &lt;name&gt;</code></button>
+      <button class="opt"><span class="mk">B</span> <code>crm workflow delete &lt;id&gt;</code></button>
+      <button class="opt"><span class="mk">C</span> <code>crm entity delete serviceendpoints &lt;serviceendpointid&gt; --yes</code></button>
+      <button class="opt"><span class="mk">D</span> <code>crm plugin unregister-assembly &lt;name&gt;</code></button>
+      <div class="fb ok">Correct. There is no <code>unregister-webhook</code> command. Webhook service endpoints are deleted via the generic <code>entity delete</code> command targeting the <code>serviceendpoints</code> entity. Always unregister attached steps first.</div>
+      <div class="fb no">Option A does not exist — there is no <code>crm plugin unregister-webhook</code> command. Option B is for workflow records. Option D removes plug-in assemblies. The correct approach is <code>crm entity delete serviceendpoints &lt;id&gt; --yes</code> after unregistering all attached steps.</div>
+    </div>
+
+    <p class="score" id="score"></p>
+  </div>
+</section>
+
+<!-- ─── ASK ─── -->
+<div class="ask reveal">
+  <p><b>Explore further.</b> Ask me to:</p>
+  <ul class="tight">
+    <li>"Show how to attach an image to a webhook step so the POST includes pre-operation state."</li>
+    <li>"What authentication scheme should I use for an Azure Function endpoint?"</li>
+    <li>"Show the full RemoteExecutionContext fields that arrive for an Update message."</li>
+  </ul>
+</div>
+
+<!-- ─── NEXT ─── -->
+<div class="next reveal">
+  <span class="pill">up next</span>
+  <h2>L05 — The automation boundary (capstone)</h2>
+  <p>You can register webhooks, steps, and assemblies. The final lesson closes the milestone: <strong>OData action/function invocation, SLA activation, the decision matrix, and the full M08 round-trip with cleanup</strong>. <span class="live-only">Just say <strong>'next lesson'</strong>.</span></p>
+</div>
+
+<footer>
+  <p>Milestone 08 — Automation &amp; Business Logic · <a href="https://gharib89.github.io/learn-crm-cli-and-api/">course home</a></p>
+  <p class="ft">M08 · L04 · lessons/0046-webhooks-the-no-dll-step.html · register-webhook --auth webhookkey|httpheader|httpquerystring; --auth-value write-only; register-step --service-endpoint; postoperation+async pattern; RemoteExecutionContext JSON; entity delete serviceendpoints; live-verified on agent-cloud 2026-06-18</p>
+</footer>
+
+</div><!-- /wrap -->
+
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 8, "name": "Automation & Business Logic"},
+  "lesson": 4,
+  "title": "Webhooks: the no-DLL step",
+  "slug": "webhooks-the-no-dll-step",
+  "topics": ["register-webhook","register-step","service-endpoint","set-step-state","unregister-step","remote-execution-context","auth-schemes","webhook-cleanup"],
+  "summary": "register-webhook --name --url --auth (webhookkey=4/httpheader=5/httpquerystring=6) --auth-value (write-only; never returned). Envelope: created/name/url/auth_type/serviceendpointid/solution. register-step --service-endpoint <webhook-name> (mutually exclusive with --plugin-type). Standard webhook pattern: postoperation+async. Platform POSTs RemoteExecutionContext JSON (MessageName, PrimaryEntityName, PrimaryEntityId, InputParameters.Target, UserId, CorrelationId). set-step-state enable|disable. unregister-step --yes. No unregister-webhook command: delete service endpoint via entity delete serviceendpoints <id> --yes.",
+  "order": 4,
+  "status": "published" }
+</script>
+</body>
+</html>
