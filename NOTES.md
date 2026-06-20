@@ -626,3 +626,55 @@ left at v9.1 (the §02 v9.2 probe was reverted); active profile unchanged (agent
   only on-prem bulk mechanism (`crm/core/data_import.py:1-4`) — so the CLI never uses CreateMultiple even on
   cloud, and bulk import works identically on both targets despite the platform-level CreateMultiple gap.
 - **profile edit** does NOT touch the stored secret (`--api-version` etc. only); safe for reversible probes.
+
+## M10 lesson sequence (started 2026-06-20)
+
+**Milestone re-slot (decided 2026-06-20, with user):** the new M10 = **"Working agentically with
+Claude Code + crm"** — the *how-to* of driving the CLI via the `/crm` skill. The previously-planned
+capstone ("deliver a real requirement end-to-end + file a bug", issue #10) **moves to M12**; M11
+"Under the Hood" is unchanged. New spine order: **M10 agentic → M11 internals → M12 capstone.**
+Capstone is genuinely last (it *exercises* M10's workflow). Mission tie: the whole mission is
+"shift D365 work to a repeatable, reviewable agentic workflow" — M01–M09 taught the verbs; M10
+finally teaches the workflow that wraps them. Lessons **0053–0058**.
+
+**Hard running example (researched + live-verified, threads L03→L04→L05):** a **"Deal Desk"
+approval system on Opportunity**. Deliberately chosen because it splits into automatable vs
+GUI-only, confirmed against **crm v1.0.0**:
+- **Automatable chain (ordered):** publisher+solution → `Deal Review` custom table →
+  global option set (Approval Status) → 1:N Account→Deal Review + lookup *(needs both tables first)*
+  → status column *(needs optionset first)* → plugin assembly → register-step on Opportunity Update
+  *(step needs assembly first)* → model-driven app + sitemap subarea *(table invisible until subarea)*
+  → form add-field *(needs published column)* → publish once → export managed → promote.
+- **GUI-only traps the agent must DETECT + escalate (no create verb in crm v1.0.0):**
+  **rollup column** (`metadata add-attribute --kind` has NO rollup/calculated — kinds are
+  string|memo|integer|bigint|decimal|double|money|boolean|datetime|picklist|multiselect|lookup|customer|image|file);
+  **approval BPF** (category 4) + **Power Automate flow** (category 5) — `workflow` group only
+  list/activate/import, no create; **dashboard/chart** — no verb at all.
+- **MS Learn grounding (rollup):** rollup attr can only use **1:N (not N:N)** relationships, can't
+  reference another rollup, recalc is **async scheduled jobs** (CalculateRollupFieldRequest is sync
+  for one record only), **10 rollups/entity, 100/org** cap. Cite
+  learn.microsoft.com/dynamics365/customerengagement/on-premises/developer/calculated-and-rollup-attributes (op-9-1).
+
+**L04 live tool — `metadata dependencies TARGET --kind [entity|attribute|optionset|relationship]
+--for [delete|dependents]`** (read-only, v1.0.0). `--for delete` = `RetrieveDependenciesForDelete`
+(blockers preventing delete); `--for dependents` = `RetrieveDependentComponents`. Envelope:
+`{ok:true, data:{can_delete:bool, blockers:[{dependent_type, dependent_id, dependent_parent_id,
+required_type, dependency_type}]}}`. Live: `account --for dependents` → can_delete:false +
+Entity-Relationship blockers (dependency_type 1); `contact --for delete` → blockers dependent_type
+"10346" (numeric component type) dependency_type 2.
+
+- **L01** — **The agent contract** (`0053`). `--json` envelope `{ok,data,meta}`, exit 0/1/2,
+  `--dry-run`/`--validate`/`--yes`, `meta.warnings`, "never guess → `crm describe`". Best-practices base.
+- **L02** — **What the agent can & can't do** (`0054`). Automatable (CLI/Web-API) vs GUI-only, from
+  the agent's seat. Uses the Deal Desk GUI-only traps (rollup/BPF/flow/dashboard).
+- **L03** — **Plan a big task with the agent** (`0055`). Decompose the Deal Desk requirement into the
+  ordered chain; plan mode; lifecycle order schema→solution→UI→logic; separate automatable from not first.
+- **L04** — **Check dependencies before you build** (`0056`). `metadata dependencies` + `describe` +
+  `--dry-run` to de-risk; surface the GUI-only blockers up front. Hard-problem dependency lesson.
+- **L05** — **Environments & promotion** (`0057`). profile-as-switch, whoami-before-mutate, solution
+  export(managed)→validate→import dev→test→prod, version ceiling. Capture both orgs if VPN up else cloud.
+- **L06** — **Report a bug** (`0058`, capstone). tool-defect vs user-error; `gh issue create --repo
+  Gharib89/crm`; feedback.md template; agent offers, never files silently. Closes M10.
+
+**Status:** authoring in progress (0053 first, build+show before batching rest). 0052's auto-Continue
+will rewire from 0008 (M11 L01 fallback) to 0053 once M10 ships.

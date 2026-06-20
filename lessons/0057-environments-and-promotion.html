@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M10 · L05 — Environments &amp; promotion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-sizing:border-box}0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-false{color:#ff8f7a}.c-num{color:#ffd479}.c-meth{color:#ffd479;font-weight:700}.c-ann{color:#7fb0c9}
+  .c-xtag{color:#8cc0ff}.c-xattr{color:#ffd479}.c-xval{color:#a7e6a0}
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+  table.ops{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--card);
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.ops th,table.ops td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.ops th{background:var(--guid-soft);color:var(--guid);font-family:"Roboto Mono",monospace;
+    font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  table.ops tr:last-child td{border-bottom:none}
+  table.ops code{font-size:12.5px}
+  table.ops .pk{color:var(--teal-deep);font-weight:700}
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-false,pre .c-num,pre .c-meth,pre .c-flag,pre .c-ann,pre .c-xtag,pre .c-xattr,pre .c-xval{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+<header class="top reveal">
+  <p class="eyebrow">Milestone 10 <span class="dot">·</span> Working Agentically <span class="dot">·</span> Lesson 05</p>
+  <h1>Two orgs,<br><em>one change</em></h1>
+  <p class="sub">A customization is built in dev and lands in test, then prod. The profile is the switch between them, <code>whoami</code> confirms the target before every write, and a managed solution is the vehicle that carries the change downstream.</p>
+  <div class="livechip"><span class="led"></span> live on <b>agent-cloud + agent-on-prem</b> &nbsp;·&nbsp; <span class="pill">reads</span> <span class="pill t">promotion</span></div>
+  <div class="rule"></div>
+  <div class="why">
+    <b>Why this matters:</b> The mission requires handling the cloud/on-prem split correctly and delivering a requirement <em>inside a solution</em> that can move between environments. You never customize in prod; you build unmanaged in dev and ship managed downstream. Getting the switch, the direction, and the version ceiling right is what makes the agentic workflow safe across a real dev → test → prod chain.
+  </div>
+</header>
+
+<p class="lead reveal">The single most dangerous mistake in promotion is doing the right command against the <em>wrong org</em>. So the discipline starts there: the profile <em>is</em> the environment, and you confirm it every time before you write.</p>
+
+<!-- ─── SECTION 01 ─── -->
+<section class="reveal">
+  <h2><span class="n">01</span> The profile is the switch</h2>
+  <p>There's no env-var override and no ambient target — the active profile decides which org answers. <code>profile list</code> marks the active one; <code>--profile &lt;name&gt;</code> overrides per-run:</p>
+
+  <pre class="term"><span class="tag">live · two profiles, two orgs</span><code><span class="c-comment">$ crm --json profile list</span>
+<span class="c-punc">[</span> <span class="c-punc">{</span> <span class="c-key">"name"</span><span class="c-punc">:</span> <span class="c-str">"agent-cloud"</span><span class="c-punc">,</span> <span class="c-key">"active"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+    <span class="c-key">"target"</span><span class="c-punc">:</span> <span class="c-str">"cloud"</span><span class="c-punc">,</span> <span class="c-key">"url"</span><span class="c-punc">:</span> <span class="c-str">"https://orgexample.crm.dynamics.com"</span> <span class="c-punc">}</span><span class="c-punc">,</span>
+  <span class="c-punc">{</span> <span class="c-key">"name"</span><span class="c-punc">:</span> <span class="c-str">"agent-on-prem"</span><span class="c-punc">,</span> <span class="c-key">"active"</span><span class="c-punc">:</span> <span class="c-false">false</span><span class="c-punc">,</span>
+    <span class="c-key">"target"</span><span class="c-punc">:</span> <span class="c-str">"on-prem"</span><span class="c-punc">,</span> <span class="c-key">"url"</span><span class="c-punc">:</span> <span class="c-str">"http://crm.contoso.local/Contoso"</span> <span class="c-punc">}</span> <span class="c-punc">]</span></code></pre>
+
+  <p>Before any mutation, <code>whoami</code> confirms the <em>live</em> org actually answering — both targets respond with the same envelope, just different identities:</p>
+
+  <pre class="term"><span class="tag">live · whoami on each target</span><code><span class="c-comment"># cloud (active)            # on-prem (--profile agent-on-prem)</span>
+<span class="c-key">OrganizationId</span><span class="c-punc">:</span> <span class="c-guid">9102ced1-…</span>     <span class="c-key">OrganizationId</span><span class="c-punc">:</span> <span class="c-guid">b948cd5f-…</span>
+<span class="c-comment"># same command, same shape — only the identity (and host) differ</span></code></pre>
+
+  <div class="callout warn">
+    <span class="ic">RULE</span>
+    <div><strong>whoami before every mutate.</strong> The agent never trusts "the active profile is probably right" — it confirms the target, because a schema write against prod-instead-of-dev is exactly the irreversible mistake this whole milestone is built to prevent.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 02 ─── -->
+<section class="reveal">
+  <h2><span class="n">02</span> Build unmanaged in dev, ship managed downstream</h2>
+  <p>The ALM rule: customize in a <strong>dev</strong> org inside your own <strong>unmanaged</strong> solution, export it <strong>as managed</strong>, and import that managed zip into <strong>test</strong> then <strong>prod</strong>. The promotion pipeline, in real verbs:</p>
+
+  <pre class="term"><span class="tag">dev → test → prod</span><code><span class="c-comment"># in DEV — bump, then publish (unpublished == not exported)</span>
+crm solution set-version DealDesk --version 1.1.0.0
+crm solution publish-all
+
+<span class="c-comment"># export MANAGED for downstream orgs</span>
+crm solution export DealDesk -o dealdesk_managed.zip --managed
+
+<span class="c-comment"># pre-flight, then import into TEST (repeat for PROD)</span>
+crm solution validate dealdesk_managed.zip --against-org
+crm --profile test solution import dealdesk_managed.zip --yes</code></pre>
+
+  <div class="callout tip">
+    <span class="ic">TWO TRAPS</span>
+    <div><strong>Unpublished == not exported</strong> — a change you forgot to <code>publish-all</code> silently drops out of the zip. And <strong>never hand-edit a managed component downstream</strong> — that active unmanaged layer blocks future managed updates. The agent's job downstream is <em>import only</em>.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 03 ─── -->
+<section class="reveal">
+  <h2><span class="n">03</span> The version-ceiling trap</h2>
+  <p>A managed zip carries the <em>package version</em> of the org it was built in, and an org <strong>rejects any zip newer than itself</strong>. That bites the cloud → on-prem direction directly: a cloud (v9.2) export will <em>not</em> import into on-prem (v9.1) — you get <code>0x80048068</code>.</p>
+
+  <table class="ops">
+    <thead><tr><th>Build org</th><th>Target org</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>on-prem v9.1</td><td>cloud v9.2</td><td style="color:var(--ok);font-weight:700">imports (target is newer)</td></tr>
+      <tr><td>cloud v9.2</td><td>on-prem v9.1</td><td style="color:var(--bad);font-weight:700">rejected — <code>0x80048068</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <span class="ic">CATCH IT</span>
+    <div><code>solution validate --against-org</code> compares the package's <code>SolutionPackageVersion</code> against the target org and catches this <em>before</em> the import (the offline <code>validate</code> is structural only and won't). The fix: <strong>build on the lowest version in your chain</strong>, or keep every tier on one platform. This is the cloud/on-prem split the mission asks you to handle, showing up at promotion time.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 04 ─── -->
+<section class="reveal">
+  <h2><span class="n">04</span> The agent's promotion discipline</h2>
+  <p>Pulling it together — the rules the agent follows on every promotion, each one guarding against an irreversible slip:</p>
+
+  <ol class="steps">
+    <li><strong>whoami before every mutate</strong> — confirm the live target, never trust the active profile blindly.</li>
+    <li><strong>Build unmanaged in dev only</strong> — prod and test receive managed imports, never hand edits.</li>
+    <li><strong>Publish before export</strong> — unpublished customizations don't travel.</li>
+    <li><strong>validate <code>--against-org</code> before import</strong> — catch the version ceiling and live form/view issues on paper.</li>
+    <li><strong>One solution per change, dry-run on the target</strong> — and verify components landed after import.</li>
+  </ol>
+
+  <div class="callout tip">
+    <span class="ic">SAME VERBS</span>
+    <div>Notice the promotion commands are <em>identical</em> on cloud and on-prem — only the profile (auth + host + version) differs, exactly as M09 established. On-prem imports run synchronously; cloud returns an async job to watch. The workflow doesn't fork; the profile carries the difference.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 05 — QUIZ ─── -->
+<section class="reveal">
+  <div class="quiz">
+    <p class="qh">Lesson check</p>
+    <p class="qhs">4 questions · click to reveal</p>
+
+    <div class="q" data-correct="2">
+      <p class="stem">1. What selects which org a <code>crm</code> command runs against?</p>
+      <button class="opt"><span class="mk">A</span> A <code>CRM_URL</code> environment variable</button>
+      <button class="opt"><span class="mk">B</span> A flag on each verb naming the host</button>
+      <button class="opt"><span class="mk">C</span> The active profile (or a per-run <code>--profile</code> override)</button>
+      <button class="opt"><span class="mk">D</span> Whichever org responded last</button>
+      <div class="fb ok">Correct. The profile is the switch — there's no env-var override and no ambient target. <code>profile list</code> shows the active one; <code>--profile &lt;name&gt;</code> overrides for a single run. That's why whoami-before-mutate matters: the profile, not a host flag, decides the target.</div>
+      <div class="fb no">The active profile (or <code>--profile</code> per run) selects the org. There's no <code>CRM_URL</code> env var, no per-verb host flag, and nothing sticky about the last response.</div>
+    </div>
+
+    <div class="q" data-correct="0">
+      <p class="stem">2. You promote a change to prod. In which form does the solution travel downstream?</p>
+      <button class="opt"><span class="mk">A</span> Exported as <em>managed</em>, imported into prod</button>
+      <button class="opt"><span class="mk">B</span> Exported unmanaged so prod can be edited</button>
+      <button class="opt"><span class="mk">C</span> Rebuilt by hand in prod from the dev steps</button>
+      <button class="opt"><span class="mk">D</span> Copied as raw records via bulk import</button>
+      <div class="fb ok">Correct. You build unmanaged in dev and ship <em>managed</em> downstream — managed layers are how test/prod receive changes without hand edits that would block future updates. Re-doing it by hand or copying records isn't ALM and doesn't carry metadata properly.</div>
+      <div class="fb no">Ship a <em>managed</em> export into prod. Unmanaged downstream invites hand-edits that block updates; rebuilding by hand or bulk-copying records isn't solution ALM.</div>
+    </div>
+
+    <div class="q" data-correct="3">
+      <p class="stem">3. A cloud (v9.2) managed export fails to import into on-prem (v9.1) with <code>0x80048068</code>. Why?</p>
+      <button class="opt"><span class="mk">A</span> On-prem can't import managed solutions</button>
+      <button class="opt"><span class="mk">B</span> The NTLM profile lacks import privilege</button>
+      <button class="opt"><span class="mk">C</span> Managed solutions only import on the org that built them</button>
+      <button class="opt"><span class="mk">D</span> An org rejects a package newer than itself — build on the lowest version in the chain</button>
+      <div class="fb ok">Correct. The zip carries its build org's package version, and a target rejects anything newer. So a v9.2 build won't land on a v9.1 org. <code>validate --against-org</code> catches it pre-import; the fix is to build on the lowest version in the dev→test→prod chain.</div>
+      <div class="fb no">It's the version ceiling: a target org rejects a package newer than itself, so v9.2→v9.1 fails. On-prem does import managed solutions, it's not a privilege issue, and managed zips do move between orgs — just not downward in version.</div>
+    </div>
+
+    <div class="q" data-correct="1">
+      <p class="stem">4. What must happen in dev <em>before</em> <code>solution export</code>, or the change won't travel?</p>
+      <button class="opt"><span class="mk">A</span> Delete the unmanaged solution</button>
+      <button class="opt"><span class="mk">B</span> <code>publish-all</code> — unpublished customizations aren't exported</button>
+      <button class="opt"><span class="mk">C</span> Switch the active profile to prod</button>
+      <button class="opt"><span class="mk">D</span> Run <code>whoami</code> on the target</button>
+      <div class="fb ok">Correct. Only published customizations are included in the export zip, so a forgotten <code>publish-all</code> silently drops changes. Deleting the solution would remove it, switching to prod is wrong-direction, and whoami confirms a target but doesn't publish anything.</div>
+      <div class="fb no"><code>publish-all</code> first — unpublished changes drop out of the export. Don't delete the solution, don't switch to prod to build, and whoami confirms a target without publishing.</div>
+    </div>
+
+    <p class="score" id="score"></p>
+  </div>
+</section>
+
+<!-- ─── REFS ─── -->
+<section class="reveal">
+  <h3>Primary source</h3>
+  <p>The crm agent skill's <code>reference/solutions.md</code> and the <code>reference/customization-lifecycle.md</code> "Promote to the next environment" section are the canonical pipeline (export managed → validate → import → verify) and the version-ceiling rule. Ground the ALM concepts themselves in Microsoft's Power Platform ALM docs.</p>
+  <ol class="refs">
+    <li id="r1">crm agent skill — <code>reference/solutions.md</code>, <code>reference/customization-lifecycle.md</code> (promote; version ceiling <code>0x80048068</code>). <a href="https://github.com/Gharib89/crm" target="_blank">github.com/Gharib89/crm</a></li>
+    <li id="r2"><a href="https://learn.microsoft.com/power-platform/alm/" target="_blank">Application lifecycle management (ALM) with Microsoft Power Platform</a> — dev/test/prod, managed vs unmanaged, solution layering.</li>
+    <li id="r3">Revisit <a href="0036-export-and-import.html">M06 L04 — export &amp; import</a> and <a href="0051-same-ops-on-prem.html">M09 L04</a> for the verb mechanics this lesson sequences into a promotion.</li>
+  </ol>
+</section>
+
+<!-- ─── ASK ─── -->
+<div class="ask reveal">
+  <p><b>Your teacher is one message away.</b> Ask me to:</p>
+  <ul class="tight">
+    <li>"Walk a real export → validate → import between my two orgs, step by step."</li>
+    <li>"Show <code>whoami</code> on both targets so I can see the identities differ."</li>
+    <li>"Demonstrate <code>validate --against-org</code> catching the version ceiling."</li>
+    <li>"What's the right teardown order to remove DealDesk from test?"</li>
+  </ul>
+</div>
+
+<!-- ─── NEXT ─── -->
+<div class="next reveal">
+  <span class="pill">up next</span>
+  <h2>Report a bug — the M10 capstone</h2>
+  <p>You can plan, de-risk, build, and promote. The last agentic skill closes the loop: when something the CLI does is actually <em>wrong</em> — not your error, not a documented limit — recognize it, and file a high-quality issue upstream to <code>Gharib89/crm</code>. <span class="live-only">Just say <strong>'next lesson'</strong>.</span></p>
+</div>
+
+<footer>
+  <p>Milestone 10 — Working Agentically with Claude Code · <a href="https://gharib89.github.io/learn-crm-cli-and-api/">course home</a></p>
+  <p class="ft">M10 · L05 · lessons/0057-environments-and-promotion.html · the profile IS the switch (no env-var/ambient target; profile list marks active, --profile overrides per-run); whoami-before-every-mutate (confirm live org, never trust active profile); build unmanaged in DEV → export --managed → import into test/prod (never customize prod, never hand-edit managed downstream = blocks updates); pipeline: set-version → publish-all (unpublished==not exported) → export -o --managed → validate --against-org → import --yes → verify components; version ceiling: org rejects package newer than itself, cloud v9.2 → on-prem v9.1 = 0x80048068, validate --against-org catches it pre-import (offline validate is structural only), build on lowest version in chain; same verbs both targets (on-prem import sync, cloud async), profile carries auth+host+version; live both orgs agent-cloud+agent-on-prem reachable, URLs scrubbed to example env, 2026-06-20, crm v1.0.0</p>
+</footer>
+
+</div><!-- /wrap -->
+
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 10, "name": "Working Agentically with Claude Code"},
+  "lesson": 5,
+  "title": "Environments & promotion",
+  "slug": "environments-and-promotion",
+  "topics": ["agentic","environments","profiles","promotion","alm","managed-solution","version-ceiling","on-prem","mission"],
+  "summary": "Working across orgs and promoting a change safely. The profile IS the environment switch — no env-var override, no ambient target; profile list marks the active one, --profile <name> overrides per-run. Rule: whoami before EVERY mutate to confirm the live org actually answering (both targets return the same envelope, only identity+host differ) — never trust 'the active profile is probably right', because a schema write against prod-instead-of-dev is the irreversible mistake. ALM direction: build unmanaged in DEV inside your own solution, export AS MANAGED, import that managed zip into test then prod; never customize in prod, never hand-edit a managed component downstream (the active unmanaged layer blocks future managed updates) — downstream the agent's job is import-only. Pipeline (real verbs, identical on both targets): solution set-version --version, solution publish-all (unpublished == NOT exported — a forgotten publish silently drops changes), solution export -o file --managed, solution validate file --against-org, crm --profile test solution import file --yes, then verify components landed. Version ceiling: a managed zip carries its build org's package version and an org REJECTS any package newer than itself — cloud v9.2 export will not import into on-prem v9.1 (0x80048068); on-prem v9.1 → cloud v9.2 works (target newer). solution validate --against-org compares SolutionPackageVersion and catches it pre-import (offline validate is structural only); fix = build on the lowest version in the dev→test→prod chain, or keep every tier on one platform. Same verbs on cloud and on-prem (on-prem import synchronous, cloud returns async job); the profile carries auth+host+version, the workflow doesn't fork. Agent promotion discipline: whoami-before-mutate, build-unmanaged-in-dev-only, publish-before-export, validate-against-org-before-import, one-solution-per-change + dry-run on target + verify after. Live: both orgs agent-cloud + agent-on-prem reachable; URLs scrubbed to example env. crm v1.0.0.",
+  "order": 5,
+  "status": "published" }
+</script>
+</body>
+</html>

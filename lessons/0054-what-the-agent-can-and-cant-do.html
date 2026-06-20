@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M10 · L02 — What the agent can &amp; can't do</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-sizing:border-box}0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-false{color:#ff8f7a}.c-num{color:#ffd479}.c-meth{color:#ffd479;font-weight:700}.c-ann{color:#7fb0c9}
+  .c-xtag{color:#8cc0ff}.c-xattr{color:#ffd479}.c-xval{color:#a7e6a0}
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+  table.ops{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--card);
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.ops th,table.ops td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.ops th{background:var(--guid-soft);color:var(--guid);font-family:"Roboto Mono",monospace;
+    font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  table.ops tr:last-child td{border-bottom:none}
+  table.ops code{font-size:12.5px}
+  table.ops .pk{color:var(--teal-deep);font-weight:700}
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-false,pre .c-num,pre .c-meth,pre .c-flag,pre .c-ann,pre .c-xtag,pre .c-xattr,pre .c-xval{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+<header class="top reveal">
+  <p class="eyebrow">Milestone 10 <span class="dot">·</span> Working Agentically <span class="dot">·</span> Lesson 02</p>
+  <h1>What it can —<br><em>and can't</em></h1>
+  <p class="sub">The CLI wraps the Dataverse Web API. If a customization has a Web-API write path, the agent can do it. If it lives only in a designer or the solution-zip pipeline, it's <em>GUI-only</em> — and the agent's job is to say so, not fake it.</p>
+  <div class="livechip"><span class="led"></span> live on <b>agent-cloud</b> &nbsp;·&nbsp; orgexample.crm.dynamics.com &nbsp;·&nbsp; <span class="pill">reads</span> <span class="pill t">boundary</span></div>
+  <div class="rule"></div>
+  <div class="why">
+    <b>Why this matters:</b> The mission asks you to judge, for <em>any</em> requirement, what's automatable via the <code>crm</code> CLI / Dataverse Web API and what isn't. Get this line wrong and the agent either refuses work it could do, or — worse — confidently "completes" a step that has no API and leaves a silent hole in your customization. Knowing the boundary up front is what makes the agentic workflow trustworthy.
+  </div>
+</header>
+
+<p class="lead reveal">There's one clean test behind the whole boundary: <em>is there a Web-API write path?</em> The CLI is a faithful wrapper over the Dataverse Web API — it can do what the API can do, and it <em>refuses</em> rather than fakes what the API can't.</p>
+
+<!-- ─── SECTION 01 ─── -->
+<section class="reveal">
+  <h2><span class="n">01</span> The line has two questions, not one</h2>
+  <p>Every <code>crm</code> verb issues a real HTTP request to <code>/api/data/v9.x/</code>, so it's tempting to say "automatable = there's a Web-API path." That's too coarse. Two questions actually decide what the agent does: <strong>(1) is there a <em>supported</em> Dataverse API path?</strong> and <strong>(2) does the <code>crm</code> CLI expose a verb for it?</strong></p>
+
+  <div class="callout tip">
+    <span class="ic">TEST</span>
+    <div>The two answers give three outcomes: <strong>API + CLI verb</strong> → do it now (most of M01–M09). <strong>Supported API but no verb yet</strong> → a <em>CLI gap</em>: doable via the raw API/SDK, and worth a feature request. <strong>No supported API path</strong> → genuinely GUI/pipeline-only. "GUI-only" in everyday talk usually means *"the CLI has no verb"* — which, as you'll see in §03, isn't always the same as *"the platform can't."*</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 02 ─── -->
+<section class="reveal">
+  <h2><span class="n">02</span> What the agent <em>can</em> do</h2>
+  <p>The automatable surface is large — it's everything M01–M09 taught. From the agent's seat:</p>
+
+  <table class="ops">
+    <thead><tr><th>Domain</th><th>The agent can…</th><th>Met in</th></tr></thead>
+    <tbody>
+      <tr><td class="pk">Records</td><td>CRUD, OData + FetchXML queries, associate/lookup, bulk import/export, ad-hoc actions</td><td>M01–M02</td></tr>
+      <tr><td class="pk">Schema</td><td>Create tables, columns, <em>global option sets</em>, 1:N / N:N relationships, alternate keys</td><td>M03–M05</td></tr>
+      <tr><td class="pk">Solutions</td><td>Create/export/import, validate, set-version, publish, packager extract/pack</td><td>M06</td></tr>
+      <tr><td class="pk">UI</td><td>Views, model-driven apps + sitemap, web resources, <em>ribbon buttons</em>, add fields to forms</td><td>M07</td></tr>
+      <tr><td class="pk">Automation</td><td>Register plug-in assemblies + steps + images, webhooks, activate/import workflows, activate SLAs</td><td>M08</td></tr>
+      <tr><td class="pk">Security</td><td>Roles &amp; assignment</td><td>refs</td></tr>
+    </tbody>
+  </table>
+
+  <p>If a requirement decomposes into pieces on this table, the agent can drive the whole thing end-to-end with the safe-write loop from <a href="0053-the-agent-contract.html">L01</a>.</p>
+</section>
+
+<!-- ─── SECTION 03 ─── -->
+<section class="reveal">
+  <h2><span class="n">03</span> What the CLI can't do — three different reasons</h2>
+  <p>None of these have a <code>crm</code> verb in v1.0.0 (confirmed absent from <code>crm describe</code>). But <em>why</em> differs — and the right response differs with it:</p>
+
+  <table class="ops">
+    <thead><tr><th>Component</th><th>Bucket</th><th>Reality</th></tr></thead>
+    <tbody>
+      <tr><td class="pk">Charts (<code>savedqueryvisualization</code>)</td><td style="color:var(--teal-deep);font-weight:700">CLI gap</td><td><strong>Supported</strong> Web-API/SDK create — the CLI just has no verb. Low risk.</td></tr>
+      <tr><td class="pk">Dashboards (<code>systemform</code>)</td><td style="color:var(--teal-deep);font-weight:700">CLI gap</td><td><strong>Supported</strong> SDK create (FormXml). No verb yet.</td></tr>
+      <tr><td class="pk">SLA + KPI items</td><td style="color:var(--teal-deep);font-weight:700">CLI gap</td><td>Entities with a create path; CLI only does <code>sla activate</code>.</td></tr>
+      <tr><td class="pk">Rollup &amp; calculated columns</td><td style="color:var(--amber);font-weight:700">unsupported via API</td><td>The metadata field exists, but MS docs: <em>"the only supported way to change <code>FormulaDefinition</code> is the formula editor."</em></td></tr>
+      <tr><td class="pk">BPF (cat 4) · business rules (cat 2)</td><td style="color:var(--amber);font-weight:700">unsupported via API</td><td>Authored in the designer; raw <code>clientdata</code> is unsupported, and enabling a table for BPF is <strong>irreversible</strong>.</td></tr>
+      <tr><td class="pk">Ribbon <code>RibbonDiffXml</code> · early-bound classes</td><td style="color:var(--bad);font-weight:700">no API at all</td><td>Solution-zip pipeline (ribbon) or external codegen (<code>pac</code>/<code>CrmSvcUtil</code>) only.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <span class="ic">NUANCE</span>
+    <div>Two cautions. <strong>(1)</strong> "GUI-only" is per-<em>component</em>, not per-domain: the agent <em>can</em> add a ribbon <strong>button</strong> (`ribbon add-button`) but not hand-edit arbitrary `RibbonDiffXml`; it <em>can</em> register a plug-in step but its DLL is compiled outside. <strong>(2)</strong> "Modern flows (cat 5)" are <em>not</em> on this list: <code>workflow export</code>/<code>import</code> already round-trip and clone flow definitions — net-new authoring still needs designer-generated <code>clientdata</code>, but promotion is covered.</div>
+  </div>
+
+  <div class="callout tip">
+    <span class="ic">REAL</span>
+    <div>The three "CLI gap" rows above were filed as upstream feature requests during this lesson's authoring — <a href="https://github.com/Gharib89/crm/issues/420" target="_blank">#420 charts</a>, <a href="https://github.com/Gharib89/crm/issues/421" target="_blank">#421 dashboards</a>, <a href="https://github.com/Gharib89/crm/issues/422" target="_blank">#422 SLA create</a>. A CLI gap isn't a dead end; it's a roadmap item (and exactly the feedback loop <a href="0058-report-a-bug.html">L06</a> teaches).</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 04 ─── -->
+<section class="reveal">
+  <h2><span class="n">04</span> The move when you hit the wall</h2>
+  <p>When a requirement contains a no-verb piece, the agent doesn't go quiet and it doesn't pretend. It detects it early (during planning), names it explicitly so it's a tracked task — and then the response depends on <em>which bucket</em> it fell in:</p>
+
+  <ol class="steps">
+    <li><strong>CLI gap</strong> (supported API, no verb) → do it via the raw Web-API/SDK if it's on the critical path, and/or <strong>file a feature request</strong> so the verb exists next time. Low risk — the platform supports it.</li>
+    <li><strong>Unsupported via API</strong> (rollup, BPF, business rules) → hand off to the <strong>designer</strong> with a short manual checklist. Forcing the raw API here is unsupported and risky (invalid components, irreversible flags).</li>
+    <li><strong>No API at all</strong> (RibbonDiffXml, codegen) → it's the solution-zip pipeline or external tooling; flag it as out-of-band.</li>
+  </ol>
+
+  <div class="callout tip">
+    <span class="ic">DEAL DESK</span>
+    <div>The requirement you'll plan next — a "Deal Desk" approval on Opportunity — is <em>mostly</em> automatable (table, option set, relationship, plug-in step, app). Its <strong>rollup of total approved value</strong> and <strong>approval BPF</strong> are the <em>unsupported-via-API</em> hand-offs (designer + checklist); its <strong>notification flow</strong> is designer-authored but, once built, promotes via <code>workflow export/import</code>. A trustworthy agent builds what it can and is precise about why each remainder is manual — which is what L03 and L04 teach you to orchestrate.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 05 — QUIZ ─── -->
+<section class="reveal">
+  <div class="quiz">
+    <p class="qh">Lesson check</p>
+    <p class="qhs">4 questions · click to reveal</p>
+
+    <div class="q" data-correct="3">
+      <p class="stem">1. A chart has a <em>supported</em> Web-API create path, but <code>crm</code> has no chart verb. What is this?</p>
+      <button class="opt"><span class="mk">A</span> Genuinely GUI-only — impossible without the designer</button>
+      <button class="opt"><span class="mk">B</span> Unsupported via API — risky to attempt</button>
+      <button class="opt"><span class="mk">C</span> A bug in <code>crm</code> to fix immediately</button>
+      <button class="opt"><span class="mk">D</span> A CLI gap — doable via the raw API, and worth a feature request</button>
+      <div class="fb ok">Correct. "No verb" ≠ "no path." Charts (<code>savedqueryvisualization</code>) have a documented, supported API, so this is a CLI gap — the agent can fall back to the raw API and file a feature request (we filed #420). It's not impossible, not unsupported, and a missing-feature isn't a defect.</div>
+      <div class="fb no">It's a CLI gap: the platform supports charts via a documented API; the CLI just lacks the verb. Fall back to the raw API and/or file a feature request. It's not impossible, not unsupported-and-risky, and not a bug.</div>
+    </div>
+
+    <div class="q" data-correct="3">
+      <p class="stem">2. Which is <b>unsupported via API</b> — the field exists but Microsoft says use the designer?</p>
+      <button class="opt"><span class="mk">A</span> Creating a global option set</button>
+      <button class="opt"><span class="mk">B</span> Registering a plug-in step on Update</button>
+      <button class="opt"><span class="mk">C</span> Creating a system chart</button>
+      <button class="opt"><span class="mk">D</span> A rollup column's <code>FormulaDefinition</code></button>
+      <div class="fb ok">Correct. The attribute metadata carries <code>FormulaDefinition</code>, but MS docs state the only supported way to set it is the formula editor — so authoring a rollup via raw API is unsupported/risky. Option sets and plug-in steps have real verbs; charts are a CLI gap (supported API, no verb).</div>
+      <div class="fb no">The rollup's <code>FormulaDefinition</code> is the unsupported-via-API case (designer-only per MS). Option sets and steps are automatable; a chart is a CLI gap (supported API), not unsupported.</div>
+    </div>
+
+    <div class="q" data-correct="0">
+      <p class="stem">3. A requirement includes a Power Automate flow for email. What does a trustworthy agent do?</p>
+      <button class="opt"><span class="mk">A</span> Flag it as GUI-only and hand off a manual task; build the automatable rest</button>
+      <button class="opt"><span class="mk">B</span> Generate the flow definition JSON and POST it via the CLI</button>
+      <button class="opt"><span class="mk">C</span> Skip the whole requirement since one part can't be automated</button>
+      <button class="opt"><span class="mk">D</span> Register it as a plug-in step instead</button>
+      <div class="fb ok">Correct. Cloud-flow logic has no Dataverse write path, so the agent names it as a manual task and proceeds with everything that <em>is</em> automatable. It doesn't fabricate an API call, abandon the whole job, or substitute an unrelated mechanism.</div>
+      <div class="fb no">Flows are GUI-only — the agent surfaces that as a manual task and still does the automatable parts. Faking a POST, abandoning the requirement, or swapping in a plug-in step are all wrong responses.</div>
+    </div>
+
+    <div class="q" data-correct="1">
+      <p class="stem">4. "GUI-only is per-domain" — what's the correction?</p>
+      <button class="opt"><span class="mk">A</span> Correct — if any part of a domain is GUI-only, the whole domain is</button>
+      <button class="opt"><span class="mk">B</span> It's per-component: e.g. ribbon <em>buttons</em> are automatable but raw <code>RibbonDiffXml</code> edits aren't</button>
+      <button class="opt"><span class="mk">C</span> Correct — UI is always GUI-only, automation never is</button>
+      <button class="opt"><span class="mk">D</span> It's per-target: GUI-only on on-prem, automatable on cloud</button>
+      <div class="fb ok">Correct. The boundary runs through individual components. Within one domain, some pieces have a Web-API path and some don't — a ribbon button has a verb, arbitrary RibbonDiffXml doesn't; a plug-in step registers via the CLI, but its DLL is compiled outside. Always check the specific component.</div>
+      <div class="fb no">It's per-component, not per-domain or per-target. The same domain mixes automatable and GUI-only pieces (ribbon button vs RibbonDiffXml; step registration vs DLL compilation), so judge each component on its own.</div>
+    </div>
+
+    <p class="score" id="score"></p>
+  </div>
+</section>
+
+<!-- ─── REFS ─── -->
+<section class="reveal">
+  <h3>Primary source</h3>
+  <p>The crm agent skill's <code>SKILL.md</code> → <strong>"Don't reach past the API"</strong> and the per-domain reference files (<code>reference/automation.md</code>, <code>reference/customizations.md</code>) are the canonical statement of what has a Web-API path and what doesn't. When unsure about a specific component, <code>crm describe &lt;group&gt;</code> is the live answer for the installed version.</p>
+  <ol class="refs">
+    <li id="r1">crm agent skill — <code>SKILL.md</code> ("Don't reach past the API"), <code>reference/automation.md</code>, <code>reference/customizations.md</code>. <a href="https://github.com/Gharib89/crm" target="_blank">github.com/Gharib89/crm</a></li>
+    <li id="r2"><a href="https://learn.microsoft.com/dynamics365/customerengagement/on-premises/developer/calculated-and-rollup-attributes?view=op-9-1" target="_blank">Calculated and rollup attributes (D365 CE)</a> — what rollups are, and their platform constraints (the headline GUI-only example).</li>
+    <li id="r3">Recall the automation boundary capstone, <a href="0047-automation-boundary-capstone.html">M08 L05</a> — the same line, drawn from the automation side.</li>
+  </ol>
+</section>
+
+<!-- ─── ASK ─── -->
+<div class="ask reveal">
+  <p><b>Your teacher is one message away.</b> Ask me to:</p>
+  <ul class="tight">
+    <li>"Take a requirement I describe and split it into automatable vs GUI-only, line by line."</li>
+    <li>"Show me <code>crm describe</code> proving there's no rollup or BPF create verb."</li>
+    <li>"Which parts of a typical 'approval process' are GUI-only, and why?"</li>
+    <li>"What's the difference between registering a plug-in step and building its assembly?"</li>
+  </ul>
+</div>
+
+<!-- ─── NEXT ─── -->
+<div class="next reveal">
+  <span class="pill">up next</span>
+  <h2>Plan a big task with the agent</h2>
+  <p>You can now sort any requirement into can / can't. Next, the hard part: taking a genuinely big requirement — the Deal Desk approval — and turning it into an <strong>ordered, dependency-aware plan</strong> the agent executes step by step, with the GUI-only pieces flagged before a single write lands. <span class="live-only">Just say <strong>'next lesson'</strong>.</span></p>
+</div>
+
+<footer>
+  <p>Milestone 10 — Working Agentically with Claude Code · <a href="https://gharib89.github.io/learn-crm-cli-and-api/">course home</a></p>
+  <p class="ft">M10 · L02 · lessons/0054-what-the-agent-can-and-cant-do.html · TWO questions decide the boundary (1: supported Dataverse API path? 2: does crm expose a verb?) → THREE buckets for no-verb components, not flat "GUI-only"; CAN (API+verb): records CRUD/query, schema tables/cols/global-optionsets/relationships/keys, solutions lifecycle, views/apps/sitemap/webresources/ribbon-buttons/form-fields, plugins+webhooks+workflow-activate+import+sla-activate, roles, bulk; CAN'T, by reason: (A) CLI GAP = supported API but no verb, low risk, do via raw API + file FR → charts (savedqueryvisualization #420), dashboards (systemform #421), SLA+KPI create (#422); (B) UNSUPPORTED VIA API = field exists but MS says designer-only, risky → rollup/calculated columns (FormulaDefinition only via formula editor), BPF cat 4 + business rules cat 2 (clientdata designer-only; BPF table-enable irreversible); (C) NO API AT ALL = RibbonDiffXml (solution-zip), early-bound classes (codegen); modern flows (cat 5) NOT GUI-only — workflow export/import round-trip+clone (net-new still needs designer clientdata); nuance per-component not per-domain (ribbon button yes/RibbonDiffXml no; step yes/DLL outside); the move by bucket: A=raw API+FR, B=designer+checklist, C=pipeline/external; corrected 2026-06-20 after Web-API capability review (was flat 'no Web-API path'); reads only; agent-cloud, crm v1.0.0</p>
+</footer>
+
+</div><!-- /wrap -->
+
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 10, "name": "Working Agentically with Claude Code"},
+  "lesson": 2,
+  "title": "What the agent can & can't do",
+  "slug": "what-the-agent-can-and-cant-do",
+  "topics": ["agentic","automation-boundary","web-api","gui-only","rollup","bpf","power-automate","capability","mission"],
+  "summary": "The capability boundary from the agent's seat, as TWO questions not one: (1) is there a SUPPORTED Dataverse API path? (2) does the crm CLI expose a verb? That yields THREE buckets for anything without a verb — 'GUI-only' colloquially means 'no CLI verb', which is NOT always 'the platform can't'. CAN do now (API + verb = all of M01-M09): records CRUD + OData/FetchXML + associate + bulk; schema tables/columns/GLOBAL option sets/1:N+N:N relationships/alternate keys; solutions create/export/import/validate/set-version/publish; UI views/model-driven apps+sitemap/web resources/ribbon BUTTONS/form add-field; automation plug-in assemblies+steps+images/webhooks/workflow activate+import/SLA activate; security roles. CAN'T via CLI, split by REASON (all confirmed absent from crm describe v1.0.0): BUCKET A = CLI GAP (supported Web-API/SDK create, no verb yet, LOW RISK, do via raw API + worth a feature request): charts (savedqueryvisualization/userqueryvisualization — DataDescription/PresentationDescription XML; filed upstream #420), dashboards (systemform FormXml; #421), SLA + KPI items create (CLI only does sla activate; #422). BUCKET B = UNSUPPORTED VIA API (the metadata field exists but Microsoft says designer-only — risky to force): rollup & calculated columns (FormulaDefinition is XAML and MS docs state 'the only supported way to change it is the formula editor'; add-attribute --kind also has no rollup/calculated, kinds stop at picklist/lookup/file), Business Process Flows (cat 4) and business rules (cat 2) (clientdata is designer-generated; enabling a table for BPF via IsBusinessProcessEnabled is IRREVERSIBLE). BUCKET C = NO API AT ALL: ribbon RibbonDiffXml hand-edits (solution-zip pipeline only; CLI's ribbon add-button automates the zip dance), early-bound class generation (pac/CrmSvcUtil codegen, not a server op). NOTE: modern/Power Automate flows (cat 5) are NOT GUI-only — workflow export/import already round-trip and clone flow definitions (net-new authoring still needs designer-generated clientdata, but promotion is covered). Nuance: the boundary is PER-COMPONENT not per-domain — ribbon BUTTON automatable but raw RibbonDiffXml not; plug-in step registers via CLI but its .NET DLL is compiled outside. The agent's move depends on the bucket: A = use raw Web-API/SDK if on critical path + file a feature request; B = hand off to the designer with a manual checklist (forcing raw API is unsupported/risky/irreversible); C = solution-zip pipeline or external tooling. Always detect early during planning and name each remainder precisely. Deal Desk: rollup of approved value + approval BPF are bucket-B designer hand-offs; the notification flow is designer-authored but promotes via workflow export/import. (Lesson corrected 2026-06-20 after a Web-API capability review — superseded an earlier flat 'no Web-API write path' framing.)",
+  "order": 2,
+  "status": "published" }
+</script>
+</body>
+</html>

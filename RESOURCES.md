@@ -46,6 +46,16 @@ Trusted sources for this workspace. Explainers draw from here, not parametric gu
 - [Optimize performance for bulk operations](https://learn.microsoft.com/power-apps/developer/data-platform/optimize-performance-create-update#bulk-operation-apis) ·
   [Execute $batch operations](https://learn.microsoft.com/power-apps/developer/data-platform/webapi/execute-batch-operations-using-web-api)
   Use for: `CreateMultiple`/`UpdateMultiple` availability (cloud-only / per-table) vs the universal OData `$batch` path (M09 L02).
+- [Calculated and rollup attributes (D365 CE)](https://learn.microsoft.com/dynamics365/customerengagement/on-premises/developer/calculated-and-rollup-attributes?view=op-9-1)
+  Use for: the headline **GUI-only** example (M10 L02/L04) — rollups aggregate over **1:N only** (not N:N),
+  can't reference another rollup, recalc on **async scheduled jobs**, max 10/table & 100/org. Grounds why
+  `metadata add-attribute` has no `rollup` kind.
+- [ALM with Microsoft Power Platform](https://learn.microsoft.com/power-platform/alm/)
+  Use for: the dev→test→prod promotion discipline (M10 L05) — build unmanaged in dev, ship **managed**
+  downstream, solution layering, and the managed-vs-unmanaged rule the version ceiling enforces.
+- [`gh issue create` manual](https://cli.github.com/manual/gh_issue_create)
+  Use for: filing an upstream defect from the shell (M10 L06) — `--repo`, `--label`, `--body-file` flags
+  behind the `Gharib89/crm` issue recipe in `reference/feedback.md`.
 
 ## Wisdom (Communities)
 

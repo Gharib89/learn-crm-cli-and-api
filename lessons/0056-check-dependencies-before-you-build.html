@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M10 · L04 — Check dependencies before you build</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-sizing:border-box}0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-false{color:#ff8f7a}.c-num{color:#ffd479}.c-meth{color:#ffd479;font-weight:700}.c-ann{color:#7fb0c9}
+  .c-xtag{color:#8cc0ff}.c-xattr{color:#ffd479}.c-xval{color:#a7e6a0}
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+  table.ops{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--card);
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.ops th,table.ops td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.ops th{background:var(--guid-soft);color:var(--guid);font-family:"Roboto Mono",monospace;
+    font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  table.ops tr:last-child td{border-bottom:none}
+  table.ops code{font-size:12.5px}
+  table.ops .pk{color:var(--teal-deep);font-weight:700}
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-false,pre .c-num,pre .c-meth,pre .c-flag,pre .c-ann,pre .c-xtag,pre .c-xattr,pre .c-xval{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+<header class="top reveal">
+  <p class="eyebrow">Milestone 10 <span class="dot">·</span> Working Agentically <span class="dot">·</span> Lesson 04</p>
+  <h1>Check the<br><em>wiring first</em></h1>
+  <p class="sub">A plan is a set of assumptions. Before you mutate, verify them: what needs what, what blocks what, and is each target even ready. Three read-only tools turn a hopeful plan into a de-risked one.</p>
+  <div class="livechip"><span class="led"></span> live on <b>agent-cloud</b> &nbsp;·&nbsp; orgexample.crm.dynamics.com &nbsp;·&nbsp; <span class="pill">reads</span> <span class="pill t">de-risk</span></div>
+  <div class="rule"></div>
+  <div class="why">
+    <b>Why this matters:</b> "Dependency order bites" — a write that assumes a prereq which isn't there fails <em>mid-build</em>, leaving the org half-customized and hard to unwind. The mission wants requirements driven cleanly end-to-end; the cheapest way to get there is to confirm the wiring before any write, with read-only calls that cost nothing and catch the failure on paper instead of in production.
+  </div>
+</header>
+
+<p class="lead reveal">There are two questions dependencies answer, and they run in opposite directions: <em>"what must exist before I build this?"</em> and <em>"what would break if I changed this?"</em> One command answers both.</p>
+
+<!-- ─── SECTION 01 ─── -->
+<section class="reveal">
+  <h2><span class="n">01</span> Two directions of dependency</h2>
+  <p><code>metadata dependencies</code> is read-only and points either way, by component <code>--kind</code> (<code>entity</code>, <code>attribute</code>, <code>optionset</code>, <code>relationship</code>):</p>
+
+  <table class="ops">
+    <thead><tr><th>Flag</th><th>Answers</th><th>Maps to</th></tr></thead>
+    <tbody>
+      <tr><td class="pk">--for dependents</td><td>"What depends on this?" — what would break if you changed/removed it</td><td><code>RetrieveDependentComponents</code></td></tr>
+      <tr><td class="pk">--for delete</td><td>"What blocks deleting this?" — the components in the way of a teardown</td><td><code>RetrieveDependenciesForDelete</code></td></tr>
+    </tbody>
+  </table>
+
+  <p>Both return the same envelope shape: a <code>can_delete</code> verdict plus a <code>blockers</code> array. Here it is live against <code>account</code> on agent-cloud — note <code>can_delete:false</code> because real relationships point at it:</p>
+
+  <pre class="term"><span class="tag">live · agent-cloud · reads only</span><code><span class="c-comment">$ crm --json metadata dependencies account --kind entity --for delete</span>
+<span class="c-punc">{</span> <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+  <span class="c-key">"data"</span><span class="c-punc">:</span> <span class="c-punc">{</span>
+    <span class="c-key">"can_delete"</span><span class="c-punc">:</span> <span class="c-false">false</span><span class="c-punc">,</span>
+    <span class="c-key">"blockers"</span><span class="c-punc">:</span> <span class="c-punc">[</span>
+      <span class="c-punc">{</span> <span class="c-key">"dependent_type"</span><span class="c-punc">:</span> <span class="c-str">"Entity Relationship"</span><span class="c-punc">,</span>
+        <span class="c-key">"dependent_id"</span><span class="c-punc">:</span> <span class="c-guid">"b319a54f-0364-4ed1-a2f0-…"</span><span class="c-punc">,</span>
+        <span class="c-key">"required_type"</span><span class="c-punc">:</span> <span class="c-str">"Entity"</span><span class="c-punc">,</span>
+        <span class="c-key">"dependency_type"</span><span class="c-punc">:</span> <span class="c-num">1</span> <span class="c-punc">}</span><span class="c-punc">,</span>
+      <span class="c-comment">… more blockers …</span>
+    <span class="c-punc">]</span> <span class="c-punc">}</span> <span class="c-punc">}</span></code></pre>
+
+  <div class="callout tip">
+    <span class="ic">READ IT</span>
+    <div><code>can_delete:false</code> + a non-empty <code>blockers[]</code> = "something depends on this; deal with those first." Each blocker names the <code>dependent_type</code> (here an <em>Entity Relationship</em>) so you know <em>what</em> stands in the way. For the Deal Desk teardown, this is how the agent removes components in the right (reverse) order instead of hitting <code>0x8004f01f</code>.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 02 ─── -->
+<section class="reveal">
+  <h2><span class="n">02</span> Is the target even ready? <code>metadata describe</code></h2>
+  <p>Dependencies tell you about edges <em>between</em> components. <code>metadata describe</code> tells you about <em>one</em> component's write-readiness — does it exist, what's its real name, what can you write to it. It's the brief the agent reads before authoring against any table:</p>
+
+  <pre class="term"><span class="tag">live · agent-cloud</span><code><span class="c-comment">$ crm --json metadata describe account</span>
+<span class="c-punc">{</span> <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span> <span class="c-key">"data"</span><span class="c-punc">:</span> <span class="c-punc">{</span>
+  <span class="c-key">"logical_name"</span><span class="c-punc">:</span> <span class="c-str">"account"</span><span class="c-punc">,</span>
+  <span class="c-key">"entity_set_name"</span><span class="c-punc">:</span> <span class="c-str">"accounts"</span><span class="c-punc">,</span>
+  <span class="c-key">"primary_id"</span><span class="c-punc">:</span> <span class="c-str">"accountid"</span><span class="c-punc">,</span>
+  <span class="c-key">"primary_name"</span><span class="c-punc">:</span> <span class="c-str">"name"</span><span class="c-punc">,</span>
+  <span class="c-key">"writable_attributes"</span><span class="c-punc">:</span> <span class="c-punc">[</span> <span class="c-comment">… each with type, required_level, options …</span> <span class="c-punc">]</span> <span class="c-punc">}</span> <span class="c-punc">}</span></code></pre>
+
+  <div class="callout tip">
+    <span class="ic">USE</span>
+    <div>Before the Deal Desk step that adds a status column, the agent <code>describe</code>s the target table to confirm the table exists, get its exact <code>entity_set_name</code> and <code>primary_id</code> (no guessing the three names), and check the column isn't already there. It's the write-readiness brief you met in <a href="0022-describe-write-readiness.html">M03 L05</a> — now used as a pre-flight gate.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 03 ─── -->
+<section class="reveal">
+  <h2><span class="n">03</span> The pre-write trio</h2>
+  <p>Put together, three read-only checks de-risk any planned write — none of them mutate:</p>
+
+  <table class="ops">
+    <thead><tr><th>Check</th><th>Catches</th></tr></thead>
+    <tbody>
+      <tr><td class="pk">metadata dependencies</td><td>A prereq that must exist first, or a blocker that stops a teardown/replace</td></tr>
+      <tr><td class="pk">metadata describe</td><td>A target that doesn't exist, a wrong name, or a column already present</td></tr>
+      <tr><td class="pk">--dry-run</td><td>A malformed request — it reports live facts (<code>_exists</code>, <code>would_skip</code>) and the exact URL/body it <em>would</em> send</td></tr>
+    </tbody>
+  </table>
+
+  <p>And one more, <em>after</em> a write: a just-published metadata change takes a beat to propagate, so the agent gates the read-back with <code>--expect ATTR=VALUE</code> and retries on mismatch rather than trusting an instant read.</p>
+
+  <div class="callout warn">
+    <span class="ic">REMEMBER</span>
+    <div><code>--validate</code> is <strong>record-write only</strong>. For the <code>metadata</code>, <code>solution</code>, and component writes that make up most of a customization, your pre-flight net is <code>dependencies</code> + <code>describe</code> + <code>--dry-run</code> + <code>--expect</code> — not <code>--validate</code>.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 04 ─── -->
+<section class="reveal">
+  <h2><span class="n">04</span> The Deal Desk check, before any write</h2>
+  <p>Applied to the plan from <a href="0055-plan-a-big-task.html">L03</a>, the dependency pass looks like this — all reads, zero mutations:</p>
+
+  <ol class="steps">
+    <li><strong>Confirm the system anchors exist</strong> — <code>describe account</code> and <code>describe opportunity</code>: both are real, get their exact set/id names for the lookup and the step.</li>
+    <li><strong>Confirm the names are free</strong> — <code>describe</code> shows no <code>ag_dealreview</code> table and no <code>ag_approvalstatus</code> option set yet, so the create calls won't collide.</li>
+    <li><strong>Dry-run the dependency-sensitive writes</strong> — the 1:N create and the status column, to confirm the request shape (referenced/referencing entity, the optionset binding) before committing.</li>
+    <li><strong>Re-confirm the boundary</strong> — the rollup of approved value is still GUI-only (no <code>--kind rollup</code>), so it stays a flagged manual task, <em>not</em> a step that will fail.</li>
+  </ol>
+
+  <div class="callout tip">
+    <span class="ic">ROLLUP FACTS</span>
+    <div>Even done by hand in the designer, the rollup carries platform constraints worth telling the user: a rollup can only aggregate over a <strong>1:N</strong> relationship (not N:N), can't reference another rollup, recalculates on <strong>asynchronous scheduled jobs</strong> (so the Account total won't update the instant a review is approved), and there's a cap of <strong>10 rollups per table</strong>.<sup><a href="#r2">2</a></sup> Surfacing that up front is part of a good dependency check.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 05 — QUIZ ─── -->
+<section class="reveal">
+  <div class="quiz">
+    <p class="qh">Lesson check</p>
+    <p class="qhs">4 questions · click to reveal</p>
+
+    <div class="q" data-correct="2">
+      <p class="stem">1. You want to know what would break if you removed a custom relationship. Which call?</p>
+      <button class="opt"><span class="mk">A</span> <code>metadata describe</code> on the relationship</button>
+      <button class="opt"><span class="mk">B</span> <code>--dry-run</code> a delete</button>
+      <button class="opt"><span class="mk">C</span> <code>metadata dependencies … --for dependents</code></button>
+      <button class="opt"><span class="mk">D</span> <code>metadata attributes</code> on the entity</button>
+      <div class="fb ok">Correct. <code>--for dependents</code> (RetrieveDependentComponents) lists what depends on the target — exactly "what would break if I changed this." <code>describe</code> reports one component's readiness, a dry-run previews a single request, and <code>attributes</code> just lists columns.</div>
+      <div class="fb no">Use <code>--for dependents</code> — it returns the components that depend on the target. <code>describe</code> is single-component readiness, <code>--dry-run</code> previews one request, and <code>attributes</code> only lists columns.</div>
+    </div>
+
+    <div class="q" data-correct="1">
+      <p class="stem">2. <code>metadata dependencies account --for delete</code> returns <code>can_delete:false</code> with a non-empty <code>blockers[]</code>. This means:</p>
+      <button class="opt"><span class="mk">A</span> The command failed; retry it</button>
+      <button class="opt"><span class="mk">B</span> Other components depend on <code>account</code>; you must handle those first</button>
+      <button class="opt"><span class="mk">C</span> You lack privilege to read dependencies</button>
+      <button class="opt"><span class="mk">D</span> <code>account</code> doesn't exist</button>
+      <div class="fb ok">Correct. <code>ok:true</code> means the read succeeded; <code>can_delete:false</code> + blockers is a normal, informative result — it's telling you which components stand in the way. It's not a failure, a privilege issue, or a missing entity.</div>
+      <div class="fb no">It's a successful read (<code>ok:true</code>) reporting that dependents exist — handle them first. Nothing failed, there's no privilege problem, and <code>account</code> clearly exists.</div>
+    </div>
+
+    <div class="q" data-correct="3">
+      <p class="stem">3. For a <code>metadata create-entity</code>, which is <em>not</em> available as a pre-flight check?</p>
+      <button class="opt"><span class="mk">A</span> <code>--dry-run</code> to preview the request</button>
+      <button class="opt"><span class="mk">B</span> <code>metadata describe</code> to confirm the name is free</button>
+      <button class="opt"><span class="mk">C</span> <code>--expect</code> after publish to gate the read-back</button>
+      <button class="opt"><span class="mk">D</span> <code>--validate</code> to server-check the payload</button>
+      <div class="fb ok">Correct. <code>--validate</code> is record-write only (<code>entity create</code>/<code>update</code>) — it doesn't apply to <code>metadata</code>. For schema writes, the net is <code>dependencies</code> + <code>describe</code> + <code>--dry-run</code> + <code>--expect</code>.</div>
+      <div class="fb no"><code>--validate</code> is record-write only and isn't available for <code>metadata</code> writes. The other three (dry-run, describe, expect-after-publish) are the schema-write pre-flight net.</div>
+    </div>
+
+    <div class="q" data-correct="0">
+      <p class="stem">4. Why does the dependency check <em>re-confirm</em> that the rollup is GUI-only?</p>
+      <button class="opt"><span class="mk">A</span> So the rollup stays a flagged manual task, not a build step that will fail</button>
+      <button class="opt"><span class="mk">B</span> Because rollups depend on the plug-in assembly</button>
+      <button class="opt"><span class="mk">C</span> Because <code>--dry-run</code> can create rollups safely</button>
+      <button class="opt"><span class="mk">D</span> To pick the right cascade behavior</button>
+      <div class="fb ok">Correct. The dependency pass is also where the agent re-verifies the automatable/GUI-only split against the live CLI, so a no-API component like the rollup never sneaks into the build sequence as a step that would error out. It's not about assemblies, dry-run can't create it, and cascade is a relationship concern.</div>
+      <div class="fb no">It keeps the rollup as a manual task instead of a doomed build step — the dependency pass double-checks the boundary against the live CLI. Rollups don't depend on the assembly, dry-run can't create them, and cascade is unrelated.</div>
+    </div>
+
+    <p class="score" id="score"></p>
+  </div>
+</section>
+
+<!-- ─── REFS ─── -->
+<section class="reveal">
+  <h3>Primary source</h3>
+  <p>The crm agent skill's <code>reference/metadata.md</code> covers <code>dependencies</code>, <code>describe</code> (the write-readiness brief), and the publish-then-poll <code>--expect</code> discipline. Pair it with the lifecycle file's "dependency order bites" section for <em>why</em> the order matters.</p>
+  <ol class="refs">
+    <li id="r1">crm agent skill — <code>reference/metadata.md</code> (dependencies, describe, --expect) and <code>reference/customization-lifecycle.md</code> (dependency order). <a href="https://github.com/Gharib89/crm" target="_blank">github.com/Gharib89/crm</a></li>
+    <li id="r2"><a href="https://learn.microsoft.com/dynamics365/customerengagement/on-premises/developer/calculated-and-rollup-attributes?view=op-9-1" target="_blank">Calculated and rollup attributes (D365 CE)</a> — rollups aggregate over 1:N only, recalc on async scheduled jobs, max 10 per table / 100 per org.</li>
+  </ol>
+</section>
+
+<!-- ─── ASK ─── -->
+<div class="ask reveal">
+  <p><b>Your teacher is one message away.</b> Ask me to:</p>
+  <ul class="tight">
+    <li>"Run <code>metadata dependencies</code> on a custom table and read the blockers with me."</li>
+    <li>"Do the full Deal Desk dependency pass against agent-cloud — reads only."</li>
+    <li>"Show a <code>--dry-run</code> that catches a missing referencing entity before it fails."</li>
+    <li>"What teardown order does <code>--for delete</code> imply for the Deal Desk components?"</li>
+  </ul>
+</div>
+
+<!-- ─── NEXT ─── -->
+<div class="next reveal">
+  <span class="pill">up next</span>
+  <h2>Environments &amp; promotion</h2>
+  <p>The plan is built and verified in your dev org. Now move it: the <strong>profile is the switch</strong> between orgs, <code>whoami</code> confirms the target before every mutation, and a managed solution rides dev → test → prod with one version-ceiling trap to avoid. <span class="live-only">Just say <strong>'next lesson'</strong>.</span></p>
+</div>
+
+<footer>
+  <p>Milestone 10 — Working Agentically with Claude Code · <a href="https://gharib89.github.io/learn-crm-cli-and-api/">course home</a></p>
+  <p class="ft">M10 · L04 · lessons/0056-check-dependencies-before-you-build.html · dependency order bites (write assuming absent prereq fails mid-build); metadata dependencies TARGET --kind [entity|attribute|optionset|relationship] --for [dependents|delete] (read-only): --for dependents = RetrieveDependentComponents (what breaks if changed), --for delete = RetrieveDependenciesForDelete (what blocks teardown); envelope {ok:true,data:{can_delete:bool, blockers:[{dependent_type, dependent_id, required_type, dependency_type}]}} — live account --for delete → can_delete:false + Entity Relationship blockers; metadata describe = single-component write-readiness {logical_name, entity_set_name, primary_id, primary_name, writable_attributes[]}; pre-write trio = dependencies (prereq/blocker) + describe (exists/name/already-there) + --dry-run (_exists/would_skip/url/body); --expect ATTR=VALUE gates read-back after publish; --validate is RECORD-write only (not metadata); Deal Desk check (reads only): describe account+opportunity, confirm ag_dealreview/ag_approvalstatus names free, dry-run 1:N + status column, re-confirm rollup is GUI-only; rollup facts (MS Learn): 1:N only not N:N, no rollup-of-rollup, async scheduled recalc, 10/table 100/org; live agent-cloud (url scrubbed), 2026-06-20, crm v1.0.0</p>
+</footer>
+
+</div><!-- /wrap -->
+
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 10, "name": "Working Agentically with Claude Code"},
+  "lesson": 4,
+  "title": "Check dependencies before you build",
+  "slug": "check-dependencies-before-you-build",
+  "topics": ["agentic","dependencies","metadata-dependencies","describe","dry-run","de-risk","rollup","deal-desk","mission"],
+  "summary": "De-risking a plan before mutating, because dependency order bites — a write assuming an absent prereq fails mid-build and leaves the org half-customized. Two directions of dependency, both via read-only metadata dependencies TARGET --kind [entity|attribute|optionset|relationship]: --for dependents (RetrieveDependentComponents = what depends on this / what breaks if changed) and --for delete (RetrieveDependenciesForDelete = what blocks deleting this). Same envelope shape: {ok:true, data:{can_delete:bool, blockers:[{dependent_type, dependent_id, dependent_parent_id, required_type, dependency_type}]}}. Live: account --for delete → can_delete:false + 'Entity Relationship' blockers (real relationships point at it) — ok:true means the READ succeeded; can_delete:false+blockers is normal informative output, not a failure. metadata describe = single-component write-readiness brief {logical_name, entity_set_name, primary_id, primary_name, writable_attributes[] each with type/required_level/options} — confirm a target exists, get exact names (no guessing the three names), check a column isn't already there. The pre-write trio (all read-only, no mutation): metadata dependencies (prereq/blocker), metadata describe (exists/name/already-present), --dry-run (malformed request; reports live _exists/would_skip + exact url/body). Plus --expect ATTR=VALUE AFTER publish to gate the read-back (metadata propagation lag), retry on mismatch. KEY: --validate is RECORD-write only (entity create/update) — NOT available for metadata/solution/component writes, so their net is dependencies+describe+dry-run+expect. Deal Desk dependency pass (reads only): describe account+opportunity (exist, get set/id names), confirm ag_dealreview table + ag_approvalstatus optionset names are free, dry-run the 1:N + status column, re-confirm rollup is GUI-only (no --kind rollup) so it stays a flagged manual task not a failing step. Rollup constraints to surface (MS Learn): aggregates over 1:N only (not N:N), can't reference another rollup, recalc on ASYNC scheduled jobs (Account total not instant), max 10 rollups/table 100/org. Live agent-cloud crm v1.0.0; URL scrubbed.",
+  "order": 4,
+  "status": "published" }
+</script>
+</body>
+</html>

@@ -628,4 +628,60 @@ The mission skill: a **CLI defect** shows as a malformed request the CLI itself 
 **not** a well-formed `403`/`501`/`429`, which are correct server responses to real conditions. When
 it is a defect, file a high-quality issue to `Gharib89/crm` with the `crm --version`, the scrubbed
 command + full `--json` envelope, `connection doctor` output, and expected-vs-actual. Scrub host/GUIDs
-to the example env; the agent **offers**, never files silently. _Met: M09 L05._
+to the example env; the agent **offers**, never files silently. _Met: M09 L05; generalized to any target M10 L06._
+
+## Working agentically with Claude Code — *M10*
+
+**Capability boundary — two questions, three buckets**
+What the agent can do is decided by **two** questions, not one: (1) is there a **supported** Dataverse
+API path? (2) does the **crm CLI** expose a verb? "GUI-only" colloquially means *"no CLI verb"* —
+which is **not** always *"the platform can't."* **Automatable now** (API + verb = all of M01–M09):
+records, schema (tables/columns/global option sets/relationships/keys), solutions, views/apps/sitemap/
+web resources/ribbon **buttons**/form fields, plug-in & webhook registration, workflow/SLA
+activation, roles, bulk. **No verb in v1.0.0**, split by reason: **(A) CLI gap** — supported API, low
+risk, do via raw API + worth a feature request: **charts** (`savedqueryvisualization`, filed #420),
+**dashboards** (`systemform`, #421), **SLA + KPI create** (#422). **(B) unsupported via API** — the
+field exists but MS says designer-only, risky to force: **rollup/calculated columns**
+(`FormulaDefinition` only via the formula editor; `add-attribute --kind` has none), **BPF** (cat 4)
+and **business rules** (cat 2) (designer-generated `clientdata`; BPF table-enable is **irreversible**).
+**(C) no API at all** — ribbon `RibbonDiffXml` (solution-zip pipeline only), early-bound classes
+(codegen). Modern flows (cat 5) are **not** GUI-only: `workflow export/import` round-trip + clone them
+(net-new still needs designer `clientdata`). Line is **per-component, not per-domain**. The agent's
+move depends on the bucket: A = raw API + feature request; B = designer + manual checklist; C =
+pipeline/external. _Met: M10 L02 (corrected 2026-06-20 after a Web-API capability review)._
+
+**Rollup / calculated column (the headline GUI-only trap)**
+A column whose value is aggregated from related rows (rollup) or computed from same-row fields
+(calculated). **No CLI path** — `metadata add-attribute --kind` offers no `rollup`/`calculated`
+(kinds stop at picklist/lookup/file); authored in the column designer. Platform constraints worth
+surfacing even when done by hand: rollups aggregate over a **1:N only** (not N:N), can't reference
+another rollup, recalc on **asynchronous scheduled jobs** (not instant), max **10 per table / 100 per
+org**. The agent flags it as a manual task, never a build step. _Met: M10 L02 / L04._
+
+**`metadata dependencies` (the de-risk read)**
+Read-only call answering dependency questions in two directions, by `--kind`
+(entity|attribute|optionset|relationship): **`--for dependents`** (`RetrieveDependentComponents` —
+what depends on this / breaks if changed) and **`--for delete`** (`RetrieveDependenciesForDelete` —
+what blocks a teardown). Envelope: `{can_delete: bool, blockers: [{dependent_type, dependent_id,
+required_type, dependency_type}]}`. `can_delete:false` + non-empty `blockers[]` on an `ok:true` read
+is normal — it names what stands in the way (used to teardown in reverse order). With **`metadata
+describe`** (single-component write-readiness) + **`--dry-run`** it forms the pre-write trio for
+metadata/component writes (which have **no `--validate`**). _Met: M10 L04._
+
+**Promotion: managed dev→test→prod & the version ceiling**
+ALM direction: build **unmanaged in dev**, `export --managed`, import that zip into **test then
+prod** (never customize prod; never hand-edit a managed component downstream — it blocks future
+updates). Pipeline: `set-version` → `publish-all` (**unpublished == not exported**) → `export -o …
+--managed` → `validate --against-org` → `import --yes` → verify. **Version ceiling:** a managed zip
+carries its build org's package version and an org **rejects any package newer than itself** — cloud
+v9.2 → on-prem v9.1 fails (`0x80048068`); `validate --against-org` catches it pre-import. Build on the
+**lowest version in the chain**. The **profile is the switch**; `whoami` before every mutate. _Met:
+M10 L05._
+
+**The M10 agentic loop**
+The repeatable, reviewable workflow that wraps every CLI verb: **contract → boundary → plan →
+de-risk → promote → feedback**. Read every command in `--json` (L01), judge automatable vs GUI-only
+(L02), decompose a requirement into an ordered plan with GUI-only pieces flagged (L03), verify
+dependencies before mutating (L04), promote a managed solution across environments (L05), and file
+genuine defects upstream (L06). This loop is what the mission means by "shift D365 work to an agentic
+workflow." _Met: M10 L01–L06._

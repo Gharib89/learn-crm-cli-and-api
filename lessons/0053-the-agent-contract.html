@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M10 · L01 — The agent contract</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-sizing:border-box}0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-false{color:#ff8f7a}.c-num{color:#ffd479}.c-meth{color:#ffd479;font-weight:700}.c-ann{color:#7fb0c9}
+  .c-xtag{color:#8cc0ff}.c-xattr{color:#ffd479}.c-xval{color:#a7e6a0}
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+  table.ops{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--card);
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.ops th,table.ops td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.ops th{background:var(--guid-soft);color:var(--guid);font-family:"Roboto Mono",monospace;
+    font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  table.ops tr:last-child td{border-bottom:none}
+  table.ops code{font-size:12.5px}
+  table.ops .pk{color:var(--teal-deep);font-weight:700}
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-false,pre .c-num,pre .c-meth,pre .c-flag,pre .c-ann,pre .c-xtag,pre .c-xattr,pre .c-xval{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+<header class="top reveal">
+  <p class="eyebrow">Milestone 10 <span class="dot">·</span> Working Agentically <span class="dot">·</span> Lesson 01</p>
+  <h1>The agent<br><em>contract</em></h1>
+  <p class="sub">When Claude Code drives <code>crm</code>, one flag turns human-readable output into a machine-readable promise: <code>--json</code>. Learn to read the envelope and the exit code, and you can trust — or distrust — every step.</p>
+  <div class="livechip"><span class="led"></span> live on <b>agent-cloud</b> &nbsp;·&nbsp; orgexample.crm.dynamics.com &nbsp;·&nbsp; <span class="pill">reads</span> <span class="pill t">M10 start</span></div>
+  <div class="rule"></div>
+  <div class="why">
+    <b>Why this matters:</b> The mission is to move D365 work onto a <em>repeatable, reviewable agentic workflow</em>. M01–M09 taught you the verbs; this milestone teaches the workflow that wraps them. It starts here, because every later step — planning, dependency-checking, promotion, bug-filing — rests on the agent and you reading the <em>same</em> structured signal from each command. That shared signal is the contract.
+  </div>
+</header>
+
+<p class="lead reveal">A human reads a wall of text and decides "looks fine." An agent can't — it needs a <em>stable shape</em> to branch on. <code>--json</code> is that shape: <em>did it work, what came back, and what should I notice</em> — in three fixed fields, every time.</p>
+
+<!-- ─── SECTION 01 ─── -->
+<section class="reveal">
+  <h2><span class="n">01</span> Always <code>--json</code> — the three-field envelope</h2>
+  <p>From an agent context you pass <code>--json</code> on <em>every</em> call. The reply is always the same skeleton: <code>ok</code> (did it work), <code>data</code> (the result), <code>meta</code> (diagnostics). Success fills <code>data</code>; failure replaces it with <code>error</code>.</p>
+
+  <pre class="term"><span class="tag">success · exit 0</span><code><span class="c-comment">$ crm --json connection whoami</span>
+<span class="c-punc">{</span>
+  <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+  <span class="c-key">"data"</span><span class="c-punc">:</span> <span class="c-punc">{</span>
+    <span class="c-key">"BusinessUnitId"</span><span class="c-punc">:</span> <span class="c-guid">"4a617aa7-5a3d-f111-88b5-000d3a3b279b"</span><span class="c-punc">,</span>
+    <span class="c-key">"UserId"</span><span class="c-punc">:</span> <span class="c-guid">"bf40e4d2-ee3e-f111-88b4-6045bd001b10"</span><span class="c-punc">,</span>
+    <span class="c-key">"OrganizationId"</span><span class="c-punc">:</span> <span class="c-guid">"9102ced1-5c3e-f111-b31d-000d3a302819"</span>
+  <span class="c-punc">}</span>
+<span class="c-punc">}</span></code></pre>
+
+  <p>When something goes wrong, the shape barely changes — <code>ok:false</code>, an <code>error</code> string, and a <code>meta</code> that <em>classifies</em> the failure so the agent can decide what to do next:</p>
+
+  <pre class="term"><span class="tag">failure · exit 1</span><code><span class="c-comment">$ crm --json entity get contacts 00000000-0000-0000-0000-000000000000</span>
+<span class="c-punc">{</span>
+  <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-false">false</span><span class="c-punc">,</span>
+  <span class="c-key">"error"</span><span class="c-punc">:</span> <span class="c-str">"Entity 'contact' With Id = 00000000-… Does Not Exist"</span><span class="c-punc">,</span>
+  <span class="c-key">"meta"</span><span class="c-punc">:</span> <span class="c-punc">{</span>
+    <span class="c-key">"status"</span><span class="c-punc">:</span> <span class="c-num">404</span><span class="c-punc">,</span> <span class="c-key">"code"</span><span class="c-punc">:</span> <span class="c-str">"0x80040217"</span><span class="c-punc">,</span>
+    <span class="c-key">"category"</span><span class="c-punc">:</span> <span class="c-str">"not_found"</span><span class="c-punc">,</span> <span class="c-key">"retryable"</span><span class="c-punc">:</span> <span class="c-false">false</span>
+  <span class="c-punc">}</span>
+<span class="c-punc">}</span></code></pre>
+
+  <div class="callout tip">
+    <span class="ic">SCAN</span>
+    <div><code>meta.category</code> is the one field worth branching on first — it's a closed enum (<code>not_found</code>, <code>auth_failed</code>, <code>forbidden</code>, <code>validation</code>, <code>throttled</code>, <code>server_error</code>, <code>transport_error</code>). And <code>meta.warnings</code> is an <em>array</em> of non-fatal advisories (staged-but-unpublished, created-but-read-back-failed) — always scan it even when <code>ok:true</code>.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 02 ─── -->
+<section class="reveal">
+  <h2><span class="n">02</span> The exit code is the first thing to check</h2>
+  <p>Before parsing a single byte of JSON, the agent checks <code>$?</code>. The exit code answers "did the operation take effect?" in one integer — and it distinguishes a <em>server</em> failure from a <em>you-typed-it-wrong</em> failure:</p>
+
+  <table class="ops">
+    <thead><tr><th>Exit</th><th>Meaning</th><th>Envelope</th></tr></thead>
+    <tbody>
+      <tr><td class="pk">0</td><td>Success — the operation happened</td><td><code>ok: true</code></td></tr>
+      <tr><td class="pk">1</td><td>Operational failure — server rejected it, validation failed, or you declined a prompt</td><td><code>ok: false</code> + classified <code>meta</code></td></tr>
+      <tr><td class="pk">2</td><td>Usage error — bad/unknown flag, missing argument, or a bare <code>crm</code> with no subcommand</td><td><code>ok: false</code>, terse <code>error</code> (no <code>meta</code>)</td></tr>
+    </tbody>
+  </table>
+
+  <p>The 1-vs-2 split is the useful part. <strong>Exit 1 is the server's verdict</strong> — your command was well-formed, D365 said no. <strong>Exit 2 is the CLI's verdict</strong> — you never reached the server:</p>
+
+  <pre class="term"><span class="tag">usage error · exit 2</span><code><span class="c-comment">$ crm --json entity get        # forgot the entity-set + id</span>
+<span class="c-punc">{</span> <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-false">false</span><span class="c-punc">,</span> <span class="c-key">"error"</span><span class="c-punc">:</span> <span class="c-str">"Missing argument 'ENTITY_SET'."</span> <span class="c-punc">}</span>
+<span class="c-comment"># note: no meta block — it never became a request</span></code></pre>
+
+  <div class="callout warn">
+    <span class="ic">TRAP</span>
+    <div>Non-zero is non-zero, but the fix differs. On <strong>exit 2</strong> the agent rewrites the <em>command</em> (it's a syntax problem — run <code>--help</code>). On <strong>exit 1</strong> the agent reads <code>meta.category</code> and reacts to the <em>server</em> (retry a <code>throttled</code>, fix a <code>validation</code>, stop on a <code>forbidden</code>). Confusing the two means retrying a typo or rewriting a perfectly good command.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 03 ─── -->
+<section class="reveal">
+  <h2><span class="n">03</span> Three flags that make writes safe</h2>
+  <p>Reads are cheap to get wrong — you just re-run. Writes aren't. Three flags are the agent's standing safety net before any mutation:</p>
+
+  <table class="ops">
+    <thead><tr><th>Flag</th><th>What it does</th><th>Scope</th></tr></thead>
+    <tbody>
+      <tr><td class="pk">--dry-run</td><td>Builds the request and shows it (<code>method</code>/<code>url</code>/<code>body</code>) <em>without sending the write</em>. Reads still fire, so the preview reports live facts.</td><td>every mutation</td></tr>
+      <tr><td class="pk">--validate</td><td>Server-checks a record payload, turning raw OData noise into a clean <code>unknown_fields</code> verdict.</td><td><strong>record writes only</strong> (<code>entity create</code>/<code>update</code>)</td></tr>
+      <tr><td class="pk">--yes</td><td>Confirms a destructive verb non-interactively. Without it, a delete in a non-TTY aborts safely.</td><td>destructive verbs</td></tr>
+    </tbody>
+  </table>
+
+  <p>A dry-run returns the exact HTTP it <em>would</em> have sent — and flags itself with <code>meta.dry_run: true</code> so the agent never mistakes a preview for a commit:</p>
+
+  <pre class="term"><span class="tag">--dry-run · exit 0 · nothing written</span><code><span class="c-comment">$ crm --json --dry-run entity create contacts \
+      --data '{"firstname":"Test","lastname":"DryRun"}'</span>
+<span class="c-punc">{</span> <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+  <span class="c-key">"data"</span><span class="c-punc">:</span> <span class="c-punc">{</span> <span class="c-key">"_dry_run"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+    <span class="c-key">"method"</span><span class="c-punc">:</span> <span class="c-meth">"POST"</span><span class="c-punc">,</span>
+    <span class="c-key">"url"</span><span class="c-punc">:</span> <span class="c-str">"https://orgexample.crm.dynamics.com/api/data/v9.2/contacts"</span><span class="c-punc">,</span>
+    <span class="c-key">"body"</span><span class="c-punc">:</span> <span class="c-punc">{</span> <span class="c-key">"firstname"</span><span class="c-punc">:</span> <span class="c-str">"Test"</span><span class="c-punc">,</span> <span class="c-key">"lastname"</span><span class="c-punc">:</span> <span class="c-str">"DryRun"</span> <span class="c-punc">}</span> <span class="c-punc">}</span><span class="c-punc">,</span>
+  <span class="c-key">"meta"</span><span class="c-punc">:</span> <span class="c-punc">{</span> <span class="c-key">"dry_run"</span><span class="c-punc">:</span> <span class="c-true">true</span> <span class="c-punc">}</span> <span class="c-punc">}</span></code></pre>
+
+  <div class="callout tip">
+    <span class="ic">KEY</span>
+    <div>The safe-write loop you met in <a href="0004-dry-run-preview-the-write.html">M01 L04</a> is now the agent's default reflex: <strong>validate (records) → dry-run → read <code>$?</code> and the envelope → commit only if clean.</strong> <code>--validate</code> is record-only, so for <code>metadata</code>, <code>solution</code>, and component writes, <code>--dry-run</code> is your pre-flight net.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 04 ─── -->
+<section class="reveal">
+  <h2><span class="n">04</span> Never guess a flag — ask the binary</h2>
+  <p>The CLI is <a href="../index.html">versioned and drifts</a> (you saw a result shape change between releases). So the agent's rule is: <strong>when unsure, interrogate the tool, don't recall from memory.</strong> Three discovery calls, none of which mutate anything:</p>
+
+  <ol class="steps">
+    <li><strong><code>crm describe [group]</code></strong> — a machine-readable catalogue of every command, option, and choice. No connection needed. This is how the agent learns flags that are correct <em>for the installed version</em>.</li>
+    <li><strong><code>crm &lt;group&gt; --help</code></strong> — the exact options, choices, and defaults for one command.</li>
+    <li><strong><code>crm --json connection whoami</code></strong> — confirm <em>which live org</em> will answer before any mutation. The right command against the wrong org is still a mistake.</li>
+  </ol>
+
+  <div class="callout warn">
+    <span class="ic">WHY</span>
+    <div>A coding agent's training data is frozen; your <code>crm</code> binary is not. Guessing a flag from memory is how you get a confident command that 404s or, worse, writes the wrong thing. <code>describe</code> + <code>--help</code> make the agent's knowledge match <em>this</em> machine's <code>crm --version</code> — the single most important habit in this milestone.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 05 — QUIZ ─── -->
+<section class="reveal">
+  <div class="quiz">
+    <p class="qh">Lesson check</p>
+    <p class="qhs">4 questions · click to reveal</p>
+
+    <div class="q" data-correct="1">
+      <p class="stem">1. A command returns <b>exit 2</b> with <code>{"ok":false,"error":"Missing argument 'ENTITY_SET'."}</code> and no <code>meta</code>. What does the agent do?</p>
+      <button class="opt"><span class="mk">A</span> Read <code>meta.category</code> and retry with backoff</button>
+      <button class="opt"><span class="mk">B</span> Fix the command itself — it's a usage error that never reached the server</button>
+      <button class="opt"><span class="mk">C</span> File an upstream bug; the CLI is broken</button>
+      <button class="opt"><span class="mk">D</span> Add <code>--yes</code> and run it again</button>
+      <div class="fb ok">Correct. Exit 2 is the CLI's verdict — a malformed command that never became a request (hence no <code>meta</code>). The fix is to rewrite the command, ideally after a quick <code>--help</code>. There's no server category to react to, nothing to retry, and nothing to confirm with <code>--yes</code>.</div>
+      <div class="fb no">Exit 2 = usage error: the command was malformed and never reached the server (no <code>meta</code> to classify). The agent rewrites the command (check <code>--help</code>), rather than reading a category, retrying, or filing a bug.</div>
+    </div>
+
+    <div class="q" data-correct="2">
+      <p class="stem">2. Which field should an agent branch on <em>first</em> to decide how to react to a failure?</p>
+      <button class="opt"><span class="mk">A</span> <code>meta.status</code> — the raw HTTP code</button>
+      <button class="opt"><span class="mk">B</span> <code>error</code> — the human-readable message</button>
+      <button class="opt"><span class="mk">C</span> <code>meta.category</code> — the closed classification enum</button>
+      <button class="opt"><span class="mk">D</span> <code>meta.code</code> — the hex error code</button>
+      <div class="fb ok">Correct. <code>meta.category</code> is a small closed set (<code>not_found</code>, <code>auth_failed</code>, <code>forbidden</code>, <code>validation</code>, <code>throttled</code>, <code>server_error</code>, <code>transport_error</code>) — stable to branch on. Status and hex codes are noisier, and the error string is for humans, not control flow.</div>
+      <div class="fb no">Branch on <code>meta.category</code> — a closed enum built for exactly this. The HTTP status and hex code are lower-level, and the <code>error</code> string is meant for human reading, not reliable branching.</div>
+    </div>
+
+    <div class="q" data-correct="0">
+      <p class="stem">3. You want to confirm what a <code>metadata create-entity</code> will send, without creating anything. The right flag is:</p>
+      <button class="opt"><span class="mk">A</span> <code>--dry-run</code> — previews the request; <code>meta.dry_run:true</code></button>
+      <button class="opt"><span class="mk">B</span> <code>--validate</code> — works on any write</button>
+      <button class="opt"><span class="mk">C</span> <code>--yes</code> — skips the confirmation</button>
+      <button class="opt"><span class="mk">D</span> <code>--json</code> — suppresses the write</button>
+      <div class="fb ok">Correct. <code>--dry-run</code> builds and shows the request without sending the mutation, flagged by <code>meta.dry_run:true</code>. <code>--validate</code> is <em>record-write only</em> — it doesn't apply to <code>metadata</code>, so dry-run is the pre-flight for schema writes. <code>--yes</code> only skips confirmation, and <code>--json</code> only sets output format.</div>
+      <div class="fb no">Use <code>--dry-run</code>: it previews the request and writes nothing (<code>meta.dry_run:true</code>). <code>--validate</code> is record-write only (not <code>metadata</code>), <code>--yes</code> just suppresses a prompt, and <code>--json</code> only changes output format.</div>
+    </div>
+
+    <div class="q" data-correct="3">
+      <p class="stem">4. Why is "run <code>crm describe</code> / <code>--help</code> instead of recalling the flag" a core agent habit here?</p>
+      <button class="opt"><span class="mk">A</span> It's faster than reading the JSON envelope</button>
+      <button class="opt"><span class="mk">B</span> It avoids needing a profile</button>
+      <button class="opt"><span class="mk">C</span> It hides destructive verbs from the agent</button>
+      <button class="opt"><span class="mk">D</span> The CLI is versioned and drifts, so the binary — not memory — is the source of truth</button>
+      <div class="fb ok">Correct. The agent's training is frozen but the installed <code>crm</code> evolves (flags, output shapes, and defaults change between releases). <code>describe</code> and <code>--help</code> report what's true for <em>this</em> version, so the command matches the binary rather than a stale memory.</div>
+      <div class="fb no">It's about correctness, not speed: <code>crm</code> is versioned and its flags/shapes drift between releases. Querying the binary (<code>describe</code>/<code>--help</code>) keeps the command aligned with the installed version instead of frozen training data.</div>
+    </div>
+
+    <p class="score" id="score"></p>
+  </div>
+</section>
+
+<!-- ─── REFS ─── -->
+<section class="reveal">
+  <h3>Primary source</h3>
+  <p>The crm agent skill's <code>SKILL.md</code> → <strong>"Agent contract — JSON mode"</strong> is the canonical statement of the envelope, the exit-code table, and the <code>--dry-run</code>/<code>--validate</code>/<code>--yes</code> rules. Read it once end-to-end — it's short and it's the contract every later lesson assumes.</p>
+  <ol class="refs">
+    <li id="r1">crm agent skill — <code>SKILL.md</code> (Agent contract — JSON mode; exit codes; safety flags; command discovery). <a href="https://github.com/Gharib89/crm" target="_blank">github.com/Gharib89/crm</a></li>
+    <li id="r2">Revisit <a href="0003-the-envelope-and-exit-codes.html">M01 L03 — the envelope &amp; exit codes</a> and <a href="0004-dry-run-preview-the-write.html">M01 L04 — dry-run</a> for the mechanics this lesson reframes from the agent's seat.</li>
+  </ol>
+</section>
+
+<!-- ─── ASK ─── -->
+<div class="ask reveal">
+  <p><b>Your teacher is one message away.</b> Ask me to:</p>
+  <ul class="tight">
+    <li>"Show me a <code>throttled</code> and a <code>validation</code> envelope side by side, and how you'd react to each."</li>
+    <li>"Walk through a real validate → dry-run → commit loop on a contact, live."</li>
+    <li>"What's in <code>crm describe</code> for the <code>solution</code> group?"</li>
+    <li>"Why does exit 1 sometimes carry <code>retryable:true</code> but retrying never helps?"</li>
+  </ul>
+</div>
+
+<!-- ─── NEXT ─── -->
+<div class="next reveal">
+  <span class="pill">up next</span>
+  <h2>What the agent can — and can't — do</h2>
+  <p>You can now read what <em>any</em> command tells you back. Next, the boundary that decides which commands even exist: some customizations have a clean CLI/Web-API path, and some are <strong>GUI-only</strong> — no verb will ever touch them. Knowing the line up front is what keeps an agent from faking work it can't actually do. <span class="live-only">Just say <strong>'next lesson'</strong>.</span></p>
+</div>
+
+<footer>
+  <p>Milestone 10 — Working Agentically with Claude Code · <a href="https://gharib89.github.io/learn-crm-cli-and-api/">course home</a></p>
+  <p class="ft">M10 · L01 · lessons/0053-the-agent-contract.html · the {ok,data,meta} envelope (success fills data, failure swaps in error+classified meta; scan meta.category enum + meta.warnings array); exit codes 0 success / 1 operational (server verdict, read category) / 2 usage (CLI verdict, no meta, rewrite command); safety flags --dry-run (every mutation, meta.dry_run:true, reads still fire) / --validate (record writes only) / --yes (destructive); never guess → crm describe + group --help + connection whoami; reads only; live env agent-cloud (url scrubbed to orgexample), 2026-06-20, crm v1.0.0</p>
+</footer>
+
+</div><!-- /wrap -->
+
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 10, "name": "Working Agentically with Claude Code"},
+  "lesson": 1,
+  "title": "The agent contract",
+  "slug": "the-agent-contract",
+  "topics": ["agentic","json-mode","envelope","exit-codes","dry-run","validate","meta-category","command-discovery","best-practices","mission"],
+  "summary": "Opens M10 (driving crm via Claude Code + the /crm skill). The agent contract = always pass --json, which returns a stable {ok,data,meta} envelope: success fills data, failure swaps in an error string + a classified meta (status, code, category, retryable). Branch first on meta.category (closed enum: not_found, auth_failed, forbidden, validation, throttled, server_error, transport_error); always scan meta.warnings (array of non-fatal advisories) even when ok:true. Check the exit code before parsing JSON: 0=success, 1=operational failure (server verdict — well-formed command D365 rejected; read meta.category, may retry), 2=usage error (CLI verdict — bad/missing flag or arg; no meta; rewrite the command, check --help). Three safety flags: --dry-run previews the request (method/url/body) without sending the write, reads still fire, flagged meta.dry_run:true (every mutation); --validate server-checks a record payload into a clean unknown_fields verdict (RECORD writes only — entity create/update — not metadata/solution/component); --yes confirms destructive verbs non-interactively (else abort-safe in non-TTY). Safe-write loop: validate→dry-run→check $?+envelope→commit. Never guess a flag: crm describe [group] (machine catalogue, no connection), crm <group> --help (exact options), crm --json connection whoami (confirm live org) — because the CLI is versioned and drifts, so the binary is source of truth, not the agent's frozen training. Live envelopes captured on agent-cloud crm v1.0.0; cloud URL scrubbed to orgexample.",
+  "order": 1,
+  "status": "published" }
+</script>
+</body>
+</html>

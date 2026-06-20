@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M10 · L06 — Report a bug</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-sizing:border-box}0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-false{color:#ff8f7a}.c-num{color:#ffd479}.c-meth{color:#ffd479;font-weight:700}.c-ann{color:#7fb0c9}
+  .c-xtag{color:#8cc0ff}.c-xattr{color:#ffd479}.c-xval{color:#a7e6a0}
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+  table.ops{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--card);
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.ops th,table.ops td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.ops th{background:var(--guid-soft);color:var(--guid);font-family:"Roboto Mono",monospace;
+    font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  table.ops tr:last-child td{border-bottom:none}
+  table.ops code{font-size:12.5px}
+  table.ops .pk{color:var(--teal-deep);font-weight:700}
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-false,pre .c-num,pre .c-meth,pre .c-flag,pre .c-ann,pre .c-xtag,pre .c-xattr,pre .c-xval{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+<header class="top reveal">
+  <p class="eyebrow">Milestone 10 <span class="dot">·</span> Working Agentically <span class="dot">·</span> Lesson 06</p>
+  <h1>Tool defect,<br><em>or you?</em></h1>
+  <p class="sub">The M10 capstone. When a command misbehaves, sort it: your error, a documented limit — or a genuine <code>crm</code> defect. When it's the last one, file a high-quality issue upstream. The agent offers; it never files silently.</p>
+  <div class="livechip"><span class="led"></span> <span class="pill">feedback loop</span> &nbsp;·&nbsp; upstream: <b>Gharib89/crm</b> &nbsp;·&nbsp; <span class="pill t">capstone</span></div>
+  <div class="rule"></div>
+  <div class="why">
+    <b>Why this matters:</b> The mission's final goal is to recognize when a failure is a <em>tool defect</em> — not user error — and feed a high-quality issue back to the upstream repo. A good report makes the CLI better for everyone and closes the agentic loop: you didn't just consume the tool, you improved it. This is the one milestone skill that points <em>outward</em>.
+  </div>
+</header>
+
+<p class="lead reveal">Most failures aren't bugs. The skill is telling the rare real defect apart from the far more common "the server said no" or "that's a documented limit" — and then writing the report that gets it fixed.</p>
+
+<!-- ─── SECTION 01 ─── -->
+<section class="reveal">
+  <h2><span class="n">01</span> The triage line</h2>
+  <p>Before reaching for the issue tracker, run the failure past this line. Most land on the left:</p>
+
+  <table class="ops">
+    <thead><tr><th>It's <em>not</em> a CLI bug if…</th><th>It <em>may</em> be a CLI bug if…</th></tr></thead>
+    <tbody>
+      <tr><td>The error names a server condition (auth, privilege, "not found", version)</td><td>The CLI raises an internal traceback instead of a clean <code>{ok,error,meta}</code> envelope</td></tr>
+      <tr><td>The same inputs fail the same way the server would by hand</td><td><code>--dry-run</code> shows the CLI building a <em>wrong request</em> (bad URL/version/body)</td></tr>
+      <tr><td>It's a documented limit (a GUI-only component; a cloud-only message on on-prem)</td><td>A version-agnostic command behaves differently for no documented reason</td></tr>
+      <tr><td>A <code>retryable</code> class actually recovers on retry</td><td>The envelope contract is violated (missing <code>ok</code>/<code>meta</code>, wrong <code>category</code> for the status)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout tip">
+    <span class="ic">SHORT FORM</span>
+    <div>A bug is the CLI's <em>own</em> behavior being wrong — a request it mis-built, a crash that breaks the contract, an unexplained inconsistency. A well-formed server "no" (a 403, a 501-for-version, a 429) is the API doing its job, reported faithfully. When in doubt, reproduce it with <code>--dry-run</code> and ask: did <em>the CLI</em> do something wrong, or did it correctly relay the server?</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 02 ─── -->
+<section class="reveal">
+  <h2><span class="n">02</span> The agent offers — it never files silently</h2>
+  <p>This is a firm rule from the skill itself: if <code>crm</code> misbehaves or lacks a capability, the agent <strong>tells you and offers to file an issue — it does not file on its own.</strong> Filing is an outward, public action; it needs your sign-off and your judgment on what to include.</p>
+
+  <div class="callout warn">
+    <span class="ic">CONSENT</span>
+    <div>The same posture you saw for GUI-only gaps (<a href="0054-what-the-agent-can-and-cant-do.html">L02</a>) applies here: surface, don't paper over — and surface, don't act unilaterally. The agent drafts the report; you approve it before anything is posted to <code>Gharib89/crm</code>.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 03 ─── -->
+<section class="reveal">
+  <h2><span class="n">03</span> Filing it well</h2>
+  <p>On your approval, the issue goes to the upstream repo with the <code>gh</code> CLI, carrying the facts that make it reproducible — and <strong>nothing secret</strong>:</p>
+
+  <pre class="term"><span class="tag">on approval</span><code><span class="c-comment"># keep the needs-triage label so the maintainer sees it</span>
+gh issue create --repo Gharib89/crm --label needs-triage \
+  --title <span class="c-str">"&lt;short summary&gt;"</span> \
+  --body-file <span class="c-str">&lt;path&gt;</span></code></pre>
+
+  <p>The body follows the skill's template — the four things a maintainer needs to act:</p>
+
+  <pre class="term"><span class="tag">issue body</span><code><span class="c-key">## What I was doing</span>
+&lt;the exact crm command(s) run — scrubbed&gt;
+
+<span class="c-key">## Expected</span>
+&lt;what should have happened&gt;
+
+<span class="c-key">## Actual</span>
+&lt;the --json envelope or error output&gt;
+
+<span class="c-key">## Environment</span>
+- crm --version: <span class="c-num">1.0.0</span>
+- target: on-prem (NTLM) | Dataverse online (OAuth)
+- API version: v9.1 | v9.2</code></pre>
+
+  <div class="callout warn">
+    <span class="ic">SCRUB</span>
+    <div>Before anything is posted, replace the real org/host with the example env (<code>https://orgexample.crm.dynamics.com</code>, <code>http://crm.contoso.local/Contoso</code>) and mask GUIDs. The repro must be faithful in <em>shape</em>, never in <em>secrets</em>. For a <strong>feature request</strong>, drop the Expected/Actual split — describe the capability and the workflow it unblocks — and keep the <code>needs-triage</code> label.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 04 ─── -->
+<section class="reveal">
+  <h2><span class="n">04</span> M10 in one screen <span class="pill">capstone</span></h2>
+  <p>The whole milestone is one loop — the agentic workflow that wraps every CLI verb you learned in M01–M09:</p>
+
+  <table class="ops">
+    <thead><tr><th>Step</th><th>The skill</th><th>Lesson</th></tr></thead>
+    <tbody>
+      <tr><td class="pk">Contract</td><td>Read every command in <code>--json</code>: envelope, exit code, safety flags, never-guess</td><td><a href="0053-the-agent-contract.html">L01</a></td></tr>
+      <tr><td class="pk">Boundary</td><td>Judge automatable (Web-API) vs GUI-only; never fake the gap</td><td><a href="0054-what-the-agent-can-and-cant-do.html">L02</a></td></tr>
+      <tr><td class="pk">Plan</td><td>Decompose a requirement into an ordered plan; flag GUI-only first</td><td><a href="0055-plan-a-big-task.html">L03</a></td></tr>
+      <tr><td class="pk">De-risk</td><td>Check dependencies + describe + dry-run before any write</td><td><a href="0056-check-dependencies-before-you-build.html">L04</a></td></tr>
+      <tr><td class="pk">Promote</td><td>Profile-as-switch, whoami-before-mutate, managed dev→test→prod</td><td><a href="0057-environments-and-promotion.html">L05</a></td></tr>
+      <tr><td class="pk">Feedback</td><td>Tool-defect vs user-error; file a high-quality issue upstream</td><td>this lesson</td></tr>
+    </tbody>
+  </table>
+
+  <p>That loop — <strong>contract → boundary → plan → de-risk → promote → feedback</strong> — is what "a repeatable, reviewable agentic workflow" actually means. With it, you can hand the agent a real requirement and trust both what it builds and what it tells you it <em>can't</em>.</p>
+</section>
+
+<!-- ─── SECTION 05 — QUIZ ─── -->
+<section class="reveal">
+  <div class="quiz">
+    <p class="qh">Lesson check</p>
+    <p class="qhs">4 questions · click to reveal</p>
+
+    <div class="q" data-correct="3">
+      <p class="stem">1. Which is the strongest signal of a genuine <code>crm</code> defect?</p>
+      <button class="opt"><span class="mk">A</span> A <code>403 forbidden</code> on a restricted operation</button>
+      <button class="opt"><span class="mk">B</span> A rollup column has no CLI path</button>
+      <button class="opt"><span class="mk">C</span> A cloud-only message fails on on-prem</button>
+      <button class="opt"><span class="mk">D</span> <code>--dry-run</code> shows the CLI building a malformed request, or it returns a traceback instead of an envelope</button>
+      <div class="fb ok">Correct. A wrong request the CLI itself composed (seen in dry-run) or a crash that breaks the <code>{ok,meta}</code> contract is the tool misbehaving. A 403, a GUI-only gap, and a cloud-only message on on-prem are all documented/expected conditions reported faithfully — not bugs.</div>
+      <div class="fb no">The defect signal is the CLI's own behavior being wrong — a malformed request (visible in dry-run) or a non-envelope traceback. 403s, GUI-only gaps, and cloud-only-message limits are expected conditions, correctly reported.</div>
+    </div>
+
+    <div class="q" data-correct="1">
+      <p class="stem">2. The agent concludes it has found a real bug. What does it do?</p>
+      <button class="opt"><span class="mk">A</span> File the issue immediately so it isn't forgotten</button>
+      <button class="opt"><span class="mk">B</span> Tell you, draft the report, and file only on your approval</button>
+      <button class="opt"><span class="mk">C</span> Fix the CLI source and open a PR</button>
+      <button class="opt"><span class="mk">D</span> Work around it silently and move on</button>
+      <div class="fb ok">Correct. The skill's rule is explicit: surface it and offer to file — never file silently. Filing is a public action needing your sign-off. (And per the mission, this track files issues, not PRs — fixing the source is out of scope here.)</div>
+      <div class="fb no">It surfaces the defect and offers to file, posting only on your approval — never silently, and never auto-filing. Fixing the source / opening a PR is out of scope for this track; a silent workaround hides the problem.</div>
+    </div>
+
+    <div class="q" data-correct="0">
+      <p class="stem">3. What must you do to the command and output <em>before</em> the issue is posted?</p>
+      <button class="opt"><span class="mk">A</span> Scrub the real host/org to the example env and mask GUIDs</button>
+      <button class="opt"><span class="mk">B</span> Remove the <code>--json</code> envelope to keep it short</button>
+      <button class="opt"><span class="mk">C</span> Drop the <code>crm --version</code> so it stays generic</button>
+      <button class="opt"><span class="mk">D</span> Strip the <code>needs-triage</code> label</button>
+      <div class="fb ok">Correct. The repro must be faithful in shape but carry no secrets — replace the real org URL/host with the example env and mask GUIDs. The version, the full envelope, and the <code>needs-triage</code> label are exactly what the maintainer needs; keep them.</div>
+      <div class="fb no">Scrub host/org to the example env and mask GUIDs — faithful shape, no secrets. Keep the version, the full envelope, and the <code>needs-triage</code> label; those are what make the report actionable.</div>
+    </div>
+
+    <div class="q" data-correct="2">
+      <p class="stem">4. In one phrase, what is the M10 agentic loop?</p>
+      <button class="opt"><span class="mk">A</span> Connect → query → export → done</button>
+      <button class="opt"><span class="mk">B</span> Plan → build → publish, repeat</button>
+      <button class="opt"><span class="mk">C</span> Contract → boundary → plan → de-risk → promote → feedback</button>
+      <button class="opt"><span class="mk">D</span> Validate → dry-run → commit</button>
+      <div class="fb ok">Correct. That six-step loop is the milestone: read the contract, judge the boundary, plan the work, de-risk with dependency checks, promote across environments, and feed defects back upstream. The others are useful fragments (the safe-write loop, the build cycle) but not the whole agentic workflow.</div>
+      <div class="fb no">The loop is contract → boundary → plan → de-risk → promote → feedback. The other options are real but partial — the safe-write loop and the build cycle live <em>inside</em> this larger workflow.</div>
+    </div>
+
+    <p class="score" id="score"></p>
+  </div>
+</section>
+
+<!-- ─── REFS ─── -->
+<section class="reveal">
+  <h3>Primary source</h3>
+  <p>The crm agent skill's <code>reference/feedback.md</code> is the canonical issue template and the <code>gh issue create</code> recipe; <code>SKILL.md</code> states the "offer, never file silently" rule. Pair with <code>reference/troubleshooting.md</code> for the error taxonomy that powers the triage line.</p>
+  <ol class="refs">
+    <li id="r1">crm agent skill — <code>reference/feedback.md</code> (issue template, <code>gh</code> recipe), <code>SKILL.md</code> ("Found a bug?"), <code>reference/troubleshooting.md</code> (error taxonomy). <a href="https://github.com/Gharib89/crm" target="_blank">github.com/Gharib89/crm</a></li>
+    <li id="r2"><a href="https://cli.github.com/manual/gh_issue_create" target="_blank"><code>gh issue create</code> manual</a> — flags for filing from the shell (<code>--repo</code>, <code>--label</code>, <code>--body-file</code>).</li>
+    <li id="r3">The triage line first appeared in <a href="0052-on-prem-decision-matrix.html">M09 L05</a> (on-prem failure classes) — this lesson generalizes it to any target.</li>
+  </ol>
+</section>
+
+<!-- ─── ASK ─── -->
+<div class="ask reveal">
+  <p><b>M10 complete.</b> Ask me to:</p>
+  <ul class="tight">
+    <li>"I think I found a bug — walk it through the triage line with me."</li>
+    <li>"Draft a scrubbed upstream issue for this failure (don't file it yet)."</li>
+    <li>"Run the whole M10 loop on the Deal Desk requirement, end to end."</li>
+    <li>"I'm ready for the capstone — deliver a real requirement across both orgs."</li>
+  </ul>
+</div>
+
+<!-- ─── NEXT ─── -->
+<div class="next reveal">
+  <span class="pill">milestone complete</span>
+  <h2>M10 — Working Agentically with Claude Code ✓</h2>
+  <p>You can now drive <code>crm</code> through Claude Code as a disciplined loop: read the contract, judge what's automatable, plan and de-risk a big requirement, promote it across environments, and report a genuine defect upstream. Next, the optional deep-dive — <strong>M11, Under the Hood</strong>: how the <code>crm</code> codebase itself is built, so you understand the tool you've been driving. <span class="live-only">Just say <strong>'next lesson'</strong>.</span></p>
+</div>
+
+<footer>
+  <p>Milestone 10 — Working Agentically with Claude Code · <a href="https://gharib89.github.io/learn-crm-cli-and-api/">course home</a></p>
+  <p class="ft">M10 · L06 · lessons/0058-report-a-bug.html · capstone; tool-defect-vs-user-error triage line: NOT a bug = server condition named / same failure by hand / documented limit (GUI-only, cloud-only message) / retryable recovers; MAYBE a bug = internal traceback not clean envelope / --dry-run shows CLI building wrong request / version-agnostic command differs for no reason / envelope contract violated; short form = CLI's OWN behavior wrong vs faithful server 'no'; agent OFFERS, never files silently (SKILL.md rule; outward action needs sign-off); file on approval: gh issue create --repo Gharib89/crm --label needs-triage --title --body-file; body template = What I was doing / Expected / Actual / Environment (crm --version, target on-prem|online, API version); SCRUB host/org to example env + mask GUIDs (faithful shape never secrets); feature request drops Expected/Actual; this track files issues NOT PRs; M10 loop recap: contract(L01)→boundary(L02)→plan(L03)→de-risk(L04)→promote(L05)→feedback(L06); next M11 under-the-hood; 2026-06-20, crm v1.0.0</p>
+</footer>
+
+</div><!-- /wrap -->
+
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 10, "name": "Working Agentically with Claude Code"},
+  "lesson": 6,
+  "title": "Report a bug",
+  "slug": "report-a-bug",
+  "topics": ["agentic","capstone","tool-defect","issue-filing","feedback","gh-cli","scrub","mission"],
+  "summary": "M10 capstone — closing the agentic loop by feeding genuine defects upstream. The triage line (most failures land on the NOT-a-bug side): NOT a CLI bug if the error names a server condition (auth/privilege/not-found/version), the same inputs fail the same way by hand, it's a documented limit (a GUI-only component, a cloud-only message on on-prem), or a retryable class actually recovers. MAY be a CLI bug if the CLI raises an internal traceback instead of a clean {ok,error,meta} envelope, --dry-run shows it building a WRONG request (bad URL/version/body), a version-agnostic command behaves differently for no documented reason, or the envelope contract is violated (missing ok/meta, wrong category for status). Short form: a bug is the CLI's OWN behavior being wrong; a well-formed server 'no' (403/501-for-version/429) is the API doing its job, reported faithfully — when in doubt reproduce with --dry-run and ask 'did the CLI do wrong, or correctly relay the server?'. Firm rule (SKILL.md): the agent TELLS the user and OFFERS to file — it never files silently; filing is a public outward action needing sign-off (same surface-don't-act-unilaterally posture as GUI-only gaps). On approval: gh issue create --repo Gharib89/crm --label needs-triage --title '<summary>' --body-file <path>. Body template: ## What I was doing (exact scrubbed commands) / ## Expected / ## Actual (the --json envelope) / ## Environment (crm --version, target on-prem(NTLM)|online(OAuth), API version v9.1|v9.2). SCRUB the real host/org to the example env (orgexample.crm.dynamics.com, crm.contoso.local/Contoso) and mask GUIDs — faithful in shape, never in secrets. Feature request: drop Expected/Actual, describe the capability + workflow it unblocks, keep needs-triage. This track files issues NOT PRs (fixing the source is out of scope). M10 loop recap = contract(L01) -> boundary(L02) -> plan(L03) -> de-risk(L04) -> promote(L05) -> feedback(L06): the repeatable reviewable agentic workflow. Next: M11 Under the Hood (optional codebase deep-dive).",
+  "order": 6,
+  "status": "published" }
+</script>
+</body>
+</html>
