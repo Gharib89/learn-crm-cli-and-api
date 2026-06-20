@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M09 · L03 — connection doctor — see every divergence at once</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-sizing:border-box}0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-false{color:#ff8f7a}.c-num{color:#ffd479}.c-meth{color:#ffd479;font-weight:700}.c-ann{color:#7fb0c9}
+  .c-xtag{color:#8cc0ff}.c-xattr{color:#ffd479}.c-xval{color:#a7e6a0}
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+  table.ops{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--card);
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.ops th,table.ops td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.ops th{background:var(--guid-soft);color:var(--guid);font-family:"Roboto Mono",monospace;
+    font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  table.ops tr:last-child td{border-bottom:none}
+  table.ops code{font-size:12.5px}
+  table.ops .pk{color:var(--teal-deep);font-weight:700}
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-false,pre .c-num,pre .c-meth,pre .c-flag,pre .c-ann,pre .c-xtag,pre .c-xattr,pre .c-xval{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+<header class="top reveal">
+  <p class="eyebrow">Milestone 09 <span class="dot">·</span> On-prem Differences <span class="dot">·</span> Lesson 03</p>
+  <h1>One call,<br><em>five checks</em></h1>
+  <p class="sub">When something's off, don't guess. <code>connection doctor</code> walks the whole request path — DNS, TLS, version, auth, rate-limit — in one shot. Four of its five checks read differently on-prem than on cloud.</p>
+  <div class="livechip"><span class="led"></span> live on <b>agent-on-prem</b> &nbsp;·&nbsp; crm.contoso.local/Contoso &nbsp;·&nbsp; <span class="pill">reads</span></div>
+  <div class="rule"></div>
+  <div class="why">
+    <b>Why this matters:</b> M01 taught you to confirm identity before mutating. On-prem raises the stakes: the connection can break at the network layer (VPN down), the TLS layer, the version layer, or the auth layer — each with a different fix. <code>connection doctor</code> classifies <em>which</em> layer failed, so you act on the real cause instead of retrying blind. Reading its output is the on-prem operator's core skill.
+  </div>
+</header>
+
+<p class="lead reveal">Every other lesson in this milestone looks at <em>one</em> divergence. <code>connection doctor</code> shows them all at once — it's the single command that paints the full on-prem-vs-cloud picture, check by check.</p>
+
+<!-- ─── SECTION 01 ─── -->
+<section class="reveal">
+  <h2><span class="n">01</span> What <code>doctor</code> checks</h2>
+  <p><code>connection doctor</code> (top-level alias: <code>crm doctor</code>) runs five checks in a fixed order, short-circuiting downstream checks when a prerequisite fails — there's no point testing TLS if TCP never connected. It's read-only: safe to run anytime, against any profile.</p>
+
+  <table class="ops">
+    <thead><tr><th>#</th><th>Check</th><th>Answers</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><code class="pk">dns_tcp</code></td><td>Does the host resolve and accept a TCP connection on its port?</td></tr>
+      <tr><td>2</td><td><code class="pk">tls</code></td><td>Does the TLS handshake succeed? (skipped for plain <code>http</code>)</td></tr>
+      <tr><td>3</td><td><code class="pk">version</code></td><td>Which server version answers, and is the profile's <code>api_version</code> served?</td></tr>
+      <tr><td>4</td><td><code class="pk">auth</code></td><td>Do the credentials authenticate? (returns the user GUID)</td></tr>
+      <tr><td>5</td><td><code class="pk">rate_limit</code></td><td>Are service-protection headers present, and what do they say?</td></tr>
+    </tbody>
+  </table>
+
+  <p>The <em>structure</em> — these five checks, in this order — is identical on both targets. The <em>details</em> are where on-prem and cloud part ways.</p>
+</section>
+
+<!-- ─── SECTION 02 ─── -->
+<section class="reveal">
+  <h2><span class="n">02</span> On-prem, live</h2>
+  <pre class="term"><span class="tag">crm --json --profile agent-on-prem connection doctor · 2026-06-20 · crm v1.0.0</span><code><span class="c-punc">{</span> <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span> <span class="c-key">"data"</span><span class="c-punc">: {</span> <span class="c-key">"checks"</span><span class="c-punc">: [</span>
+  <span class="c-punc">{</span> <span class="c-key">"check"</span><span class="c-punc">:</span> <span class="c-str">"dns_tcp"</span><span class="c-punc">,</span> <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+    <span class="c-key">"detail"</span><span class="c-punc">:</span> <span class="c-str">"TCP connection to crm.contoso.local:80 succeeded"</span> <span class="c-punc">},</span>
+  <span class="c-punc">{</span> <span class="c-key">"check"</span><span class="c-punc">:</span> <span class="c-str">"tls"</span><span class="c-punc">,</span> <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+    <span class="c-key">"detail"</span><span class="c-punc">:</span> <span class="c-str">"not applicable (plain http)"</span> <span class="c-punc">},</span>
+  <span class="c-punc">{</span> <span class="c-key">"check"</span><span class="c-punc">:</span> <span class="c-str">"version"</span><span class="c-punc">,</span> <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+    <span class="c-key">"detail"</span><span class="c-punc">:</span> <span class="c-str">"server version 9.1.44.15"</span> <span class="c-punc">},</span>
+  <span class="c-punc">{</span> <span class="c-key">"check"</span><span class="c-punc">:</span> <span class="c-str">"auth"</span><span class="c-punc">,</span> <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+    <span class="c-key">"detail"</span><span class="c-punc">:</span> <span class="c-str">"authenticated as f890426a-0000-0000-0000-00155d467b90"</span> <span class="c-punc">},</span>
+  <span class="c-punc">{</span> <span class="c-key">"check"</span><span class="c-punc">:</span> <span class="c-str">"rate_limit"</span><span class="c-punc">,</span> <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+    <span class="c-key">"detail"</span><span class="c-punc">:</span> <span class="c-str">"no rate-limit headers present"</span> <span class="c-punc">}</span>
+<span class="c-punc">] } }</span></code></pre>
+
+  <p>Read it top to bottom: TCP to port <strong>80</strong> (plain HTTP), TLS <strong>skipped</strong>, server <strong>9.1.x</strong>, NTLM auth as a domain user, and <strong>no rate-limit headers</strong>. That profile is the on-prem fingerprint.</p>
+</section>
+
+<!-- ─── SECTION 03 ─── -->
+<section class="reveal">
+  <h2><span class="n">03</span> Cloud, live — the four that diverge</h2>
+  <pre class="term"><span class="tag">crm --json --profile agent-cloud connection doctor · 2026-06-20</span><code><span class="c-comment"># (details only, for contrast)</span>
+<span class="c-key">dns_tcp</span>    <span class="c-true">ok</span>  TCP connection to orgexample.crm.dynamics.com:<span class="c-num">443</span> succeeded
+<span class="c-key">tls</span>        <span class="c-true">ok</span>  TLS handshake OK
+<span class="c-key">version</span>    <span class="c-true">ok</span>  server version 9.2.26053.150
+<span class="c-key">auth</span>       <span class="c-true">ok</span>  authenticated as bf40e4d2-0000-0000-0000-6045bd001b10
+<span class="c-key">rate_limit</span> <span class="c-true">ok</span>  x-ms-ratelimit-time-remaining-xrm-requests: 1,199.64;
+              x-ms-ratelimit-burst-remaining-xrm-requests: 7998</code></pre>
+
+  <p>Same five checks, four different answers:</p>
+  <table class="ops">
+    <thead><tr><th>Check</th><th>On-prem</th><th>Cloud</th></tr></thead>
+    <tbody>
+      <tr><td><code>dns_tcp</code></td><td>port <code>80</code></td><td>port <code>443</code></td></tr>
+      <tr><td><code>tls</code></td><td><code>not applicable (plain http)</code></td><td><code>TLS handshake OK</code></td></tr>
+      <tr><td><code>version</code></td><td><code>9.1.44.15</code></td><td><code>9.2.26053.150</code></td></tr>
+      <tr><td><code>auth</code></td><td>NTLM, domain user</td><td>OAuth, application user</td></tr>
+      <tr><td><code>rate_limit</code></td><td><code>no rate-limit headers</code></td><td><code>x-ms-ratelimit-*</code> present</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout tip">
+    <span class="ic">TIP</span>
+    <div><strong>Each failed check has a different fix.</strong> A <code>dns_tcp</code> failure on on-prem almost always means the <strong>VPN is down</strong> ("No route to host"). A <code>version</code> failure means the profile's <code>api_version</code> isn't served (re-negotiate). An <code>auth</code> failure means wrong domain/username/password (NTLM) or app registration (OAuth). <code>doctor</code> tells you which layer broke so you don't fix the wrong one.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 04 ─── -->
+<section class="reveal">
+  <h2><span class="n">04</span> The rate-limit check: service protection</h2>
+  <p>The last check is the most cloud-specific. Dataverse online enforces <strong>service protection API limits</strong>: caps on requests-per-connection, concurrent connections, and execution time, evaluated over a rolling 5-minute window. Exceed them and the platform returns <strong>HTTP 429 (Too Many Requests)</strong> with a <code>Retry-After</code> header telling you how long to wait.<sup><a href="#r1">1</a></sup> Cloud advertises your remaining budget on every response via <code>x-ms-ratelimit-*</code> headers — which is what <code>doctor</code> surfaces.</p>
+
+  <p>On-prem emits <strong>none</strong> of these. There's no shared multi-tenant platform to protect, so <code>doctor</code> reports <code>"no rate-limit headers present"</code>. Practically:</p>
+
+  <ul class="tight">
+    <li><strong>Cloud:</strong> a tight bulk loop can hit a 429. The CLI's retry layer honors <code>Retry-After</code> for idempotent verbs — but throttling is a real operational concern.<sup><a href="#r2">2</a></sup></li>
+    <li><strong>On-prem:</strong> no service-protection throttling. Your ceiling is the server's own hardware, not a platform quota — heavy loops won't earn a 429, but they can still overload a modest box.</li>
+  </ul>
+
+  <div class="callout warn">
+    <span class="ic">NOTE</span>
+    <div>Throttling-absence is <em>not</em> a license to hammer on-prem. The <code>retryable</code> classes you learned (429/5xx/transport) still apply; on-prem just won't produce the 429 class. Treat the difference as "no quota referee," not "infinite capacity."</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 05 — QUIZ ─── -->
+<section class="reveal">
+  <div class="quiz">
+    <p class="qh">Lesson check</p>
+    <p class="qhs">3 questions · click to reveal</p>
+
+    <div class="q" data-correct="1">
+      <p class="stem">1. <code>connection doctor</code> against on-prem shows <code>dns_tcp: ok=false, "No route to host"</code> and every later check "not checked (network unreachable)". What's the most likely cause?</p>
+      <button class="opt"><span class="mk">A</span> Wrong NTLM password — the auth check failed</button>
+      <button class="opt"><span class="mk">B</span> The VPN is down — the host isn't reachable on the network</button>
+      <button class="opt"><span class="mk">C</span> The profile's api_version isn't served by the server</button>
+      <button class="opt"><span class="mk">D</span> Service-protection throttling blocked the connection</button>
+      <div class="fb ok">Correct. dns_tcp is the first check; "No route to host" is a network-layer failure, and for a VPN-gated on-prem host that almost always means the VPN isn't connected. The later checks are skipped because the connection never opened — so this isn't an auth, version, or throttling problem.</div>
+      <div class="fb no">A dns_tcp / "No route to host" failure is network-layer — for a VPN-gated on-prem org it means the VPN is down. The downstream checks are skipped (can't test auth/version without a connection), so it isn't a password, version, or throttling issue.</div>
+    </div>
+
+    <div class="q" data-correct="2">
+      <p class="stem">2. Which <code>doctor</code> check returns <code>"not applicable (plain http)"</code> on a typical on-prem profile, and why?</p>
+      <button class="opt"><span class="mk">A</span> <code>rate_limit</code> — on-prem has no service-protection limits</button>
+      <button class="opt"><span class="mk">B</span> <code>auth</code> — NTLM doesn't use a handshake</button>
+      <button class="opt"><span class="mk">C</span> <code>tls</code> — the on-prem URL is <code>http://</code>, so there's no TLS to test</button>
+      <button class="opt"><span class="mk">D</span> <code>version</code> — v9.1 predates TLS reporting</button>
+      <div class="fb ok">Correct. On-prem orgs are commonly reached over plain <code>http://</code> inside a trusted network, so there is no TLS handshake to verify and the <code>tls</code> check reports "not applicable (plain http)". Cloud is always <code>https://</code>, so its <code>tls</code> check does a real handshake.</div>
+      <div class="fb no">It's the <code>tls</code> check. On-prem is typically plain <code>http://</code> (no transport encryption to verify inside the VPN), so TLS is "not applicable." Cloud is always https and runs a real handshake.</div>
+    </div>
+
+    <div class="q" data-correct="0">
+      <p class="stem">3. Why does the cloud <code>rate_limit</code> check show <code>x-ms-ratelimit-*</code> values while on-prem shows none?</p>
+      <button class="opt"><span class="mk">A</span> Service protection limits apply to the shared cloud platform; on-prem has no such quota</button>
+      <button class="opt"><span class="mk">B</span> On-prem hides the headers for security reasons</button>
+      <button class="opt"><span class="mk">C</span> The CLI strips rate-limit headers from on-prem responses</button>
+      <button class="opt"><span class="mk">D</span> On-prem uses a different header name the doctor doesn't read</button>
+      <div class="fb ok">Correct. Service protection limits exist to keep one tenant from degrading a shared multi-tenant cloud — so Dataverse online advertises remaining budget via <code>x-ms-ratelimit-*</code> headers and returns 429 + Retry-After when exceeded. On-prem is single-org, so there's no platform quota and no such headers.</div>
+      <div class="fb no">Cloud emits <code>x-ms-ratelimit-*</code> because service protection limits guard the shared platform (429 + Retry-After when exceeded). On-prem is a single dedicated org with no platform quota, so it genuinely sends no such headers — the CLI isn't hiding or renaming anything.</div>
+    </div>
+
+    <p class="score" id="score"></p>
+  </div>
+</section>
+
+<!-- ─── REFS ─── -->
+<section class="reveal">
+  <h3>Primary source</h3>
+  <p>Read <a href="https://learn.microsoft.com/power-apps/maker/data-platform/api-limits-overview#service-protection-limits" target="_blank">Microsoft Dataverse API limits overview — Service protection limits</a> to understand the cloud throttling model the <code>rate_limit</code> check reflects (and why on-prem doesn't have it).</p>
+  <ol class="refs">
+    <li id="r1"><a href="https://learn.microsoft.com/power-apps/developer/data-platform/api-limits" target="_blank">Service protection API limits</a> — 429 Too Many Requests + <code>Retry-After</code>, evaluated in a 5-minute sliding window.</li>
+    <li id="r2">crm agent skill — <code>reference/troubleshooting.md</code> (retry semantics: 429/5xx/transport auto-retry for idempotent verbs). <a href="https://github.com/Gharib89/crm" target="_blank">github.com/Gharib89/crm</a></li>
+  </ol>
+</section>
+
+<!-- ─── ASK ─── -->
+<div class="ask reveal">
+  <p><b>Ask me to dig in:</b></p>
+  <ul class="tight">
+    <li>"Show the full on-prem <code>doctor</code> output when the VPN is <em>down</em> — what do the skipped checks look like?"</li>
+    <li>"How does the CLI's retry layer use the <code>Retry-After</code> header on a cloud 429?"</li>
+    <li>"What's the difference between <code>connection test</code>, <code>connection status</code>, and <code>connection doctor</code>?"</li>
+    <li>"Can I raise on-prem throughput safely without a service-protection referee?"</li>
+  </ul>
+</div>
+
+<!-- ─── NEXT ─── -->
+<div class="next reveal">
+  <span class="pill">next up</span>
+  <h2>Run the same ops on-prem</h2>
+  <p>You've diagnosed the connection from every angle. Time to <em>use</em> it: next we run a full create → get → delete round-trip and a couple of queries against on-prem, prove the commands and the envelope are byte-for-byte the same as cloud (only the host and version path change), and satisfy this milestone's "Done when" — run the same ops on-prem and explain each divergence.</p>
+</div>
+
+<footer>
+  <p>Milestone 09 — On-prem Differences · <a href="https://gharib89.github.io/learn-crm-cli-and-api/">course home</a></p>
+  <p class="ft">M09 · L03 · lessons/0050-connection-doctor.html · connection doctor (alias crm doctor) 5 checks dns_tcp/tls/version/auth/rate_limit, ordered + short-circuiting; on-prem vs cloud: port 80/443, plain-http/TLS, 9.1/9.2, NTLM/OAuth, no-ratelimit/x-ms-ratelimit; service protection = cloud-only 429+Retry-After 5-min window; reads only; live-verified both orgs 2026-06-20, crm v1.0.0</p>
+</footer>
+
+</div><!-- /wrap -->
+
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 9, "name": "On-prem Differences"},
+  "lesson": 3,
+  "title": "connection doctor — see every divergence at once",
+  "slug": "connection-doctor",
+  "topics": ["on-prem","connection-doctor","diagnostics","service-protection","rate-limit","tls","ntlm","oauth","429","vpn"],
+  "summary": "connection doctor (alias crm doctor) runs 5 ordered, short-circuiting, read-only checks: dns_tcp, tls, version, auth, rate_limit. Structure identical on both targets; 4 of 5 details diverge. On-prem live: TCP :80, tls 'not applicable (plain http)', 'server version 9.1.44.15', NTLM auth (domain user), 'no rate-limit headers present'. Cloud: TCP :443, 'TLS handshake OK', 'server version 9.2.26053.150', OAuth (application user), x-ms-ratelimit-time-remaining/burst-remaining-xrm-requests present. Each failed check has a distinct fix: dns_tcp 'No route to host' on on-prem = VPN down; version fail = api_version not served (re-negotiate); auth fail = creds/app-reg. Service protection limits (429 + Retry-After, 5-min sliding window) are cloud-only because the platform is multi-tenant; on-prem single-org has no quota referee (but retry classes still apply, not infinite capacity).",
+  "order": 3,
+  "status": "published" }
+</script>
+</body>
+</html>

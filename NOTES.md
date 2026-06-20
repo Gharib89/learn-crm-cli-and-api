@@ -571,3 +571,58 @@ and register a plug-in step, and articulate what needs other tools. All 5 lesson
 - **No crm workflow or SLA creation verb** — only management (activate/deactivate/run/export/import).
 - **No unregister-webhook** in `plugin` group — webhook service endpoint deleted via `entity delete
   serviceendpoints <id> --yes`.
+
+## M09 lesson sequence (started 2026-06-20)
+
+Milestone: **On-prem differences** (issue #9). "Done when": run the same ops on on-prem and explain
+each divergence from cloud. Target: **agent-on-prem** (VPN-gated; reachable 2026-06-20). Concept-first
+per beginner pref. Live-verified against **crm v1.0.0**, both orgs side-by-side (see live facts below).
+
+- **L01** — **Why two targets exist: the NTLM/OAuth split** (`0048`). The platform mental model: on-prem
+  (NTLM, domain-qualified user, plain http) vs Dataverse online (OAuth client-credentials, app reg, https).
+  The profile IS the switch (`auth_scheme`, `url`, `tenant/client_id`). Read it with `connection status`.
+- **L02** — **The v9.1 ceiling** (`0049`). Headline divergence: on-prem caps at API v9.1; v9.2 → HTTP 501.
+  Auto-negotiation at `profile add` time (tries v9.2, downgrades to v9.1, persists); explicit `--api-version`
+  never auto-downgrades. CreateMultiple/UpdateMultiple/DeleteMultiple are cloud-only (platform gap).
+- **L03** — **`connection doctor`: see every divergence at once** (`0050`). 5 checks; 4 diverge between
+  targets (transport http/https, tls n/a vs handshake, version 9.1 vs 9.2, rate-limit headers absent vs
+  service-protection headers present). Diagnose-first habit.
+- **L04** — **Run the same ops on-prem** (`0051`). CRUD + query parity proof: identical commands, identical
+  envelope, only host + version-path differ. Bulk `data import` bridges the CreateMultiple gap via `$batch`
+  ("the only on-prem bulk mechanism"). Satisfies Done-when.
+- **L05** — **Capstone: the on-prem failure decision matrix** (`0052`). When a command fails on on-prem:
+  auth? version (v9.1 cap / cloud-only feature)? privilege? or a real tool defect → file upstream. Ties to
+  mission (tool-defect-vs-user-error). Closes M09.
+
+**✅ M09 COMPLETE — 5 lessons** (L01–L05, lessons 0048–0052; authored 2026-06-20). Build green (52 lessons).
+0047's auto-Continue rewired to 0048 automatically once M09 shipped (predicted pattern held). Chain
+0048→0049→0050→0051→0052 verified; 0052's auto-Continue points to 0008 (M11 L01) as fallback since M10
+unbuilt — will rewire to M10 L01 automatically once M10 ships. GLOSSARY got an "On-prem vs cloud — M09"
+section; RESOURCES got web-api-versions / auth / api-limits / bulk-operations citations. On-prem profile
+left at v9.1 (the §02 v9.2 probe was reverted); active profile unchanged (agent-cloud); org left clean.
+**Not yet committed/pushed** — awaiting user OK (push auto-deploys via pages.yml).
+
+### M09 live-CLI facts (crm v1.0.0; agent-on-prem server 9.1.44.15 vs agent-cloud server 9.2.26053.150, 2026-06-20)
+
+- **connection status** divergences (no network call): on-prem `auth_scheme=ntlm`, `url=http://…`,
+  `username=moce\crmadmin` (domain-qualified), `tenant_id`/`client_id` null, `api_version=v9.1`. Cloud
+  `auth_scheme=oauth`, `url=https://…`, `username=""`, `tenant_id`+`client_id` populated, `api_version=v9.2`.
+- **v9.1 ceiling, live:** forcing v9.2 on-prem (`profile edit --api-version v9.2` then whoami) →
+  `{"ok":false,"error":"Requested API Version 'v9.2' is not available","meta":{"status":501,
+  "code":"0x8006088a","category":"server_error","retryable":true}}`. Reverted to v9.1. Negotiation logic in
+  `crm/core/connection.py:108-159`: DEFAULT_API_VERSION=v9.2, _ONPREM_API_VERSION=v9.1; downgrade only fires
+  during `test_connection(negotiate=True)` (i.e. `profile add` with no `--api-version`), mutated in place +
+  persisted. Explicit `--api-version` is respected as-is, never downgraded — so a hard-set v9.2 just 501s.
+- **doctor (5 checks):** dns_tcp, tls, version, auth, rate_limit. On-prem: TCP :80, tls "not applicable
+  (plain http)", "server version 9.1.44.15", NTLM auth, "no rate-limit headers present". Cloud: TCP :443,
+  "TLS handshake OK", "server version 9.2.26053.150", OAuth, rate_limit detail lists
+  `x-ms-ratelimit-time-remaining-xrm-requests` + `x-ms-ratelimit-burst-remaining-xrm-requests` (service
+  protection). Only the check *structure* is identical; 4 of 5 details diverge.
+- **CRUD parity:** on-prem `entity create contacts` → full record body back incl. `_entity_id`,
+  `_entity_id_url` (path `…/api/data/v9.1/contacts(<id>)`). get/delete/verify-gone identical to cloud. Org
+  left clean. id key is `contactid`/`_entity_id` (NOT `data.id`).
+- **query parity:** `query odata` (bare `data` array) + `query fetchxml` both work on-prem unchanged.
+- **bulk:** `data import` help says "via $batch"; `--chunk-size` = records per $batch call. `$batch` is the
+  only on-prem bulk mechanism (`crm/core/data_import.py:1-4`) — so the CLI never uses CreateMultiple even on
+  cloud, and bulk import works identically on both targets despite the platform-level CreateMultiple gap.
+- **profile edit** does NOT touch the stored secret (`--api-version` etc. only); safe for reversible probes.

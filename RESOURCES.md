@@ -34,6 +34,18 @@ Trusted sources for this workspace. Explainers draw from here, not parametric gu
 - [Use the Dynamics 365 CE (on-premises) Web API — op-9-1](https://learn.microsoft.com/dynamics365/customerengagement/on-premises/developer/use-microsoft-dynamics-365-web-api?view=op-9-1) ·
   [Authenticate (on-prem)](https://learn.microsoft.com/dynamics365/customerengagement/on-premises/developer/webapi/authenticate-web-api?view=op-9-1)
   Use for: the **on-prem-specific** v9.1 surface and NTLM/IFD auth (milestone 9).
+- [Web API versions](https://learn.microsoft.com/power-apps/developer/data-platform/webapi/web-api-versions)
+  Use for: the load-bearing M09 fact — v9.0/9.1/9.2 are **behaviorally identical**; the version is a
+  path pin, not a feature gate (so the on-prem v9.1 cap is a routing/build difference, not lost API behavior).
+- [Authenticate with Dataverse web services](https://learn.microsoft.com/power-apps/developer/data-platform/authentication) ·
+  [Authenticate users in D365 CE (on-premises)](https://learn.microsoft.com/dynamics365/customerengagement/on-premises/developer/authenticate-users?view=op-9-1)
+  Use for: the OAuth-online vs AD/NTLM-on-prem auth split (M09 L01); the realms behind a 401/403.
+- [Service protection API limits](https://learn.microsoft.com/power-apps/developer/data-platform/api-limits) ·
+  [API limits overview](https://learn.microsoft.com/power-apps/maker/data-platform/api-limits-overview#service-protection-limits)
+  Use for: the cloud-only 429 + `Retry-After` throttling model (5-min window) the `doctor` rate_limit check reflects (M09 L03).
+- [Optimize performance for bulk operations](https://learn.microsoft.com/power-apps/developer/data-platform/optimize-performance-create-update#bulk-operation-apis) ·
+  [Execute $batch operations](https://learn.microsoft.com/power-apps/developer/data-platform/webapi/execute-batch-operations-using-web-api)
+  Use for: `CreateMultiple`/`UpdateMultiple` availability (cloud-only / per-table) vs the universal OData `$batch` path (M09 L02).
 
 ## Wisdom (Communities)
 

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M09 · L02 — The v9.1 ceiling — version negotiation & cloud-only features</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-sizing:border-box}0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-false{color:#ff8f7a}.c-num{color:#ffd479}.c-meth{color:#ffd479;font-weight:700}.c-ann{color:#7fb0c9}
+  .c-xtag{color:#8cc0ff}.c-xattr{color:#ffd479}.c-xval{color:#a7e6a0}
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+  table.ops{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--card);
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.ops th,table.ops td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.ops th{background:var(--guid-soft);color:var(--guid);font-family:"Roboto Mono",monospace;
+    font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  table.ops tr:last-child td{border-bottom:none}
+  table.ops code{font-size:12.5px}
+  table.ops .pk{color:var(--teal-deep);font-weight:700}
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-false,pre .c-num,pre .c-meth,pre .c-flag,pre .c-ann,pre .c-xtag,pre .c-xattr,pre .c-xval{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+<header class="top reveal">
+  <p class="eyebrow">Milestone 09 <span class="dot">·</span> On-prem Differences <span class="dot">·</span> Lesson 02</p>
+  <h1>The v9.1<br><em>ceiling</em></h1>
+  <p class="sub">On-prem caps at API <code>v9.1</code>. Ask for <code>v9.2</code> and the server answers <code>501</code>. Here's why that line exists, how the CLI dodges it for you, and what an older build genuinely lacks.</p>
+  <div class="livechip"><span class="led"></span> live on <b>agent-on-prem</b> &nbsp;·&nbsp; crm.contoso.local/Contoso &nbsp;·&nbsp; <span class="pill">reads</span> <span class="pill t">reversible probe</span></div>
+  <div class="rule"></div>
+  <div class="why">
+    <b>Why this matters:</b> The version ceiling is the single most quoted on-prem fact — and the most misread. Once you know that <code>v9.1</code> and <code>v9.2</code> are <em>behaviorally identical</em> APIs, and that the cap is about which URL path the server answers (not which features the API has), you can tell a "this org is older" error apart from a real bug. That judgment is exactly what the mission asks for.
+  </div>
+</header>
+
+<p class="lead reveal">The API version is a <em>segment in the URL path</em> — <code>/api/data/<strong>v9.1</strong>/</code> — not a feature switch. The cloud build serves up to <code>v9.2</code>; the on-prem build serves up to <code>v9.1</code>. Ask an on-prem server for a path it doesn't host, and it tells you so.</p>
+
+<!-- ─── SECTION 01 ─── -->
+<section class="reveal">
+  <h2><span class="n">01</span> The version is a path, not a feature flag</h2>
+  <p>Here is the part most people get wrong. Microsoft is explicit: <strong>the v9.0, v9.1, and v9.2 releases have identical Web API behaviors</strong> — none of them introduces breaking changes relative to the others.<sup><a href="#r1">1</a></sup> So the number in the path is <em>not</em> a capability dial. It exists so that, <em>if</em> Microsoft ever ships a breaking change, your code can pin to the version it was written against.</p>
+
+  <p>What actually differs between on-prem and cloud is the <strong>product build</strong> behind the API. The cloud is continuously updated and hosts the <code>v9.2</code> path; the on-premises product tops out at the <code>v9.1</code> path. When the CLI requests <code>…/api/data/v9.2/…</code> from an on-prem server, that route doesn't exist there, and the server returns <strong>HTTP 501 (Not Implemented)</strong>.</p>
+
+  <div class="callout tip">
+    <span class="ic">KEY</span>
+    <div><strong>Two different "differences" hide under "v9.1 vs v9.2."</strong> (1) The <em>path</em> difference — on-prem 501s on the v9.2 URL. (2) The <em>build</em> difference — the older on-prem product lacks some newer Dataverse <em>messages</em> (like <code>CreateMultiple</code>, §04). The version number causes (1); the product age causes (2). They are not the same thing.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 02 ─── -->
+<section class="reveal">
+  <h2><span class="n">02</span> The 501, live</h2>
+  <p>You can see the ceiling directly. The on-prem profile is pinned to <code>v9.1</code>, so a normal call succeeds. Temporarily point it at <code>v9.2</code> and re-run WhoAmI — the server refuses. (<code>profile edit</code> changes only the named field; it never touches the stored secret, so this is a safe, reversible probe.)</p>
+
+  <pre class="term"><span class="tag">shell · reversible probe</span><code><span class="c-comment"># 1 · force the on-prem profile to v9.2</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> profile edit agent-on-prem <span class="c-flag">--api-version</span> v9.2
+
+<span class="c-comment"># 2 · ask the on-prem server for the v9.2 path</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> <span class="c-flag">--profile</span> agent-on-prem connection whoami</code></pre>
+
+  <pre class="term"><span class="tag">envelope · live-verified 2026-06-20 · server 9.1.44.15 · crm v1.0.0</span><code><span class="c-punc">{</span>
+  <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-false">false</span><span class="c-punc">,</span>
+  <span class="c-key">"error"</span><span class="c-punc">:</span> <span class="c-str">"Requested API Version 'v9.2' is not available"</span><span class="c-punc">,</span>
+  <span class="c-key">"meta"</span><span class="c-punc">: {</span>
+    <span class="c-key">"status"</span><span class="c-punc">:</span> <span class="c-num">501</span><span class="c-punc">,</span>
+    <span class="c-key">"code"</span><span class="c-punc">:</span> <span class="c-str">"0x8006088a"</span><span class="c-punc">,</span>
+    <span class="c-key">"category"</span><span class="c-punc">:</span> <span class="c-str">"server_error"</span><span class="c-punc">,</span>
+    <span class="c-key">"retryable"</span><span class="c-punc">:</span> <span class="c-true">true</span>
+  <span class="c-punc">}</span>
+<span class="c-punc">}</span></code></pre>
+
+  <pre class="term"><span class="tag">shell · always revert the probe</span><code><span class="c-comment"># 3 · put it back to v9.1</span>
+<span class="c-meth">crm</span> <span class="c-flag">--json</span> profile edit agent-on-prem <span class="c-flag">--api-version</span> v9.1</code></pre>
+
+  <div class="callout warn">
+    <span class="ic">READ</span>
+    <div>The status is <code>501</code> and the CLI files it under <code>category: "server_error"</code> with <code>retryable: true</code>. That classification is generic 5xx handling — but a 501-for-version is <strong>not</strong> a transient fault. Retrying won't help; the path will never exist on this server. This is a case where you read the <em>error string</em> (<code>"Requested API Version 'v9.2' is not available"</code>), not just the category, to know the real cause.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 03 ─── -->
+<section class="reveal">
+  <h2><span class="n">03</span> Why you almost never see it — auto-negotiation</h2>
+  <p>In normal use the 501 above never happens, because the CLI negotiates the version <strong>once, at <code>profile add</code> time</strong>. The logic lives in <code>crm/core/connection.py</code>:<sup><a href="#r2">2</a></sup></p>
+
+  <ol class="steps">
+    <li>The optimistic default is <code>v9.2</code> (what cloud accepts).</li>
+    <li>On <code>profile add</code> with <strong>no</strong> <code>--api-version</code>, the CLI probes with WhoAmI. If the server 501s, it downgrades one step to <code>v9.1</code> and probes again.</li>
+    <li>The negotiated value is written into the profile. From then on, every command uses the pinned <code>v9.1</code> — no re-probe, no 501.</li>
+  </ol>
+
+  <p>That is why the on-prem profile already shows <code>"api_version": "v9.1"</code> (you saw it in <a href="0048-two-targets-one-cli.html">L01</a>): it was negotiated when the profile was created.</p>
+
+  <div class="callout tip">
+    <span class="ic">GOTCHA</span>
+    <div><strong>An explicit version is respected as-is — never auto-downgraded.</strong> If you pass <code>--api-version v9.2</code> yourself (or set it with <code>profile edit</code>, as in §02), the CLI assumes you mean it and does <em>not</em> rescue you with a downgrade — even when it 501s. Auto-negotiation only kicks in when you <em>omit</em> the version and let the CLI choose. The fix for a hard-set bad version: re-run <code>profile add</code> without <code>--api-version</code> to re-negotiate.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 04 ─── -->
+<section class="reveal">
+  <h2><span class="n">04</span> What's genuinely missing: <code>CreateMultiple</code> &amp; friends</h2>
+  <p>Now the <em>build</em> difference. The high-throughput bulk messages <code>CreateMultiple</code>, <code>UpdateMultiple</code>, <code>UpsertMultiple</code>, and <code>DeleteMultiple</code> are newer Dataverse additions. They are <strong>cloud-only</strong> — not present on the on-prem v9.1 build.<sup><a href="#r3">3</a></sup> (Even on cloud they're selective: any custom table supports them, but not all stock tables like <em>account</em> or <em>contact</em> do.)</p>
+
+  <p>So how does <code>crm data import</code> move thousands of rows into an on-prem org? It doesn't use <code>CreateMultiple</code> at all. It routes every bulk write through the <strong>OData <code>$batch</code> endpoint</strong> — the universal mechanism that exists on <em>both</em> targets.<sup><a href="#r4">4</a></sup> In the CLI's own words, <code>$batch</code> is "the only on-prem bulk mechanism."</p>
+
+  <pre class="term"><span class="tag">crm data import --help</span><code><span class="c-comment">Bulk-import records from a JSONL/CSV file via $batch.</span>
+  <span class="c-flag">--chunk-size</span> INTEGER   Records per $batch call (each chunk is one
+                       transactional changeset by default).</code></pre>
+
+  <table class="ops">
+    <thead><tr><th>Mechanism</th><th>On-prem</th><th>Cloud</th><th>Used by <code>crm</code></th></tr></thead>
+    <tbody>
+      <tr><td><code>CreateMultiple</code> / <code>UpdateMultiple</code></td><td><span style="color:#b3261e">✗ absent</span></td><td><span style="color:#0c7a64">✓</span> (some tables)</td><td>never</td></tr>
+      <tr><td>OData <code>$batch</code></td><td><span style="color:#0c7a64">✓</span></td><td><span style="color:#0c7a64">✓</span></td><td><code class="pk">data import</code>, <code>batch</code>, chunked reads</td></tr>
+    </tbody>
+  </table>
+
+  <p>The upshot for the mission: the platform-level <code>CreateMultiple</code> gap is real, but it <strong>does not</strong> change how you use the CLI. Because <code>data import</code> always uses <code>$batch</code>, bulk import behaves identically on on-prem and cloud. The gap only matters if you were calling those messages directly via <code>action invoke</code> — which would fail on-prem with a "message not found" error.</p>
+</section>
+
+<!-- ─── SECTION 05 — QUIZ ─── -->
+<section class="reveal">
+  <div class="quiz">
+    <p class="qh">Lesson check</p>
+    <p class="qhs">4 questions · click to reveal</p>
+
+    <div class="q" data-correct="2">
+      <p class="stem">1. A command against on-prem returns <code>status: 501</code>, <code>"Requested API Version 'v9.2' is not available"</code>. <code>meta.retryable</code> is <code>true</code>. What should you do?</p>
+      <button class="opt"><span class="mk">A</span> Retry with backoff — <code>retryable: true</code> means it's a transient fault</button>
+      <button class="opt"><span class="mk">B</span> File a bug upstream — the server should accept v9.2</button>
+      <button class="opt"><span class="mk">C</span> Re-negotiate to v9.1 (re-run <code>profile add</code> without <code>--api-version</code>)</button>
+      <button class="opt"><span class="mk">D</span> Switch the profile to OAuth so it can reach v9.2</button>
+      <div class="fb ok">Correct. The <code>retryable: true</code> is generic 5xx classification, but a 501-for-version is permanent: the v9.2 path will never exist on an on-prem server. The error string is the real signal. The fix is to use v9.1 — re-negotiate by re-running <code>profile add</code> without an explicit version.</div>
+      <div class="fb no">Don't trust <code>retryable</code> here — it's generic 5xx handling, but a 501-for-version is permanent. The v9.2 path doesn't exist on on-prem and never will; retrying or switching auth won't help. Read the error string and use v9.1 (re-negotiate via <code>profile add</code>).</div>
+    </div>
+
+    <div class="q" data-correct="0">
+      <p class="stem">2. True or false: because on-prem caps at v9.1, its Web API has fewer behaviors / operations than the v9.2 cloud API by virtue of the version number.</p>
+      <button class="opt"><span class="mk">A</span> False — v9.0/9.1/9.2 are behaviorally identical; the differences come from the product build, not the number</button>
+      <button class="opt"><span class="mk">B</span> True — each version increment adds operations, so v9.2 strictly supersets v9.1</button>
+      <button class="opt"><span class="mk">C</span> True — v9.1 removed operations that v9.2 restored</button>
+      <button class="opt"><span class="mk">D</span> False — on-prem actually has more operations than cloud</button>
+      <div class="fb ok">Correct. Microsoft documents that v9.0, v9.1, and v9.2 have identical Web API behaviors — no breaking changes between them. The version number isn't a capability dial. Real feature gaps (like CreateMultiple) come from the older on-prem product build, not from the version segment.</div>
+      <div class="fb no">False. v9.0/9.1/9.2 are documented as behaviorally identical — the number doesn't add or remove operations. Feature gaps such as CreateMultiple come from the older on-prem product build, not from the version segment in the path.</div>
+    </div>
+
+    <div class="q" data-correct="1">
+      <p class="stem">3. When does the CLI auto-downgrade v9.2 → v9.1?</p>
+      <button class="opt"><span class="mk">A</span> On every request, transparently, whenever a 501 occurs</button>
+      <button class="opt"><span class="mk">B</span> Only during <code>profile add</code> when no <code>--api-version</code> was given</button>
+      <button class="opt"><span class="mk">C</span> Never — you must always set the version by hand</button>
+      <button class="opt"><span class="mk">D</span> Whenever you pass an explicit <code>--api-version v9.2</code></button>
+      <div class="fb ok">Correct. Negotiation runs once, at profile-add time, and only when you omit <code>--api-version</code>: it tries v9.2, downgrades to v9.1 on a 501, and persists the result. An explicit version is respected as-is and never auto-downgraded — that's why a hard-set v9.2 just 501s.</div>
+      <div class="fb no">Auto-downgrade happens only at <code>profile add</code> when you omit <code>--api-version</code> — it probes, downgrades on 501, and persists v9.1. It does NOT run per-request, and an explicit version is never auto-downgraded.</div>
+    </div>
+
+    <div class="q" data-correct="3">
+      <p class="stem">4. You need to bulk-import 5,000 contacts into the on-prem org. <code>CreateMultiple</code> isn't available there. What does <code>crm data import</code> do?</p>
+      <button class="opt"><span class="mk">A</span> Fails — bulk import requires CreateMultiple, which on-prem lacks</button>
+      <button class="opt"><span class="mk">B</span> Falls back to one <code>entity create</code> per row, 5,000 requests</button>
+      <button class="opt"><span class="mk">C</span> Silently switches the profile to cloud to get CreateMultiple</button>
+      <button class="opt"><span class="mk">D</span> Routes the writes through OData <code>$batch</code> — works identically on both targets</button>
+      <div class="fb ok">Correct. <code>data import</code> never uses CreateMultiple on either target — it chunks the rows into OData <code>$batch</code> calls (set by <code>--chunk-size</code>). <code>$batch</code> exists on both on-prem and cloud, so bulk import behaves the same regardless of the CreateMultiple gap.</div>
+      <div class="fb no"><code>data import</code> always uses OData <code>$batch</code> (the universal bulk mechanism present on both targets), chunked by <code>--chunk-size</code>. It never relies on CreateMultiple, so the on-prem gap doesn't affect it — and it doesn't degrade to one-request-per-row.</div>
+    </div>
+
+    <p class="score" id="score"></p>
+  </div>
+</section>
+
+<!-- ─── REFS ─── -->
+<section class="reveal">
+  <h3>Primary source</h3>
+  <p>Read <a href="https://learn.microsoft.com/power-apps/developer/data-platform/webapi/web-api-versions" target="_blank">Microsoft Dataverse Web API versions</a> — the paragraph stating v9.0/9.1/9.2 are behaviorally identical is the load-bearing fact of this lesson. The version number is a pin, not a feature gate.</p>
+  <ol class="refs">
+    <li id="r1"><a href="https://learn.microsoft.com/power-apps/developer/data-platform/webapi/web-api-versions" target="_blank">Web API versions</a> — "the v9.0, v9.1, and v9.2 releases don't include any breaking changes … identical Web API behaviors."</li>
+    <li id="r2">crm source — <code>crm/core/connection.py</code> (<code>test_connection(negotiate=…)</code>, <code>DEFAULT_API_VERSION="v9.2"</code>, <code>_ONPREM_API_VERSION="v9.1"</code>, downgrade on <code>501</code>). <a href="https://github.com/Gharib89/crm" target="_blank">github.com/Gharib89/crm</a></li>
+    <li id="r3"><a href="https://learn.microsoft.com/power-apps/developer/data-platform/optimize-performance-create-update#bulk-operation-apis" target="_blank">Optimize performance for bulk operations</a> — CreateMultiple/UpdateMultiple availability and limits; <code>$batch</code> as the fallback.</li>
+    <li id="r4"><a href="https://learn.microsoft.com/power-apps/developer/data-platform/webapi/execute-batch-operations-using-web-api" target="_blank">Execute batch operations using the Web API</a> — OData <code>$batch</code>, the universal bulk path.</li>
+  </ol>
+</section>
+
+<!-- ─── ASK ─── -->
+<div class="ask reveal">
+  <p><b>Ask me to go deeper:</b></p>
+  <ul class="tight">
+    <li>"Show me the <code>connection.py</code> negotiation code and walk through the downgrade branch."</li>
+    <li>"What happens if I call <code>action invoke CreateMultiple</code> directly against on-prem?"</li>
+    <li>"Are there v9.2 cloud features besides CreateMultiple I'd lose by targeting on-prem?"</li>
+    <li>"How big should <code>--chunk-size</code> be for a $batch import — any on-prem limit?"</li>
+  </ul>
+</div>
+
+<!-- ─── NEXT ─── -->
+<div class="next reveal">
+  <span class="pill">next up</span>
+  <h2>connection doctor — see every divergence at once</h2>
+  <p>You've now met the auth split (L01) and the version ceiling (L02) one at a time. <code>connection doctor</code> runs five checks in a single call — DNS/TCP, TLS, version, auth, rate-limit — and four of the five read differently on on-prem than on cloud. Next we run it against both and read the divergence end to end, including the service-protection headers cloud emits and on-prem doesn't.</p>
+</div>
+
+<footer>
+  <p>Milestone 09 — On-prem Differences · <a href="https://gharib89.github.io/learn-crm-cli-and-api/">course home</a></p>
+  <p class="ft">M09 · L02 · lessons/0049-the-v91-ceiling.html · v9.1 cap; version is a path not a feature flag (v9.0/9.1/9.2 identical behaviors); live HTTP 501 (0x8006088a) on forced v9.2; auto-negotiation at profile-add (connection.py); CreateMultiple cloud-only but data import uses $batch on both; reversible probe; live-verified on agent-on-prem (server 9.1.44.15), 2026-06-20, crm v1.0.0</p>
+</footer>
+
+</div><!-- /wrap -->
+
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 9, "name": "On-prem Differences"},
+  "lesson": 2,
+  "title": "The v9.1 ceiling — version negotiation & cloud-only features",
+  "slug": "the-v91-ceiling",
+  "topics": ["on-prem","api-version","v9.1","v9.2","http-501","version-negotiation","createmultiple","batch","data-import","profile-edit"],
+  "summary": "API version is a path segment (/api/data/v9.x/), not a feature flag: v9.0/9.1/9.2 are behaviorally identical (MS Learn). On-prem product build serves up to v9.1; asking v9.2 -> HTTP 501 Not Implemented. Live: profile edit agent-on-prem --api-version v9.2 then whoami -> {ok:false, error:'Requested API Version v9.2 is not available', meta:{status:501, code:0x8006088a, category:server_error, retryable:true}} (retryable is misleading; 501-for-version is permanent — read the error string). Auto-negotiation in connection.py: DEFAULT v9.2, downgrade to v9.1 on 501, ONLY at profile add with no --api-version, persisted; explicit version never auto-downgraded. profile edit doesn't touch the secret (reversible probe). CreateMultiple/UpdateMultiple/UpsertMultiple/DeleteMultiple are cloud-only (newer build); crm data import always routes through OData $batch (the only on-prem bulk mechanism, --chunk-size), so bulk works identically on both.",
+  "order": 2,
+  "status": "published" }
+</script>
+</body>
+</html>

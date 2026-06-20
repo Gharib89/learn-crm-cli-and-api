@@ -563,3 +563,69 @@ Delete a 1:N or N:N by schema name; for a 1:N it **also removes the lookup colum
 required in JSON mode. Preview with `--dry-run --check-dependencies` → `{would_delete, can_delete,
 blockers[]}` (empty blockers = safe; a non-empty list, e.g. lookup on a form, must be cleared
 first). Teardown order: **relationships before the tables** they connect. _Met: M05 L05._
+
+---
+
+## On-prem vs cloud — *M09*
+
+**Deployment models (on-premises / Dataverse online)**
+The two ways D365 CE ships. **On-premises**: your org runs the server on a Windows box, identity
+in Active Directory, reached over VPN. **Dataverse online**: Microsoft hosts it, identity in Entra
+ID, reached over the public internet. Both expose the **same** OData v4 Dataverse Web API
+(`<url>/api/data/v9.x/`) — only auth + version + transport differ, and the profile carries them. No `--on-prem` flag, no
+separate command set. _Met: M09 L01._
+
+**v9.1 ceiling / HTTP 501**
+The on-prem product build serves the Web API up to the **`v9.1`** path; the cloud build serves
+`v9.2`. The API version is a **path segment, not a feature flag** — MS documents v9.0/9.1/9.2 as
+*behaviorally identical*. Requesting `…/api/data/v9.2/…` from on-prem returns **HTTP 501** (`error:
+"Requested API Version 'v9.2' is not available"`, `code 0x8006088a`, `category: server_error`,
+`retryable: true` — but it's **permanently** unavailable, so read the error string, not the
+category). Sharpens the **API version (`v9.1` / `v9.2`)** term (M01 L02). _Met: M09 L02._
+
+**Version negotiation (`profile add` downgrade)**
+How the CLI avoids the 501: at **`profile add`** time, with **no** `--api-version`, it probes WhoAmI
+at the optimistic default `v9.2`, and on a 501 **downgrades once to `v9.1`** and persists it. From
+then on every call uses the pinned version. An **explicit** `--api-version` is respected as-is and
+**never** auto-downgraded (so a hard-set `v9.2` just 501s; re-run `profile add` without the flag to
+re-negotiate). Source: `crm/core/connection.py`. _Met: M09 L02._
+
+**`CreateMultiple` / `$batch` (the bulk gap)**
+`CreateMultiple` / `UpdateMultiple` / `UpsertMultiple` / `DeleteMultiple` are newer Dataverse bulk
+messages — **cloud-only**, absent from the on-prem v9.1 build (and even on cloud, only some tables
+support them). The CLI sidesteps the gap entirely: **`data import` always routes through the OData
+`$batch` endpoint** ("the only on-prem bulk mechanism," `--chunk-size` = rows per call), which
+exists on both targets — so bulk import behaves identically. The gap only bites if you call those
+messages directly via `action invoke`. _Met: M09 L02._
+
+**`connection doctor` (5 checks)**
+Read-only diagnostic (alias `crm doctor`) that walks the request path in **five ordered,
+short-circuiting checks**: `dns_tcp`, `tls`, `version`, `auth`, `rate_limit`. The check *structure*
+is identical on both targets; **4 of 5 details diverge** — on-prem: port 80 / "not applicable (plain
+http)" / "server version 9.1.x" / NTLM / "no rate-limit headers present"; cloud: 443 / "TLS
+handshake OK" / "server version 9.2.x" / OAuth / `x-ms-ratelimit-*`. Each failed check has a distinct
+fix. Extends the **`connection test`** term (M01 L02). _Met: M09 L03._
+
+**Service protection limits / `x-ms-ratelimit`**
+Cloud-only API throttling that guards the shared multi-tenant platform: caps on requests, concurrency,
+and execution time over a **5-minute sliding window**; exceeding them returns **HTTP 429** + a
+`Retry-After` header. Dataverse online advertises remaining budget via `x-ms-ratelimit-*` response
+headers (surfaced by `doctor`'s `rate_limit` check). **On-prem emits none** — single-org, no platform
+quota (but the `throttled`/`server_error`/`transport_error` retry classes still apply; not infinite
+capacity). _Met: M09 L03._
+
+**On-prem failure classes (triage)**
+Sort an on-prem failure into one of five before acting: **Network** (`doctor` dns_tcp fails /
+`transport_error` / "No route to host" → VPN down), **Version** (501 / "API Version" → re-negotiate
+to v9.1), **Feature** (works on cloud, "message not found" on-prem → cloud-only message; use
+`$batch`), **Auth** (`401` / `auth_failed` → NTLM domain/user/pass), **Privilege** (`403` /
+`forbidden` → security role). Four of five are **environment**, not request, problems. Run `doctor`
+first, then read `meta.category` + the error string. _Met: M09 L05._
+
+**Tool defect vs user error (filing upstream)**
+The mission skill: a **CLI defect** shows as a malformed request the CLI itself built (visible in
+`--dry-run`: wrong URL/version/body) or a non-envelope traceback / violated `{ok,meta}` contract —
+**not** a well-formed `403`/`501`/`429`, which are correct server responses to real conditions. When
+it is a defect, file a high-quality issue to `Gharib89/crm` with the `crm --version`, the scrubbed
+command + full `--json` envelope, `connection doctor` output, and expected-vs-actual. Scrub host/GUIDs
+to the example env; the agent **offers**, never files silently. _Met: M09 L05._

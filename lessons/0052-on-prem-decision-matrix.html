@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M09 · L05 — Auth, version, or a bug? — the on-prem decision matrix</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-sizing:border-box}0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-false{color:#ff8f7a}.c-num{color:#ffd479}.c-meth{color:#ffd479;font-weight:700}.c-ann{color:#7fb0c9}
+  .c-xtag{color:#8cc0ff}.c-xattr{color:#ffd479}.c-xval{color:#a7e6a0}
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+  table.ops{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--card);
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.ops th,table.ops td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.ops th{background:var(--guid-soft);color:var(--guid);font-family:"Roboto Mono",monospace;
+    font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  table.ops tr:last-child td{border-bottom:none}
+  table.ops code{font-size:12.5px}
+  table.ops .pk{color:var(--teal-deep);font-weight:700}
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-false,pre .c-num,pre .c-meth,pre .c-flag,pre .c-ann,pre .c-xtag,pre .c-xattr,pre .c-xval{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+<header class="top reveal">
+  <p class="eyebrow">Milestone 09 <span class="dot">·</span> On-prem Differences <span class="dot">·</span> Lesson 05</p>
+  <h1>Auth, version,<br><em>or a bug?</em></h1>
+  <p class="sub">The M09 capstone. When a command fails on on-prem, sort it fast: VPN, auth, the version ceiling, a cloud-only feature, a missing privilege — or a genuine tool defect worth filing upstream.</p>
+  <div class="livechip"><span class="led"></span> live on <b>agent-on-prem</b> &nbsp;·&nbsp; crm.contoso.local/Contoso &nbsp;·&nbsp; <span class="pill">reads</span> <span class="pill t">capstone</span></div>
+  <div class="rule"></div>
+  <div class="why">
+    <b>Why this matters:</b> The mission has two on-prem goals — handle the NTLM/v9.1 split correctly, <em>and</em> recognize when a failure is a tool defect (not user error) so you can file a high-quality issue upstream to <code>Gharib89/crm</code>. The first four lessons gave you the divergences. This one turns them into a triage you can run in seconds — the difference between "I know exactly which layer broke" and "let me retry and hope."
+  </div>
+</header>
+
+<p class="lead reveal">On cloud, most failures are your request. On on-prem, a failure could be the <em>network</em>, the <em>build's</em> age, or the <em>auth realm</em> — none of which a retry fixes. Good triage starts by asking <em>which layer</em>, not <em>what did I type wrong</em>.</p>
+
+<!-- ─── SECTION 01 ─── -->
+<section class="reveal">
+  <h2><span class="n">01</span> The five on-prem failure classes</h2>
+  <p>Almost every on-prem-specific failure falls into one of five buckets. Each has a distinct <em>tell</em> — usually in <code>meta.category</code> plus the error string — and a distinct fix:</p>
+
+  <table class="ops">
+    <thead><tr><th>Class</th><th>Tell</th><th>Cause &amp; fix</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="pk">Network</td>
+        <td><code>doctor</code> dns_tcp fails; <code>transport_error</code>; "No route to host"</td>
+        <td><strong>VPN down</strong> or host unreachable. Connect the VPN; re-run <code>doctor</code>.</td>
+      </tr>
+      <tr>
+        <td class="pk">Version</td>
+        <td><code>501</code>; "Requested API Version 'v9.2' is not available"</td>
+        <td>Profile pinned above the on-prem ceiling. Re-negotiate to <code>v9.1</code> (<code>profile add</code> without <code>--api-version</code>). <a href="0049-the-v91-ceiling.html">L02</a></td>
+      </tr>
+      <tr>
+        <td class="pk">Feature</td>
+        <td>"message/operation not found"; a verb that works on cloud errors on-prem</td>
+        <td>A <strong>cloud-only</strong> capability (e.g. <code>CreateMultiple</code>) absent from the older build. Use the on-prem equivalent (<code>$batch</code>) or accept it's not available. <a href="0049-the-v91-ceiling.html">L02 §04</a></td>
+      </tr>
+      <tr>
+        <td class="pk">Auth</td>
+        <td><code>401</code>; <code>auth_failed</code></td>
+        <td>Wrong NTLM domain / username / password. Re-run <code>profile set-password</code>; check the domain prefix.</td>
+      </tr>
+      <tr>
+        <td class="pk">Privilege</td>
+        <td><code>403</code>; <code>forbidden</code></td>
+        <td>The user authenticated but lacks the privilege/role for this operation. A security-role fix, not a connection fix.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout tip">
+    <span class="ic">KEY</span>
+    <div>Four of these five are <strong>environment</strong> problems, not request problems — the command and payload were fine. That's the on-prem mindset shift: before you re-read your own JSON, ask whether the <em>connection, build, or realm</em> is the real story. <code>meta.category</code> usually tells you in one field.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 02 ─── -->
+<section class="reveal">
+  <h2><span class="n">02</span> The triage, in order</h2>
+  <p>Run it top to bottom — the first match is your answer:</p>
+
+  <ol class="steps">
+    <li><strong>Run <code>connection doctor</code> first.</strong> It classifies network / TLS / version / auth in one call (<a href="0050-connection-doctor.html">L03</a>). If a check fails, you have your class — stop here.</li>
+    <li><strong>Read <code>meta.category</code> + the error string</strong> (not just the HTTP status). <code>transport_error</code> → network. <code>501</code> + "API Version" → version. <code>auth_failed</code> → auth. <code>forbidden</code> → privilege.</li>
+    <li><strong>Ask "does this work on cloud with the same inputs?"</strong> If yes and it fails only on on-prem, suspect a <em>feature</em> gap (cloud-only message) before suspecting a bug.</li>
+    <li><strong>Only then consider a tool defect</strong> — when none of the above fit and the behavior is wrong, not just different (§03).</li>
+  </ol>
+
+  <div class="callout warn">
+    <span class="ic">TRAP</span>
+    <div>Don't trust <code>meta.retryable</code> in isolation. You saw in <a href="0049-the-v91-ceiling.html">L02</a> that a <code>501</code>-for-version carries <code>retryable: true</code> — generic 5xx classification — yet retrying never helps. The error <em>string</em> is the deciding signal when the category is ambiguous.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 03 ─── -->
+<section class="reveal">
+  <h2><span class="n">03</span> Tool defect vs user error — and filing it well</h2>
+  <p>The mission explicitly wants you to catch genuine <code>crm</code> defects and report them. Use this line:</p>
+
+  <table class="ops">
+    <thead><tr><th>It's probably <em>not</em> a CLI bug if…</th><th>It <em>may</em> be a CLI bug if…</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>The error string names a server condition (version, auth, privilege, "not found")</td>
+        <td>The CLI raises an internal traceback / unhandled exception, not a clean envelope</td>
+      </tr>
+      <tr>
+        <td>The same command + inputs fail the same way the server would by hand</td>
+        <td>The CLI builds a <em>wrong request</em> for on-prem (visible in <code>--dry-run</code>: bad URL/version/body)</td>
+      </tr>
+      <tr>
+        <td>It's a documented cloud-only feature</td>
+        <td>A command that <em>should</em> be version-agnostic behaves differently on v9.1 for no documented reason</td>
+      </tr>
+      <tr>
+        <td>A retryable class actually recovers on retry</td>
+        <td>The envelope contract is violated (missing <code>ok</code>/<code>meta</code>, wrong <code>category</code> for the status)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>When it <em>is</em> a defect, a high-quality issue to <a href="https://github.com/Gharib89/crm" target="_blank">Gharib89/crm</a> includes the reproducible facts — never the real org URL or host (scrub to the example env):</p>
+
+  <pre class="term"><span class="tag">a good upstream issue carries…</span><code><span class="c-comment"># 1 · the exact version</span>
+crm --version                         <span class="c-comment"># → crm, version 1.0.0</span>
+
+<span class="c-comment"># 2 · the command (scrubbed) + the FULL --json envelope it returned</span>
+crm --json --profile &lt;on-prem&gt; &lt;command…&gt;
+<span class="c-comment">#   → {"ok": false, "error": "...", "meta": {"status":…, "category":…}}</span>
+
+<span class="c-comment"># 3 · what doctor says (which layer is healthy)</span>
+crm --json connection doctor
+
+<span class="c-comment"># 4 · expected vs actual, and whether cloud behaves differently</span></code></pre>
+
+  <div class="callout tip">
+    <span class="ic">SCRUB</span>
+    <div>Before pasting anything upstream, replace the real host/org with the example env (<code>http://crm.contoso.local/Contoso</code>, <code>https://orgexample.crm.dynamics.com</code>) and mask GUIDs. The repro must be faithful in <em>shape</em>, not in <em>secrets</em>. The agent can offer to file it — but never files silently.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 04 ─── -->
+<section class="reveal">
+  <h2><span class="n">04</span> M09 in one screen <span class="pill">capstone</span></h2>
+  <p>Everything this milestone established — what diverges on on-prem, and what doesn't:</p>
+
+  <table class="ops">
+    <thead><tr><th>Dimension</th><th>On-prem</th><th>Cloud</th><th>Lesson</th></tr></thead>
+    <tbody>
+      <tr><td>Auth</td><td>NTLM (domain user)</td><td>OAuth (application user)</td><td><a href="0048-two-targets-one-cli.html">L01</a></td></tr>
+      <tr><td>Transport</td><td>often plain <code>http</code></td><td>always <code>https</code></td><td><a href="0048-two-targets-one-cli.html">L01</a></td></tr>
+      <tr><td>API version</td><td><code>v9.1</code> (v9.2 → 501)</td><td><code>v9.2</code></td><td><a href="0049-the-v91-ceiling.html">L02</a></td></tr>
+      <tr><td>Bulk messages</td><td>no <code>CreateMultiple</code> — <code>$batch</code> only</td><td><code>CreateMultiple</code> + <code>$batch</code></td><td><a href="0049-the-v91-ceiling.html">L02</a></td></tr>
+      <tr><td>Service protection</td><td>none (no rate-limit headers)</td><td>429 + <code>Retry-After</code>, 5-min window</td><td><a href="0050-connection-doctor.html">L03</a></td></tr>
+      <tr><td>Reachability</td><td>VPN-gated</td><td>public internet</td><td><a href="0050-connection-doctor.html">L03</a></td></tr>
+      <tr><td><strong>Commands &amp; envelope</strong></td><td colspan="2"><strong>identical — same verbs, flags, result shape, categories</strong></td><td><a href="0051-same-ops-on-prem.html">L04</a></td></tr>
+    </tbody>
+  </table>
+
+  <p>The whole milestone reduces to a sentence: <strong>the commands don't change — the profile carries the auth scheme and version, and a handful of platform features differ because the on-prem build is older.</strong> Know that, and you can drive any M01–M08 workflow against on-prem and explain every difference you hit.</p>
+</section>
+
+<!-- ─── SECTION 05 — QUIZ ─── -->
+<section class="reveal">
+  <div class="quiz">
+    <p class="qh">Lesson check</p>
+    <p class="qhs">4 questions · click to reveal</p>
+
+    <div class="q" data-correct="2">
+      <p class="stem">1. A bulk write fails on on-prem with "message not found", but the identical command succeeds on cloud. Which failure class is this, and what's the fix?</p>
+      <button class="opt"><span class="mk">A</span> Auth — the on-prem user lacks a role; assign one</button>
+      <button class="opt"><span class="mk">B</span> A tool defect — file it upstream immediately</button>
+      <button class="opt"><span class="mk">C</span> Feature — a cloud-only message; use the on-prem equivalent (<code>$batch</code>)</button>
+      <button class="opt"><span class="mk">D</span> Version — re-negotiate the profile to v9.1</button>
+      <div class="fb ok">Correct. "Works on cloud, 'message not found' on on-prem" is the feature-gap signature: a newer Dataverse message (like CreateMultiple) that the older on-prem build doesn't have. The fix is the on-prem equivalent — $batch — not a role change, a re-negotiation, or a bug report.</div>
+      <div class="fb no">This is a feature gap: a cloud-only message absent from the older on-prem build (the "works on cloud, not on-prem" tell). Use the on-prem mechanism ($batch). It's not auth, not the version ceiling per se, and not a CLI defect.</div>
+    </div>
+
+    <div class="q" data-correct="0">
+      <p class="stem">2. What should you run <em>first</em> when any on-prem command fails unexpectedly?</p>
+      <button class="opt"><span class="mk">A</span> <code>connection doctor</code> — it classifies network/TLS/version/auth in one call</button>
+      <button class="opt"><span class="mk">B</span> Retry the command three times with backoff</button>
+      <button class="opt"><span class="mk">C</span> Re-create the profile from scratch</button>
+      <button class="opt"><span class="mk">D</span> File an upstream issue with the error text</button>
+      <div class="fb ok">Correct. <code>connection doctor</code> walks the whole path and tells you which layer broke — so you fix the right one. Blind retries, profile rebuilds, and bug reports all come <em>after</em> you've localized the failure, not before.</div>
+      <div class="fb no">Run <code>connection doctor</code> first — it localizes the failure to a layer (network/TLS/version/auth) so you don't fix the wrong thing. Retrying, rebuilding, or filing a bug are premature until you know which layer broke.</div>
+    </div>
+
+    <div class="q" data-correct="3">
+      <p class="stem">3. Which of these is the strongest signal that you've hit a genuine <code>crm</code> tool defect (not a user/environment error)?</p>
+      <button class="opt"><span class="mk">A</span> A <code>403 forbidden</code> on a restricted operation</button>
+      <button class="opt"><span class="mk">B</span> A <code>501</code> saying the API version isn't available</button>
+      <button class="opt"><span class="mk">C</span> A <code>429</code> with a <code>Retry-After</code> header on cloud</button>
+      <button class="opt"><span class="mk">D</span> The CLI builds a malformed on-prem request (wrong URL/version in <code>--dry-run</code>) or returns a non-envelope traceback</button>
+      <div class="fb ok">Correct. A wrong request the CLI itself composed — visible in <code>--dry-run</code> — or a crash that breaks the {ok,meta} envelope contract points at the tool. The other three are well-formed server responses to real environment conditions (privilege, version ceiling, throttling) — expected behavior, not bugs.</div>
+      <div class="fb no">The defect signal is the CLI's own behavior being wrong: a malformed request it built (seen in <code>--dry-run</code>) or a traceback that violates the envelope contract. 403/501/429 are correct server responses to real conditions — not bugs.</div>
+    </div>
+
+    <div class="q" data-correct="1">
+      <p class="stem">4. A teammate says "on-prem needs a different set of <code>crm</code> commands than cloud." Based on M09, what's the accurate correction?</p>
+      <button class="opt"><span class="mk">A</span> True — on-prem commands are prefixed and behave differently</button>
+      <button class="opt"><span class="mk">B</span> The commands and result envelope are identical; only auth, version, and a few platform features differ — all carried by the profile</button>
+      <button class="opt"><span class="mk">C</span> True — on-prem uses SOAP, so the verbs are entirely different</button>
+      <button class="opt"><span class="mk">D</span> Mostly true — queries differ, though writes are the same</button>
+      <div class="fb ok">Correct. The entire milestone proved the commands, flags, and envelope are the same on both targets. What differs is the auth scheme (NTLM vs OAuth), the API version (v9.1 vs v9.2), and a few cloud-only platform features — and the profile carries the auth and version for you.</div>
+      <div class="fb no">There's no separate on-prem command set and no SOAP. The verbs, flags, queries, writes, and envelope are identical; only auth (NTLM/OAuth), version (v9.1/v9.2), and a few cloud-only features differ — and the profile supplies auth + version.</div>
+    </div>
+
+    <p class="score" id="score"></p>
+  </div>
+</section>
+
+<!-- ─── REFS ─── -->
+<section class="reveal">
+  <h3>Primary source</h3>
+  <p>The crm agent skill's <code>reference/troubleshooting.md</code> is the canonical error taxonomy — the closed <code>meta.category</code> enum (<code>not_found</code>, <code>auth_failed</code>, <code>forbidden</code>, <code>validation</code>, <code>throttled</code>, <code>server_error</code>, <code>transport_error</code>) and which classes are retryable. Map every failure to one of those before acting.</p>
+  <ol class="refs">
+    <li id="r1">crm agent skill — <code>reference/troubleshooting.md</code> (error taxonomy, retry semantics, on-prem vs cloud) and <code>reference/feedback.md</code> (how to file an issue). <a href="https://github.com/Gharib89/crm" target="_blank">github.com/Gharib89/crm</a></li>
+    <li id="r2"><a href="https://learn.microsoft.com/dynamics365/customerengagement/on-premises/developer/authenticate-users?view=op-9-1" target="_blank">Authenticate users in D365 CE (on-premises)</a> — the on-prem auth realms behind a <code>401</code>/<code>403</code>.</li>
+  </ol>
+</section>
+
+<!-- ─── ASK ─── -->
+<div class="ask reveal">
+  <p><b>M09 complete.</b> Ask me to:</p>
+  <ul class="tight">
+    <li>"Walk a real on-prem failure through the triage with me, start to finish."</li>
+    <li>"Draft a high-quality upstream issue for a defect I think I found (scrubbed)."</li>
+    <li>"Which M04–M08 workflows (schema, solutions, plug-ins) have on-prem-specific gotchas?"</li>
+    <li>"I'm ready for the M10 capstone — take a real requirement end-to-end across both orgs."</li>
+  </ul>
+</div>
+
+<!-- ─── NEXT ─── -->
+<div class="next reveal">
+  <span class="pill">milestone complete</span>
+  <h2>M09 — On-prem Differences ✓</h2>
+  <p>You can now connect to on-prem (NTLM, v9.1), run any M01–M08 workflow there, read every divergence with <code>connection doctor</code>, and sort a failure into network / version / feature / auth / privilege / tool-defect on sight. Next milestone, <strong>M10 — the capstone</strong>: take a real customization requirement end-to-end through Claude Code + the CLI, and feed back what you learned. <span class="live-only">Just say <strong>'next lesson'</strong>.</span></p>
+</div>
+
+<footer>
+  <p>Milestone 09 — On-prem Differences · <a href="https://gharib89.github.io/learn-crm-cli-and-api/">course home</a></p>
+  <p class="ft">M09 · L05 · lessons/0052-on-prem-decision-matrix.html · capstone; 5 failure classes (network/version/feature/auth/privilege) + tool-defect-vs-user-error; triage order (doctor first, read meta.category + error string, retryable trap); high-quality upstream issue (version, scrubbed command+envelope, doctor); M09 divergence recap; reads only; live env agent-on-prem, 2026-06-20, crm v1.0.0</p>
+</footer>
+
+</div><!-- /wrap -->
+
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 9, "name": "On-prem Differences"},
+  "lesson": 5,
+  "title": "Auth, version, or a bug? — the on-prem decision matrix",
+  "slug": "on-prem-decision-matrix",
+  "topics": ["on-prem","capstone","troubleshooting","error-taxonomy","tool-defect","decision-matrix","meta-category","issue-filing","mission"],
+  "summary": "Capstone: triage on-prem failures into 5 classes. Network (doctor dns_tcp fail / transport_error / 'No route to host' = VPN down). Version (501 'API Version not available' = re-negotiate to v9.1). Feature (works on cloud, 'message not found' on-prem = cloud-only message like CreateMultiple; use $batch). Auth (401 auth_failed = NTLM domain/user/pass). Privilege (403 forbidden = security role). 4 of 5 are environment, not request, problems. Triage order: run connection doctor FIRST, then read meta.category + error STRING (not just status; retryable trap: 501-for-version is retryable:true but permanent), then ask 'does it work on cloud with same inputs?', only then suspect a tool defect. Defect signals: CLI builds malformed on-prem request (visible in --dry-run) or returns non-envelope traceback / violates {ok,meta} contract. NOT defects: well-formed 403/501/429. File high-quality scrubbed issue to Gharib89/crm (version, command+full envelope, doctor, expected-vs-actual; scrub host/GUIDs to example env; agent offers, never files silently). M09 recap: commands+envelope identical; only auth/version/few features differ, profile carries auth+version.",
+  "order": 5,
+  "status": "published" }
+</script>
+</body>
+</html>

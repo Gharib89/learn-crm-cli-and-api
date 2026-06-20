@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M09 · L01 — Two targets, one CLI — the NTLM/OAuth split</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-sizing:border-box}0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-false{color:#ff8f7a}.c-num{color:#ffd479}.c-meth{color:#ffd479;font-weight:700}.c-ann{color:#7fb0c9}
+  .c-xtag{color:#8cc0ff}.c-xattr{color:#ffd479}.c-xval{color:#a7e6a0}
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+  table.ops{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--card);
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.ops th,table.ops td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.ops th{background:var(--guid-soft);color:var(--guid);font-family:"Roboto Mono",monospace;
+    font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  table.ops tr:last-child td{border-bottom:none}
+  table.ops code{font-size:12.5px}
+  table.ops .pk{color:var(--teal-deep);font-weight:700}
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-false,pre .c-num,pre .c-meth,pre .c-flag,pre .c-ann,pre .c-xtag,pre .c-xattr,pre .c-xval{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="top reveal">
+  <p class="eyebrow">Milestone 09 <span class="dot">·</span> On-prem Differences <span class="dot">·</span> Lesson 01</p>
+  <h1>Two targets,<br><em>one CLI</em></h1>
+  <p class="sub">On-premises and Dataverse online are the same Web API behind two different front doors. The profile is the switch — and it decides how you authenticate.</p>
+  <div class="livechip"><span class="led"></span> live on <b>agent-on-prem</b> &nbsp;·&nbsp; crm.contoso.local/Contoso &nbsp;·&nbsp; <span class="pill">reads</span></div>
+  <div class="rule"></div>
+  <div class="why">
+    <b>Why this matters:</b> The mission needs you to handle the on-prem (NTLM, v9.1) vs cloud (OAuth, v9.2) split correctly. Every command you learned in M01–M08 ran against the cloud org. They run against on-prem <em>unchanged</em> — but the connection underneath is wired differently. This milestone starts where the difference actually lives: not in the commands, but in the profile.
+  </div>
+</header>
+
+<p class="lead reveal">D365 CE ships in two deployment models. <em>On-premises</em>: you (or your IT dept) run the server on a Windows box inside a corporate network. <em>Dataverse online</em>: Microsoft runs it in the cloud. Same OData v4 Web API — but you knock on the door differently.</p>
+
+<!-- ─── SECTION 01 ─── -->
+<section class="reveal">
+  <h2><span class="n">01</span> Two deployment models, one Web API</h2>
+  <p>Both targets expose the <strong>same</strong> Dataverse Web API at <code>&lt;url&gt;/api/data/v9.x/</code>, speaking OData v4.<sup><a href="#r1">1</a></sup> That is why the <code>crm</code> CLI is "write once, run on both" — <code>entity create</code>, <code>query odata</code>, <code>metadata entities</code> all issue the identical HTTP request shape to either server.</p>
+
+  <p>What differs is everything <em>around</em> the request — how you prove who you are, the transport, and which API version the server will answer:</p>
+
+  <table class="ops">
+    <thead><tr><th>&nbsp;</th><th>On-premises</th><th>Dataverse online</th></tr></thead>
+    <tbody>
+      <tr><td class="pk">Who runs it</td><td>Your org, on a Windows Server</td><td>Microsoft, in the cloud</td></tr>
+      <tr><td class="pk">Identity store</td><td>Active Directory (Windows accounts)</td><td>Microsoft Entra ID</td></tr>
+      <tr><td class="pk">Auth scheme</td><td><code>ntlm</code> (Windows Integrated)<sup><a href="#r2">2</a></sup></td><td><code>oauth</code> (client-credentials)<sup><a href="#r3">3</a></sup></td></tr>
+      <tr><td class="pk">Credentials</td><td>domain + username + password</td><td>tenant-id + client-id + secret (app registration)</td></tr>
+      <tr><td class="pk">Transport</td><td>often plain <code>http://</code> (inside VPN)</td><td>always <code>https://</code></td></tr>
+      <tr><td class="pk">URL shape</td><td><code>http://host/OrgName</code></td><td><code>https://org*.crm.dynamics.com</code></td></tr>
+      <tr><td class="pk">API version</td><td><code>v9.1</code> max</td><td><code>v9.2</code></td></tr>
+      <tr><td class="pk">Reachability</td><td>VPN / corporate network only</td><td>public internet</td></tr>
+    </tbody>
+  </table>
+
+  <p>The CLI <strong>infers the scheme from the URL</strong>: a <code>*.dynamics.com</code> host → OAuth, anything else → NTLM.<sup><a href="#r2">2</a></sup> You don't pick "on-prem mode" — you point a profile at a host, and the rest follows.</p>
+
+  <div class="callout tip">
+    <span class="ic">KEY</span>
+    <div><strong>The commands never change.</strong> There is no <code>--on-prem</code> flag and no on-prem command set. The same verbs run against both targets; the <em>profile</em> carries the target-specific wiring. Everything in this milestone is about reading and reasoning about that wiring.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 02 ─── -->
+<section class="reveal">
+  <h2><span class="n">02</span> The profile <em>is</em> the switch</h2>
+  <p><code>connection status</code> makes **no network call** — it just prints the active profile's resolved config. Run it against each profile and the split is right there in the fields. Here are the two side by side (secrets and IDs masked):</p>
+
+  <pre class="term"><span class="tag">crm --json --profile agent-on-prem connection status</span><code><span class="c-punc">{</span> <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span> <span class="c-key">"data"</span><span class="c-punc">: {</span> <span class="c-key">"active_profile"</span><span class="c-punc">:</span> <span class="c-str">"agent-on-prem"</span><span class="c-punc">,</span>
+  <span class="c-key">"profile"</span><span class="c-punc">: {</span>
+    <span class="c-key">"url"</span><span class="c-punc">:</span>          <span class="c-str">"http://crm.contoso.local/Contoso"</span><span class="c-punc">,</span>   <span class="c-comment"># plain http</span>
+    <span class="c-key">"auth_scheme"</span><span class="c-punc">:</span>  <span class="c-str">"ntlm"</span><span class="c-punc">,</span>
+    <span class="c-key">"username"</span><span class="c-punc">:</span>     <span class="c-str">"contoso\\alice"</span><span class="c-punc">,</span>                     <span class="c-comment"># domain-qualified</span>
+    <span class="c-key">"tenant_id"</span><span class="c-punc">:</span>    <span class="c-false">null</span><span class="c-punc">,</span>
+    <span class="c-key">"client_id"</span><span class="c-punc">:</span>    <span class="c-false">null</span><span class="c-punc">,</span>
+    <span class="c-key">"api_version"</span><span class="c-punc">:</span>  <span class="c-str">"v9.1"</span>
+  <span class="c-punc">} } }</span></code></pre>
+
+  <pre class="term"><span class="tag">crm --json --profile agent-cloud connection status</span><code><span class="c-punc">{</span> <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span> <span class="c-key">"data"</span><span class="c-punc">: {</span> <span class="c-key">"active_profile"</span><span class="c-punc">:</span> <span class="c-str">"agent-cloud"</span><span class="c-punc">,</span>
+  <span class="c-key">"profile"</span><span class="c-punc">: {</span>
+    <span class="c-key">"url"</span><span class="c-punc">:</span>          <span class="c-str">"https://orgexample.crm.dynamics.com"</span><span class="c-punc">,</span> <span class="c-comment"># https</span>
+    <span class="c-key">"auth_scheme"</span><span class="c-punc">:</span>  <span class="c-str">"oauth"</span><span class="c-punc">,</span>
+    <span class="c-key">"username"</span><span class="c-punc">:</span>     <span class="c-str">""</span><span class="c-punc">,</span>                                  <span class="c-comment"># empty — no user/pass</span>
+    <span class="c-key">"tenant_id"</span><span class="c-punc">:</span>    <span class="c-guid">"727f34ab-0000-0000-0000-5ed673dd203b"</span><span class="c-punc">,</span>
+    <span class="c-key">"client_id"</span><span class="c-punc">:</span>    <span class="c-guid">"4e156fdd-0000-0000-0000-c6844dcaf9ed"</span><span class="c-punc">,</span>
+    <span class="c-key">"api_version"</span><span class="c-punc">:</span>  <span class="c-str">"v9.2"</span>
+  <span class="c-punc">} } }</span></code></pre>
+
+  <p>Five fields tell the whole story:</p>
+  <table class="ops">
+    <thead><tr><th>Field</th><th>On-prem</th><th>Cloud</th><th>What it means</th></tr></thead>
+    <tbody>
+      <tr><td><code>auth_scheme</code></td><td><code class="pk">ntlm</code></td><td><code>oauth</code></td><td>how the CLI proves identity</td></tr>
+      <tr><td><code>url</code></td><td><code>http://…</code></td><td><code>https://…</code></td><td>transport + which world</td></tr>
+      <tr><td><code>username</code></td><td><code>contoso\alice</code></td><td>empty</td><td>NTLM uses a Windows user; OAuth uses an app, not a person</td></tr>
+      <tr><td><code>tenant_id</code> / <code>client_id</code></td><td><code>null</code></td><td>populated</td><td>the Entra app registration — OAuth-only</td></tr>
+      <tr><td><code>api_version</code></td><td><code>v9.1</code></td><td><code>v9.2</code></td><td>the negotiated API ceiling (next lesson)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <span class="ic">NOTE</span>
+    <div><strong>NTLM authenticates a person; OAuth authenticates an app.</strong> On-prem, the CLI logs in as a domain user (<code>contoso\alice</code>) — exactly the account a human would use. Cloud uses an <em>application user</em>: a non-human Entra app registration granted a security role. That is why <code>username</code> is empty for the cloud profile — there is no person behind it.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 03 ─── -->
+<section class="reveal">
+  <h2><span class="n">03</span> Confirm the live target <em>before</em> you mutate</h2>
+  <p><code>connection status</code> is offline — it reports what the profile <em>claims</em>. To confirm a live server actually answers as that identity, you need a round-trip. Two verbs do it:</p>
+
+  <pre class="term"><span class="tag">shell · WhoAmI round-trip (on-prem)</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> <span class="c-flag">--profile</span> agent-on-prem connection whoami</code></pre>
+  <pre class="term"><span class="tag">envelope · live-verified 2026-06-20 · crm v1.0.0</span><code><span class="c-punc">{</span> <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span> <span class="c-key">"data"</span><span class="c-punc">: {</span>
+    <span class="c-key">"BusinessUnitId"</span><span class="c-punc">:</span> <span class="c-guid">"078a426a-0000-0000-0000-00155d467b90"</span><span class="c-punc">,</span>
+    <span class="c-key">"UserId"</span><span class="c-punc">:</span>         <span class="c-guid">"f890426a-0000-0000-0000-00155d467b90"</span><span class="c-punc">,</span>
+    <span class="c-key">"OrganizationId"</span><span class="c-punc">:</span> <span class="c-guid">"b948cd5f-0000-0000-0000-00155d467b90"</span>
+  <span class="c-punc">} }</span></code></pre>
+
+  <p>Notice the result shape is <strong>identical</strong> to the cloud WhoAmI you saw in M08 — three GUIDs, no scheme-specific fields. The auth difference is entirely below the envelope; once you're connected, on-prem and cloud look the same to your commands. That is the whole promise of "one CLI."</p>
+
+  <p>The fuller check is <code>connection test</code> (or the deeper <code>connection doctor</code>, covered in L03), which also reports <code>api_base</code> and <code>api_version</code> — so you can see <em>which host + which version</em> answered, not just who you are:</p>
+
+  <pre class="term"><span class="tag">shell · confirm host + version</span><code><span class="c-meth">crm</span> <span class="c-flag">--json</span> <span class="c-flag">--profile</span> agent-on-prem connection test
+<span class="c-comment"># → api_base: http://crm.contoso.local/Contoso/api/data/v9.1/</span>
+<span class="c-comment"># → api_version: v9.1</span></code></pre>
+
+  <div class="callout tip">
+    <span class="ic">HABIT</span>
+    <div><strong>Confirm the target before any write.</strong> When you switch between orgs, one stray <code>--profile</code> (or a forgotten <code>profile use</code>) can point a mutation at the wrong world. A one-line <code>connection whoami</code> / <code>connection test</code> first is the cheap insurance — the same discipline you used on cloud, now doubly important when two live orgs are in play.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 04 — QUIZ ─── -->
+<section class="reveal">
+  <div class="quiz">
+    <p class="qh">Lesson check</p>
+    <p class="qhs">3 questions · click to reveal</p>
+
+    <div class="q" data-correct="1">
+      <p class="stem">1. You run <code>connection status</code> for a profile and see <code>"auth_scheme": "oauth"</code> with a populated <code>tenant_id</code> and an empty <code>username</code>. Which target is this?</p>
+      <button class="opt"><span class="mk">A</span> On-premises, authenticating as the domain administrator account</button>
+      <button class="opt"><span class="mk">B</span> Dataverse online, authenticating as an Entra application user</button>
+      <button class="opt"><span class="mk">C</span> On-premises with an Internet-Facing Deployment using Windows auth</button>
+      <button class="opt"><span class="mk">D</span> Either — the auth scheme does not indicate the deployment model</button>
+      <div class="fb ok">Correct. OAuth client-credentials + a tenant/client id + no username is the cloud signature: the CLI authenticates as an app registration (an application user), not a person. On-prem uses NTLM with a domain-qualified username and null tenant/client ids.</div>
+      <div class="fb no">OAuth + populated tenant_id/client_id + empty username is the Dataverse online signature. The CLI authenticates as an application user (an Entra app registration), which is why there is no person's username. On-prem uses ntlm with a domain-qualified username.</div>
+    </div>
+
+    <div class="q" data-correct="2">
+      <p class="stem">2. How does the CLI decide whether to use NTLM or OAuth for a profile?</p>
+      <button class="opt"><span class="mk">A</span> From a required <code>--auth-scheme</code> flag on every command</button>
+      <button class="opt"><span class="mk">B</span> By trying OAuth first and falling back to NTLM on failure</button>
+      <button class="opt"><span class="mk">C</span> It infers it from the URL — <code>*.dynamics.com</code> → OAuth, else → NTLM</button>
+      <button class="opt"><span class="mk">D</span> From an environment variable set per machine</button>
+      <div class="fb ok">Correct. The scheme is inferred from the profile's URL: a <code>*.dynamics.com</code> host means OAuth, anything else means NTLM. You can override per-run with <code>--auth-scheme</code>, but you rarely need to — pointing a profile at a host wires the rest.</div>
+      <div class="fb no">The CLI infers the scheme from the URL — <code>*.dynamics.com</code> → OAuth, any other host → NTLM. There is no required per-command flag and no try-both fallback (a per-run <code>--auth-scheme</code> override exists but is rarely needed).</div>
+    </div>
+
+    <div class="q" data-correct="0">
+      <p class="stem">3. Why do the same <code>crm</code> commands (e.g. <code>entity create</code>, <code>query odata</code>) work unchanged against both targets?</p>
+      <button class="opt"><span class="mk">A</span> Both expose the same OData v4 Web API; only auth + version differ, and the profile handles those</button>
+      <button class="opt"><span class="mk">B</span> The CLI keeps a separate on-prem command set that mirrors the cloud one</button>
+      <button class="opt"><span class="mk">C</span> On-prem requests are translated to SOAP behind the scenes</button>
+      <button class="opt"><span class="mk">D</span> The commands only work on cloud; on-prem needs the legacy SDK</button>
+      <div class="fb ok">Correct. On-prem and online are the same Dataverse Web API (OData v4) at <code>/api/data/v9.x/</code>. The request shape is identical; the profile supplies the auth scheme and version. That shared surface is what makes the CLI portable across both.</div>
+      <div class="fb no">Both targets expose the identical OData v4 Web API; the request shape is the same. There is no separate on-prem command set and no SOAP translation — the profile supplies auth + version, and the command surface is shared.</div>
+    </div>
+
+    <p class="score" id="score"></p>
+  </div>
+</section>
+
+<!-- ─── REFS ─── -->
+<section class="reveal">
+  <h3>Primary source</h3>
+  <p>Read <a href="https://learn.microsoft.com/dynamics365/customerengagement/on-premises/developer/webapi/authenticate-web-api?view=op-9-1" target="_blank">Authenticate to the Dynamics 365 CE (on-premises) Web API</a> — it shows the exact network-credential (NTLM) path for on-prem, and points to OAuth for online. The contrast in one page is this whole lesson.</p>
+  <ol class="refs">
+    <li id="r1"><a href="https://learn.microsoft.com/dynamics365/customerengagement/on-premises/developer/use-microsoft-dynamics-365-web-api?view=op-9-1" target="_blank">Use the Dynamics 365 CE (on-premises) Web API — op-9-1</a> — same OData v4 surface as online.</li>
+    <li id="r2"><a href="https://learn.microsoft.com/dynamics365/customerengagement/on-premises/developer/webapi/authenticate-web-api?view=op-9-1" target="_blank">Authenticate to the on-premises Web API</a> — NetworkCredential (NTLM/Windows) for on-prem.</li>
+    <li id="r3"><a href="https://learn.microsoft.com/power-apps/developer/data-platform/authentication" target="_blank">Authenticate with Microsoft Dataverse web services</a> — OAuth is required for online and all non-.NET-Framework clients.</li>
+  </ol>
+</section>
+
+<!-- ─── ASK ─── -->
+<div class="ask reveal">
+  <p><b>I'm your teacher — ask me anything.</b> For example:</p>
+  <ul class="tight">
+    <li>"Walk me through <code>crm profile add</code> for an on-prem URL — what does it prompt for?"</li>
+    <li>"What is <code>kerberos</code> / <code>negotiate</code> vs <code>ntlm</code> in <code>--auth-scheme</code>, and when would I use them?"</li>
+    <li>"My on-prem org is behind IFD with OAuth — does the CLI support that?"</li>
+    <li>"Show me the cloud WhoAmI side-by-side so I can compare the two envelopes."</li>
+  </ul>
+</div>
+
+<!-- ─── NEXT ─── -->
+<div class="next reveal">
+  <span class="pill">next up</span>
+  <h2>The v9.1 ceiling</h2>
+  <p>You've seen the profile carry <code>"api_version": "v9.1"</code> for on-prem and <code>"v9.2"</code> for cloud. Next we make that line bite: why on-prem caps at v9.1, what happens when you ask for v9.2 (a live HTTP 501), how the CLI auto-negotiates the version at profile-add time, and which platform features — like <code>CreateMultiple</code> — simply aren't there on an older on-prem build.</p>
+</div>
+
+<footer>
+  <p>Milestone 09 — On-prem Differences · <a href="https://gharib89.github.io/learn-crm-cli-and-api/">course home</a></p>
+  <p class="ft">M09 · L01 · lessons/0048-two-targets-one-cli.html · the NTLM/OAuth split; connection status fields (auth_scheme, url, username, tenant/client_id, api_version), whoami parity, confirm-before-mutate; reads only; live-verified on agent-on-prem (server 9.1.44.15) vs agent-cloud, 2026-06-20, crm v1.0.0</p>
+</footer>
+
+</div><!-- /wrap -->
+
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 9, "name": "On-prem Differences"},
+  "lesson": 1,
+  "title": "Two targets, one CLI — the NTLM/OAuth split",
+  "slug": "two-targets-one-cli",
+  "topics": ["on-prem","cloud","ntlm","oauth","auth-scheme","connection-status","deployment-model","application-user","whoami","profile"],
+  "summary": "On-prem and Dataverse online expose the SAME OData v4 Web API at /api/data/v9.x/; only auth + version + transport differ, and the profile carries them. CLI infers scheme from URL (*.dynamics.com -> oauth, else -> ntlm). connection status (no network) shows the split: on-prem auth_scheme=ntlm, url=http://, username=domain\\user, tenant/client_id=null, api_version=v9.1; cloud auth_scheme=oauth, url=https://, username empty, tenant/client_id populated (Entra app registration / application user), api_version=v9.2. NTLM authenticates a person; OAuth authenticates an app. connection whoami returns identical 3-GUID shape on both. Confirm target before mutating. No --on-prem flag, no separate command set.",
+  "order": 1,
+  "status": "published" }
+</script>
+</body>
+</html>
