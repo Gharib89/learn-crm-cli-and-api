@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M12 · L03 — Wire the relationships</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-sizing:border-box}0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-false{color:#ff8f7a}.c-num{color:#ffd479}.c-meth{color:#ffd479;font-weight:700}.c-ann{color:#7fb0c9}
+  .c-xtag{color:#8cc0ff}.c-xattr{color:#ffd479}.c-xval{color:#a7e6a0}
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+  table.ops{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--card);
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.ops th,table.ops td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.ops th{background:var(--guid-soft);color:var(--guid);font-family:"Roboto Mono",monospace;
+    font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  table.ops tr:last-child td{border-bottom:none}
+  table.ops code{font-size:12.5px}
+  table.ops .pk{color:var(--teal-deep);font-weight:700}
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-false,pre .c-num,pre .c-meth,pre .c-flag,pre .c-ann,pre .c-xtag,pre .c-xattr,pre .c-xval{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/runbook.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+<header class="top reveal">
+  <p class="eyebrow">Milestone 12 <span class="dot">·</span> Capstone <span class="dot">·</span> Lesson 03</p>
+  <h1>Wire the<br><em>relationships</em></h1>
+  <p class="sub">One write turns two standalone tables into a parent and a child: a 1:N from Account to Deal Review, with the lookup that points each review back at its account. Then prove it by creating a review that's actually attached.</p>
+  <div class="livechip"><span class="led"></span> live on <b>agent-cloud</b> &nbsp;·&nbsp; <span class="pill">writes</span> <span class="pill t">your turn</span></div>
+  <div class="rule"></div>
+  <div class="why">
+    <b>Why this matters:</b> The brief says reviews "hang off the Account." That's a relationship — and it's why this step had to wait: a 1:N command needs <em>both</em> tables to already exist. Get the direction right (Account is the <em>one</em>, Deal Review is the <em>many</em>) and the lookup lands on the right table; get it backwards and you'd be putting accounts under reviews.
+  </div>
+</header>
+
+<p class="lead reveal">A relationship in Dataverse <em>is</em> a column. Creating a 1:N from Account to Deal Review adds a <em>lookup</em> column to Deal Review — so "the relationship" and "the lookup" are the same write, not two.</p>
+
+<!-- ─── SECTION 01 ─── -->
+<section class="reveal">
+  <h2><span class="n">01</span> The runbook</h2>
+  <p>Three steps: create the 1:N (which creates the lookup), verify it's on the child, then create a real Deal Review bound to an account to prove the wiring carries data.</p>
+
+  <div class="runbook reveal">
+    <p class="rb-goal"><span class="rb-flag">GOAL</span> Account <code>1:N</code> Deal&nbsp;Review, with a working <code>itworx_accountid</code> lookup.</p>
+    <p class="rb-sub">target: agent-cloud · both tables must already exist (L02) · into DealDesk</p>
+    <ol class="rb-steps">
+
+      <li class="rb-step">
+        <button class="rb-check" aria-label="mark step done"></button>
+        <div class="rb-body">
+          <p class="rb-do"><b>1. Create the 1:N relationship.</b> <code>--referenced-entity</code> is the <em>one</em> side (account); <code>--referencing-entity</code> is the <em>many</em> side (deal review) that receives the lookup.</p>
+          <pre class="term"><span class="tag">step 1 · POST /RelationshipDefinitions</span><code>crm metadata create-one-to-many <span class="c-comment">\</span>
+  --schema-name itworx_account_dealreview <span class="c-comment">\</span>
+  --referenced-entity account --referencing-entity itworx_dealreview <span class="c-comment">\</span>
+  --lookup-schema itworx_accountid --lookup-display <span class="c-str">"Account"</span> <span class="c-comment">\</span>
+  --solution DealDesk --publish</code></pre>
+          <p class="rb-verify"><b>✓ verify:</b> <code>crm metadata relationships itworx_dealreview</code> lists <code>itworx_account_dealreview</code> as a many-to-one on the child.</p>
+        </div>
+      </li>
+
+      <li class="rb-step">
+        <button class="rb-check" aria-label="mark step done"></button>
+        <div class="rb-body">
+          <p class="rb-do"><b>2. Confirm the lookup column.</b> The relationship created a lookup attribute on Deal Review — it should be in the entity's attribute list.</p>
+          <pre class="term"><span class="tag">step 2 · read-back</span><code>crm metadata entity itworx_dealreview <span class="c-comment"># find itworx_accountid (Lookup)</span></code></pre>
+          <p class="rb-verify"><b>✓ verify:</b> <code>itworx_accountid</code> appears with type <code>Lookup</code>, targeting <code>account</code>.</p>
+        </div>
+      </li>
+
+      <li class="rb-step">
+        <button class="rb-check" aria-label="mark step done"></button>
+        <div class="rb-body">
+          <p class="rb-do"><b>3. Create a Deal Review bound to an account.</b> The <code>@odata.bind</code> on the lookup's navigation property is how you attach a child to its parent at create time (M05 L04). Use any account GUID from your org.</p>
+          <pre class="term"><span class="tag">step 3 · POST /itworx_dealreviews</span><code>crm entity create itworx_dealreviews --data <span class="c-str">'{
+  "itworx_name": "Acme — Q3 deal",
+  "itworx_status": 1,
+  "itworx_AccountId@odata.bind": "/accounts(&lt;account-guid&gt;)"
+}'</span></code></pre>
+          <p class="rb-verify"><b>✓ verify:</b> <code>crm entity get itworx_dealreviews &lt;new-guid&gt; --expand itworx_AccountId</code> returns the linked account — the wiring carries data.</p>
+        </div>
+      </li>
+
+    </ol>
+    <p class="rb-foot">▸ 0/3 steps checked</p>
+  </div>
+</section>
+
+<!-- ─── SECTION 02 ─── -->
+<section class="reveal">
+  <h2><span class="n">02</span> Direction is the whole game</h2>
+  <p>A 1:N is asymmetric. The dry-run body names the two roles explicitly — read them before committing:</p>
+
+  <pre class="term"><span class="tag">live · crm --dry-run metadata create-one-to-many …</span><code><span class="c-key">"@odata.type"</span><span class="c-punc">:</span> <span class="c-str">"…OneToManyRelationshipMetadata"</span><span class="c-punc">,</span>
+<span class="c-key">"ReferencedEntity"</span><span class="c-punc">:</span> <span class="c-str">"account"</span><span class="c-punc">,</span>      <span class="c-comment"># the ONE (parent)</span>
+<span class="c-key">"ReferencingEntity"</span><span class="c-punc">:</span> <span class="c-str">"itworx_dealreview"</span><span class="c-punc">,</span>  <span class="c-comment"># the MANY (child, gets the lookup)</span>
+<span class="c-key">"Lookup"</span><span class="c-punc">:</span> <span class="c-punc">{</span> <span class="c-key">"SchemaName"</span><span class="c-punc">:</span> <span class="c-str">"itworx_accountid"</span> <span class="c-punc">}</span></code></pre>
+
+  <div class="callout warn">
+    <span class="ic">REFERENCED = ONE</span>
+    <div>Mnemonic: the <strong>referenced</strong> entity is the one being <em>pointed at</em> — the parent, the "one". The <strong>referencing</strong> entity does the pointing — the child, the "many", and it's where the lookup column is born. Swap them and you've modeled "an account belongs to a review", which is nonsense for this brief.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 03 ─── -->
+<section class="reveal">
+  <h2><span class="n">03</span> The cascade default you inherited</h2>
+  <p>You didn't pass any <code>--cascade-*</code> flags, so the relationship took referential defaults. The one worth knowing for a Deal Desk:</p>
+
+  <table class="ops">
+    <thead><tr><th>Behavior</th><th>Default</th><th>Means</th></tr></thead>
+    <tbody>
+      <tr><td><code>cascade-delete</code></td><td class="pk">RemoveLink</td><td>Delete an account → its Deal Reviews <em>survive</em>, just unlinked. (Not <code>Cascade</code>, which would delete the children too.)</td></tr>
+      <tr><td><code>cascade-assign</code> / <code>share</code></td><td>NoCascade</td><td>Reassigning or sharing the account does <em>not</em> ripple to its reviews.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout tip">
+    <span class="ic">DELIBERATE</span>
+    <div>For a review/approval record, <code>RemoveLink</code> is usually right — you rarely want deleting a customer to silently destroy its audit trail of reviews. If the brief wanted parental cascade, you'd pass <code>--cascade-delete Cascade</code>. Either way, <em>choose</em> it; don't discover it. (Full cascade matrix: M05 L03.)</div>
+  </div>
+</section>
+
+<!-- ─── QUIZ ─── -->
+<section class="reveal">
+  <div class="quiz">
+    <p class="qh">Lesson check</p>
+    <p class="qhs">4 questions · click to reveal</p>
+
+    <div class="q" data-correct="2">
+      <p class="stem">1. In a 1:N Account → Deal Review, which table gets the <b>lookup column</b>?</p>
+      <button class="opt"><span class="mk">A</span> Account, the referenced entity</button>
+      <button class="opt"><span class="mk">B</span> Both tables get one</button>
+      <button class="opt"><span class="mk">C</span> Deal Review, the referencing entity</button>
+      <button class="opt"><span class="mk">D</span> Neither — it's a join table</button>
+      <div class="fb ok">Correct. The <em>referencing</em> (many) entity receives the lookup — Deal Review points back at its account. A join/intersect table is the N:N story, not 1:N.</div>
+      <div class="fb no">The referencing (many) side — Deal Review — gets the lookup. Account is referenced (the one); only the child carries the lookup, and 1:N has no join table.</div>
+    </div>
+
+    <div class="q" data-correct="0">
+      <p class="stem">2. Why couldn't this relationship be created back in L02?</p>
+      <button class="opt"><span class="mk">A</span> A 1:N needs both tables to already exist</button>
+      <button class="opt"><span class="mk">B</span> Relationships must be in a separate solution</button>
+      <button class="opt"><span class="mk">C</span> The option set wasn't published yet</button>
+      <button class="opt"><span class="mk">D</span> Lookups can't be created via the CLI</button>
+      <div class="fb ok">Correct. <code>create-one-to-many</code> references both <code>account</code> and <code>itworx_dealreview</code> — the child table had to exist first. That dependency is why relationships sit after schema in the chain.</div>
+      <div class="fb no">It's the dependency: both referenced and referencing tables must exist before the 1:N can bind them. It's not about solutions, the option set, or any CLI limit.</div>
+    </div>
+
+    <div class="q" data-correct="3">
+      <p class="stem">3. How do you attach a new Deal Review to an account <b>at create time</b>?</p>
+      <button class="opt"><span class="mk">A</span> Pass the account name in a text field</button>
+      <button class="opt"><span class="mk">B</span> Create the review, then run an update</button>
+      <button class="opt"><span class="mk">C</span> Use a separate <code>associate</code> command only</button>
+      <button class="opt"><span class="mk">D</span> Set <code>itworx_AccountId@odata.bind</code> to <code>/accounts(&lt;guid&gt;)</code></button>
+      <div class="fb ok">Correct. The <code>@odata.bind</code> on the lookup's navigation property links child to parent in the same POST — no second call needed. That's the M05 L04 child-via-lookup pattern.</div>
+      <div class="fb no">Bind the lookup navigation property with <code>@odata.bind</code> in the create body. A plain name string won't link it, and you don't need a second update or associate call for a 1:N at create time.</div>
+    </div>
+
+    <div class="q" data-correct="1">
+      <p class="stem">4. You ran no <code>--cascade-*</code> flags. Delete an account — what happens to its reviews?</p>
+      <button class="opt"><span class="mk">A</span> They're deleted too (Cascade)</button>
+      <button class="opt"><span class="mk">B</span> They survive, unlinked (RemoveLink default)</button>
+      <button class="opt"><span class="mk">C</span> The delete is blocked (Restrict)</button>
+      <button class="opt"><span class="mk">D</span> They're reassigned to the owner</button>
+      <div class="fb ok">Correct. The referential default for <code>cascade-delete</code> is <code>RemoveLink</code> — children survive, just unlinked. To delete them with the parent you'd opt into <code>--cascade-delete Cascade</code> explicitly.</div>
+      <div class="fb no">The default is <code>RemoveLink</code>: reviews survive, unlinked. <code>Cascade</code> (delete children) and <code>Restrict</code> (block) are opt-in, not the default.</div>
+    </div>
+
+    <p class="score" id="score"></p>
+  </div>
+</section>
+
+<!-- ─── REFS ─── -->
+<section class="reveal">
+  <h3>Primary source</h3>
+  <p>The crm agent skill's <code>reference/relationships.md</code> covers <code>create-one-to-many</code>, the referenced/referencing roles, the <code>--cascade-*</code> matrix, and the <code>@odata.bind</code> child pattern. Ground the modeling in Microsoft's table-relationships docs.</p>
+  <ol class="refs">
+    <li id="r1">crm agent skill — <code>reference/relationships.md</code> (<code>create-one-to-many</code>, cascade defaults, lookup birth). <a href="https://github.com/Gharib89/crm" target="_blank">github.com/Gharib89/crm</a></li>
+    <li id="r2"><a href="https://learn.microsoft.com/power-apps/maker/data-platform/create-edit-1n-relationships" target="_blank">Create &amp; edit 1:N relationships</a> · <a href="https://learn.microsoft.com/power-apps/developer/data-platform/webapi/associate-disassociate-entities-using-web-api" target="_blank">associate via @odata.bind</a>.</li>
+    <li id="r3">Revisit <a href="0029-create-one-to-many.html">M05 — create a 1:N</a>, <a href="0030-cascade-behaviors.html">M05 — cascade behaviors</a>, and <a href="0031-child-row-via-lookup.html">M05 — child row via lookup</a>.</li>
+  </ol>
+</section>
+
+<!-- ─── ASK ─── -->
+<div class="ask reveal">
+  <p><b>Your teacher is one message away.</b> Paste me your relationship envelope, or ask me to:</p>
+  <ul class="tight">
+    <li>"Give me an account GUID from the org to bind a review to."</li>
+    <li>"Did I get referenced vs referencing the right way round?"</li>
+    <li>"Should this Deal Desk use Cascade or RemoveLink on delete?"</li>
+    <li>"My <code>@odata.bind</code> create failed — read the error with me."</li>
+  </ul>
+</div>
+
+<!-- ─── NEXT ─── -->
+<div class="next reveal">
+  <span class="pill">up next</span>
+  <h2>The logic layer — and the walls</h2>
+  <p>Schema and structure are done. Now the business logic: a <strong>plug-in step on Opportunity Update</strong> — assembly first, then the step that binds to it. This is also where the Deal Desk hits its <strong>GUI-only walls</strong> (rollup, BPF, flow, dashboard) — and the agent's job becomes detecting them and handing them back. <span class="live-only">Just say <strong>'next lesson'</strong>.</span></p>
+</div>
+
+<footer>
+  <p>Milestone 12 — Capstone: requirement end-to-end · <a href="https://gharib89.github.io/learn-crm-cli-and-api/">course home</a></p>
+  <p class="ft">M12 · L03 · lessons/0061-wire-the-relationships.html · relationship runbook, 3 steps: (1) metadata create-one-to-many --schema-name itworx_account_dealreview --referenced-entity account --referencing-entity itworx_dealreview --lookup-schema itworx_accountid --lookup-display Account --solution DealDesk --publish → POST /RelationshipDefinitions {@odata.type OneToManyRelationshipMetadata, ReferencedEntity account=ONE/parent, ReferencingEntity itworx_dealreview=MANY/child gets lookup, Lookup{SchemaName itworx_accountid}}; verify metadata relationships itworx_dealreview. (2) read-back metadata entity itworx_dealreview → itworx_accountid type Lookup targeting account. (3) entity create itworx_dealreviews --data '{itworx_name, itworx_status:1, itworx_AccountId@odata.bind:/accounts(GUID)}' → child bound to parent at create time; verify entity get --expand itworx_AccountId. KEY: a 1:N IS a column — creating the relationship creates the lookup on the child (one write, not two). DIRECTION: referenced=ONE/parent (pointed at), referencing=MANY/child (does pointing, born with lookup) — swap=nonsense. Couldn't run in L02 because 1:N needs BOTH tables to exist (dependency ordering). CASCADE defaults (no --cascade-* passed): cascade-delete=RemoveLink (delete account → reviews survive unlinked, NOT Cascade), assign/share/unshare/reparent/merge=NoCascade; choose deliberately (--cascade-delete Cascade to opt in). @odata.bind on lookup navigation property (itworx_AccountId) links child→parent in same POST (M05 L04). create-many-to-many exists for N:N (--intersect-entity). URLs scrubbed orgexample. 2026-06-20, crm v1.0.0 (verified live agent-cloud via --dry-run).</p>
+</footer>
+
+</div><!-- /wrap -->
+
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 12, "name": "Capstone: requirement end-to-end"},
+  "lesson": 3,
+  "title": "Wire the relationships",
+  "slug": "wire-the-relationships",
+  "topics": ["capstone","relationships","one-to-many","lookup","cascade","odata-bind","runbook","metadata"],
+  "summary": "Relationship runbook: turn the two standalone tables into parent/child with a 1:N from Account to Deal Review, then prove it carries data. THREE STEPS: (1) metadata create-one-to-many --schema-name itworx_account_dealreview --referenced-entity account --referencing-entity itworx_dealreview --lookup-schema itworx_accountid --lookup-display 'Account' --solution DealDesk --publish → POST /RelationshipDefinitions with @odata.type OneToManyRelationshipMetadata, ReferencedEntity=account, ReferencingEntity=itworx_dealreview, inline Lookup{SchemaName itworx_accountid}; verify metadata relationships itworx_dealreview. (2) read-back metadata entity itworx_dealreview — itworx_accountid shows as Lookup targeting account. (3) entity create itworx_dealreviews --data '{\"itworx_name\":\"Acme — Q3 deal\",\"itworx_status\":1,\"itworx_AccountId@odata.bind\":\"/accounts(<guid>)\"}' to attach a child to its parent at create time; verify entity get <guid> --expand itworx_AccountId returns the linked account. KEY IDEA: a 1:N relationship IS a column — creating the relationship creates the lookup on the child, so 'the relationship' and 'the lookup' are one write, not two. DIRECTION is the whole game: referenced entity = the ONE/parent (the thing pointed at); referencing entity = the MANY/child that does the pointing and is born with the lookup column. Mnemonic: referenced=one. Swap them and you model 'an account belongs to a review' — nonsense. WHY NOT IN L02: create-one-to-many references both account and itworx_dealreview, so both tables must already exist — that dependency is why relationships sit after schema in the chain. CASCADE DEFAULTS (no --cascade-* passed → referential): cascade-delete=RemoveLink (delete an account → its Deal Reviews survive, just unlinked — NOT Cascade which deletes children); assign/share/unshare/reparent/merge=NoCascade. Choose deliberately: --cascade-delete Cascade to opt into parental delete; for a review/audit record RemoveLink is usually right. @odata.bind on the lookup navigation property (itworx_AccountId, PascalCase schema name) links child→parent in the same POST (M05 L04 pattern). For N:N there's metadata create-many-to-many (--intersect-entity). Cascade matrix: M05 L03. URLs scrubbed to orgexample; verified live on agent-cloud via --dry-run. crm v1.0.0.",
+  "order": 3,
+  "status": "published" }
+</script>
+</body>
+</html>

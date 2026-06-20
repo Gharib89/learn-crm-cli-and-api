@@ -678,3 +678,40 @@ Entity-Relationship blockers (dependency_type 1); `contact --for delete` → blo
 
 **Status:** authoring in progress (0053 first, build+show before batching rest). 0052's auto-Continue
 will rewire from 0008 (M11 L01 fallback) to 0053 once M10 ships.
+
+## M12 lesson sequence — Capstone (authored 2026-06-20)
+
+Milestone: **Capstone — requirement end-to-end + feedback** (issue #12). Style: **your-turn guided
+runbook** (learner drives Claude Code against agent-cloud). 6 lessons, the Deal Desk requirement
+built in dependency order, each step preview→commit→verify. All verbs **live-verified against
+crm v1.0.0 on agent-cloud via `--dry-run`** before authoring.
+
+- **L01** — **The brief & definition of done** (`0059`). Deal Desk requirement, 3 acceptance criteria,
+  ordered chain, automatable-vs-GUI-only split, how the runbook milestone works.
+- **L02** — **Build the schema layer** (`0060`). publisher→solution→table→optionset→status column.
+  New **runbook component**: `assets/runbook.js` + `.runbook` in `assets/site.css` (tick-off checklist).
+- **L03** — **Wire the relationships** (`0061`). 1:N Account→Deal Review + lookup + child-via-`@odata.bind`.
+- **L04** — **The logic layer & the walls** (`0062`). plugin register-assembly→register-step on
+  Opportunity Update; the four GUI-only walls (rollup/BPF/flow/dashboard) detect+escalate.
+- **L05** — **Make it visible: the UI surface** (`0063`). app create + build-sitemap subarea + form
+  add-field + one publish; "invisible until the subarea" trap.
+- **L06** — **Ship it & close the loop** (`0064`, finale). export managed→validate --against-org→import→
+  verify in target; learning record; upstream issue if warranted; teardown; course complete.
+
+**Verb-drift caught (vs the M10-era NOTES draft), verified v1.0.0:** table = `metadata create-entity`
+(NOT `create-table`); global set = `metadata create-optionset`; bound picklist =
+`metadata add-attribute <entity> --kind picklist --optionset-name <global>`. Relationship =
+`metadata create-one-to-many --referenced-entity <one> --referencing-entity <many> --lookup-schema`.
+Sitemap subarea grammar = `--subarea 'areaId/groupId:entity=<logical>[:Title]'` (area `'id[:Title]'`,
+group `'areaId/groupId[:Title]'`). `solution create-publisher` needs `--prefix` + `--option-value-prefix`.
+`crm --version` now reports **1.0.0** (mission/old NOTES said v3.9.0 — installed binary is 1.0.0).
+
+**Dry-run = live lookup:** `solution create --dry-run` before the publisher exists → `PublisherNotFound`
+(`category: validation`). Good teaching beat (ordering guard), used in L02.
+
+**Privacy:** dry-run output leaked the real cloud org host — scrubbed to `orgexample.crm.dynamics.com`
+in all lessons; verified no `orgd080ee1e` in `_site/`.
+
+**Status:** ✅ M12 COMPLETE — 6 lessons authored, built (64 lessons total), Continue chain L01→…→L06
+wired, L06 correctly has no next-link (last lesson). M11 L06 (`0013`) auto-rewired its Continue → M12 L01.
+Pending: user decision on commit/push/deploy + closing issue #12.

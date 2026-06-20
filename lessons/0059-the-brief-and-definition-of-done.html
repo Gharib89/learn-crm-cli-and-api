@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M12 · L01 — The brief &amp; definition of done</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-sizing:border-box}0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-false{color:#ff8f7a}.c-num{color:#ffd479}.c-meth{color:#ffd479;font-weight:700}.c-ann{color:#7fb0c9}
+  .c-xtag{color:#8cc0ff}.c-xattr{color:#ffd479}.c-xval{color:#a7e6a0}
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+  table.ops{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--card);
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.ops th,table.ops td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.ops th{background:var(--guid-soft);color:var(--guid);font-family:"Roboto Mono",monospace;
+    font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  table.ops tr:last-child td{border-bottom:none}
+  table.ops code{font-size:12.5px}
+  table.ops .pk{color:var(--teal-deep);font-weight:700}
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-false,pre .c-num,pre .c-meth,pre .c-flag,pre .c-ann,pre .c-xtag,pre .c-xattr,pre .c-xval{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="wrap">
+<header class="top reveal">
+  <p class="eyebrow">Milestone 12 <span class="dot">·</span> Capstone <span class="dot">·</span> Lesson 01</p>
+  <h1>The brief,<br><em>and what "done" means</em></h1>
+  <p class="sub">Everything you've learned now meets one real requirement. This lesson is the contract: the business ask, the exact definition of done, the ordered build chain — and the line between what the agent can build and what it must hand back to a human.</p>
+  <div class="livechip"><span class="led"></span> capstone runs on <b>agent-cloud</b> &nbsp;·&nbsp; <span class="pill">read &amp; plan</span> <span class="pill t">your turn next</span></div>
+  <div class="rule"></div>
+  <div class="why">
+    <b>Why this matters:</b> The mission's whole point is this moment — take a real customization requirement and drive it end-to-end with Claude&nbsp;Code + the <code>crm</code> CLI, across schema → solution → UI → logic, then close the feedback loop. Before you touch a single verb, you need a brief precise enough to verify against and a build order that respects the platform's dependencies. Get the brief wrong and every command after it is wasted.
+  </div>
+</header>
+
+<p class="lead reveal">A capstone is not a new skill — it's the proof you can <em>sequence</em> the skills you already have. So we start where every real engagement starts: pin the requirement, define "done", and lay the chain in dependency order before building anything.</p>
+
+<!-- ─── SECTION 01 ─── -->
+<section class="reveal">
+  <h2><span class="n">01</span> The requirement: a Deal Desk</h2>
+  <p>Your stakeholder is a sales manager. The ask, in their words:</p>
+
+  <div class="callout tip">
+    <span class="ic">BRIEF</span>
+    <div>"When a sizable <strong>Opportunity</strong> is worked, I want a lightweight <strong>deal-review</strong> record that tracks an <strong>approval status</strong> — Pending, Approved, or Rejected. Reviews should hang off the <strong>Account</strong>. The whole thing has to ship as one package I can move from our dev org into test and then production."</div>
+  </div>
+
+  <p>Translated into the D365 platform pieces — the mental model you built across M03–M09 — that brief becomes:</p>
+  <ul class="tight">
+    <li>A custom table <strong>Deal&nbsp;Review</strong> (<code>itworx_dealreview</code>).</li>
+    <li>A <strong>global option set</strong> <em>Approval Status</em> (Pending / Approved / Rejected) and a status column on Deal Review that uses it.</li>
+    <li>A <strong>1:N relationship</strong> Account → Deal Review, so each review points at its account via a lookup.</li>
+    <li>A <strong>plug-in step</strong> on Opportunity <em>Update</em> — the business logic that reacts to the deal changing.</li>
+    <li>A <strong>model-driven app</strong> (with a sitemap subarea) and a <strong>form field</strong> so a human can actually see and set the status.</li>
+    <li>All of it inside a <strong>solution</strong> that exports <em>managed</em> and promotes dev → test → prod.</li>
+  </ul>
+</section>
+
+<!-- ─── SECTION 02 ─── -->
+<section class="reveal">
+  <h2><span class="n">02</span> Definition of done</h2>
+  <p>This is the milestone's tracker issue, made concrete. You are <em>done</em> — and not before — when all three hold<sup><a href="#r1">1</a></sup>:</p>
+
+  <table class="ops">
+    <thead><tr><th>#</th><th>Acceptance criterion</th><th>How you'll prove it</th></tr></thead>
+    <tbody>
+      <tr><td class="pk">1</td><td>The requirement is delivered <strong>inside one solution</strong>, schema → UI → logic, and the components actually landed.</td><td><code>solution list</code> + <code>metadata</code> reads + a live record round-trip</td></tr>
+      <tr><td class="pk">2</td><td>A <strong>learning record</strong> is written capturing what was non-obvious — an ordering trap, a GUI-only wall, a surprise.</td><td>a dated note in this workspace</td></tr>
+      <tr><td class="pk">3</td><td>If a genuine tool defect or gap surfaced, an <strong>upstream issue</strong> is filed to <code>Gharib89/crm</code> (and only if warranted).</td><td>a <code>gh issue</code> URL, or a reasoned "nothing to file"</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <span class="ic">VERIFY ≠ TRUST</span>
+    <div>"Delivered" means <strong>verified</strong>, not "the command exited 0". Every build step in this milestone ends with a read-back that proves the component exists — the same <code>--json</code> envelope discipline from M01, now applied to a whole feature.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 03 ─── -->
+<section class="reveal">
+  <h2><span class="n">03</span> The chain — in dependency order</h2>
+  <p>The platform forces an order: you can't put a lookup on a table that doesn't exist, can't use an option set before you've created it, can't register a step before its assembly is uploaded. The capstone's spine is this ordered chain — and it maps one lesson per layer:</p>
+
+  <ol class="steps">
+    <li><strong>Publisher + solution</strong> — the container everything else is created <em>into</em>. <span class="pill t">L02</span></li>
+    <li><strong>Deal Review table</strong> → <strong>Approval Status</strong> global option set → <strong>status column</strong> <em>(column needs the option set first)</em>. <span class="pill t">L02</span></li>
+    <li><strong>1:N Account → Deal Review</strong> + the lookup column <em>(needs both tables to exist)</em>. <span class="pill t">L03</span></li>
+    <li><strong>Plug-in assembly</strong> → <strong>register step</strong> on Opportunity Update <em>(step needs the assembly first)</em>. <span class="pill t">L04</span></li>
+    <li><strong>Model-driven app</strong> + sitemap subarea → <strong>form field</strong> → <strong>publish once</strong> <em>(table is invisible until a subarea points at it)</em>. <span class="pill t">L05</span></li>
+    <li><strong>Export managed</strong> → promote → learning record → upstream issue. <span class="pill t">L06</span></li>
+  </ol>
+
+  <div class="callout tip">
+    <span class="ic">LIFECYCLE</span>
+    <div>Notice the macro-order: <strong>schema → solution-bound → logic → UI → ship</strong>. This is the customization lifecycle from M10 L03, now executed for real instead of planned on paper.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 04 ─── -->
+<section class="reveal">
+  <h2><span class="n">04</span> What the agent <em>can't</em> build</h2>
+  <p>Part of being done is knowing what to <strong>not</strong> attempt. A stakeholder will casually ask for things the <code>crm</code> CLI / Web API simply cannot create — and the agent's job is to <em>detect and escalate</em>, not fake it. Four traps live inside a Deal Desk:</p>
+
+  <table class="ops">
+    <thead><tr><th>Tempting ask</th><th>Why it's GUI-only in crm v1.0.0</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Rollup column</strong> ("total deal value on the account")</td><td><code>metadata add-attribute --kind</code> has no <em>rollup</em>/<em>calculated</em> kind — and rollups recalc via async system jobs, capped 10/entity.<sup><a href="#r2">2</a></sup></td></tr>
+      <tr><td><strong>Approval business process flow</strong></td><td>A BPF is a workflow <em>category 4</em>; the <code>workflow</code> group only lists/activates/imports — no create verb.</td></tr>
+      <tr><td><strong>Power Automate flow</strong></td><td>A modern flow is <em>category 5</em> — same story, no create path through the CLI.</td></tr>
+      <tr><td><strong>Dashboard / chart</strong></td><td>No CLI verb exists for these components at all.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <span class="ic">ESCALATE</span>
+    <div>When the agent hits one of these, the correct move is a one-line flag: <em>"This part is GUI-only — here's the manual step, and here's why the CLI can't do it."</em> Pretending otherwise is worse than stopping. You separate the automatable chain from the manual remainder <strong>first</strong>, before you build.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 05 ─── -->
+<section class="reveal">
+  <h2><span class="n">05</span> How this milestone works</h2>
+  <p>M12 is a <strong>runbook</strong>, not a reading. From L02 on, each lesson hands <em>you</em> the verbs and you drive Claude&nbsp;Code against <code>agent-cloud</code>. The loop, every step:</p>
+
+  <ol class="steps">
+    <li><strong>Preview</strong> the write with <code>--dry-run</code> (read the <code>method</code>/<code>url</code>/<code>body</code>) before it lands.</li>
+    <li><strong>Commit</strong> it, then immediately <strong>verify</strong> with a read-back — the component must show up.</li>
+    <li><strong>Paste me the envelope.</strong> I check it against the expected shape and we move to the next link in the chain.</li>
+  </ol>
+
+  <div class="callout tip">
+    <span class="ic">SAFE ORG</span>
+    <div><code>agent-cloud</code> is a mutate-safe dev org — destructive practice is fine, that's what it's for. Confirm the target with <code>whoami</code> before the first write (M10 L05's rule), and we'll tear the whole Deal Desk down cleanly at the end of L06.</div>
+  </div>
+</section>
+
+<!-- ─── QUIZ ─── -->
+<section class="reveal">
+  <div class="quiz">
+    <p class="qh">Lesson check</p>
+    <p class="qhs">4 questions · click to reveal</p>
+
+    <div class="q" data-correct="2">
+      <p class="stem">1. Why must the <b>Approval Status option set</b> be created before the status column?</p>
+      <button class="opt"><span class="mk">A</span> Option sets must always precede every table</button>
+      <button class="opt"><span class="mk">B</span> Columns publish faster when the set exists</button>
+      <button class="opt"><span class="mk">C</span> A picklist column references the option set — it can't bind to one that doesn't exist yet</button>
+      <button class="opt"><span class="mk">D</span> The CLI sorts components alphabetically</button>
+      <div class="fb ok">Correct. The status column is a picklist that <em>binds to</em> the global option set, so the set has to exist first. That dependency — not a CLI quirk — is what fixes the order.</div>
+      <div class="fb no">It's a real data dependency: the picklist column references the option set, so the set must exist first. It's not a blanket rule about tables, publish speed, or alphabetical ordering.</div>
+    </div>
+
+    <div class="q" data-correct="1">
+      <p class="stem">2. A stakeholder asks for a <b>rollup column</b> summing deal value on the account. The agent should…</p>
+      <button class="opt"><span class="mk">A</span> Create it with <code>metadata add-attribute --kind rollup</code></button>
+      <button class="opt"><span class="mk">B</span> Flag it as GUI-only, explain why, and hand back the manual step</button>
+      <button class="opt"><span class="mk">C</span> Approximate it with a plug-in that writes a number</button>
+      <button class="opt"><span class="mk">D</span> Skip it silently and finish the rest</button>
+      <div class="fb ok">Correct. There is no <em>rollup</em> kind in <code>add-attribute</code>, so the CLI can't create it. Detect and escalate — name the manual step and the reason. Silently skipping or faking it with a plug-in is worse than stopping.</div>
+      <div class="fb no">There's no <code>--kind rollup</code>, so it can't be created via the CLI. The right move is to flag it as GUI-only and explain — not fake it with a plug-in, and never skip silently.</div>
+    </div>
+
+    <div class="q" data-correct="3">
+      <p class="stem">3. Which of these means the capstone is <b>done</b>?</p>
+      <button class="opt"><span class="mk">A</span> Every build command exited with status 0</button>
+      <button class="opt"><span class="mk">B</span> The table is visible in the web UI</button>
+      <button class="opt"><span class="mk">C</span> A plug-in was registered on the Opportunity</button>
+      <button class="opt"><span class="mk">D</span> Delivered in a solution + a learning record + an upstream issue if warranted</button>
+      <div class="fb ok">Correct. Those three criteria are the definition of done. A clean exit code or a single visible component is necessary but nowhere near sufficient — done is the whole feature, verified, plus the feedback loop closed.</div>
+      <div class="fb no">Done is all three acceptance criteria together: delivered-in-a-solution-and-verified, a learning record, and an upstream issue if one is warranted. A single exit code or component doesn't get you there.</div>
+    </div>
+
+    <div class="q" data-correct="0">
+      <p class="stem">4. In the M12 runbook loop, what comes <b>between</b> committing a write and moving on?</p>
+      <button class="opt"><span class="mk">A</span> A read-back that verifies the component actually landed</button>
+      <button class="opt"><span class="mk">B</span> Publishing the entire solution</button>
+      <button class="opt"><span class="mk">C</span> Switching to the on-prem profile</button>
+      <button class="opt"><span class="mk">D</span> Exporting a managed zip</button>
+      <div class="fb ok">Correct. Preview → commit → <em>verify with a read-back</em> → paste the envelope. Verification is the gate on every step; you never trust a clean exit alone.</div>
+      <div class="fb no">You verify with a read-back before moving on. Publishing, switching orgs, and exporting are later steps in the chain — not the per-step gate.</div>
+    </div>
+
+    <p class="score" id="score"></p>
+  </div>
+</section>
+
+<!-- ─── REFS ─── -->
+<section class="reveal">
+  <h3>Primary source</h3>
+  <p>The crm agent skill's <code>reference/customization-lifecycle.md</code> is the canonical schema → solution → UI → logic → promote order this whole milestone executes. Ground the GUI-only rollup limits in Microsoft's calculated/rollup docs.</p>
+  <ol class="refs">
+    <li id="r1">crm capstone tracker — <code>Gharib89/crm</code> issue <a href="https://github.com/Gharib89/crm/issues" target="_blank">M12 "Capstone: requirement end-to-end + feedback"</a> (definition of done).</li>
+    <li id="r2"><a href="https://learn.microsoft.com/dynamics365/customerengagement/on-premises/developer/calculated-and-rollup-attributes" target="_blank">Calculated and rollup attributes</a> — rollups use 1:N only, recalc via async jobs, 10/entity · 100/org caps.</li>
+    <li id="r3">Revisit <a href="0055-plan-a-big-task.html">M10 L03 — Plan a big task</a> (where this chain was planned) and <a href="0054-what-the-agent-can-and-cant-do.html">M10 L02 — What the agent can &amp; can't do</a>.</li>
+  </ol>
+</section>
+
+<!-- ─── ASK ─── -->
+<div class="ask reveal">
+  <p><b>Your teacher is one message away.</b> Ask me to:</p>
+  <ul class="tight">
+    <li>"Re-state the Deal Desk brief as a checklist I can tick off."</li>
+    <li>"Show me where each piece was first taught, milestone by milestone."</li>
+    <li>"Why is the plug-in step <em>logic</em> but the lookup <em>schema</em>?"</li>
+    <li>"Walk me through detecting one GUI-only trap with <code>describe</code> before we start."</li>
+  </ul>
+</div>
+
+<!-- ─── NEXT ─── -->
+<div class="next reveal">
+  <span class="pill">up next</span>
+  <h2>Build the schema layer</h2>
+  <p>The brief is pinned and the chain is ordered — time to build. L02 is your first runbook: publisher + solution, then the Deal Review table, the Approval Status option set, and the status column that binds to it — each previewed, committed, and verified. <span class="live-only">Just say <strong>'next lesson'</strong>.</span></p>
+</div>
+
+<footer>
+  <p>Milestone 12 — Capstone: requirement end-to-end · <a href="https://gharib89.github.io/learn-crm-cli-and-api/">course home</a></p>
+  <p class="ft">M12 · L01 · lessons/0059-the-brief-and-definition-of-done.html · capstone = sequence the skills you already have, not learn a new one; BRIEF: Deal Desk approval system on Opportunity → Deal Review custom table (itworx_dealreview), Approval Status global option set (Pending/Approved/Rejected) + status column binding to it, 1:N Account→Deal Review + lookup, plug-in step on Opportunity Update, model-driven app + sitemap subarea + form field, all inside one solution that exports managed and promotes dev→test→prod; DEFINITION OF DONE (3): (1) delivered inside one solution + verified components, (2) learning record written, (3) upstream Gharib89/crm issue filed IF warranted; CHAIN in dependency order = publisher+solution → table → optionset → status column (col needs set first) → 1:N+lookup (needs both tables) → assembly → register step (needs assembly) → app+subarea → form field → publish → export managed → promote; macro-order schema→solution→logic→UI→ship; GUI-ONLY TRAPS to detect+escalate (no create verb in crm v1.0.0): rollup column (no --kind rollup; async recalc, 10/entity·100/org), approval BPF (workflow cat 4), Power Automate flow (cat 5), dashboard/chart (no verb); RUNBOOK loop = dry-run preview → commit → read-back verify → paste envelope; verify≠trust (exit 0 ≠ done); agent-cloud mutate-safe dev org, whoami before first write, teardown at L06; 2026-06-20, crm v1.0.0</p>
+</footer>
+
+</div><!-- /wrap -->
+
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 12, "name": "Capstone: requirement end-to-end"},
+  "lesson": 1,
+  "title": "The brief & definition of done",
+  "slug": "the-brief-and-definition-of-done",
+  "topics": ["capstone","mission","deal-desk","requirement","definition-of-done","dependency-order","gui-only","runbook","planning"],
+  "summary": "The M12 capstone contract. A capstone is not a new skill — it's proof you can SEQUENCE the skills you already have. THE BRIEF (Deal Desk): a sales manager wants a lightweight deal-review/approval system on Opportunity — a Deal Review custom table (itworx_dealreview), a global option set Approval Status (Pending/Approved/Rejected) with a status column that binds to it, a 1:N Account→Deal Review relationship + lookup, a plug-in step on Opportunity Update, a model-driven app + sitemap subarea + form field so a human can see/set status, all inside ONE solution that exports managed and promotes dev→test→prod. DEFINITION OF DONE (all three): (1) delivered inside one solution with components verified (not just exit 0) via solution list + metadata reads + a record round-trip; (2) a learning record written capturing what was non-obvious; (3) an upstream Gharib89/crm issue filed IF a genuine defect/gap surfaced (reasoned 'nothing to file' is acceptable). THE CHAIN in dependency order, one lesson per layer: publisher+solution (L02) → Deal Review table → Approval Status option set → status column, column needs the set first (L02) → 1:N Account→Deal Review + lookup, needs both tables (L03) → plug-in assembly → register step on Opportunity Update, step needs assembly (L04) → model-driven app + sitemap subarea → form field → publish once, table invisible until a subarea points at it (L05) → export managed → promote → learning record → upstream issue (L06). Macro-order: schema → solution-bound → logic → UI → ship. WHAT THE AGENT CAN'T BUILD (detect + escalate, GUI-only in crm v1.0.0, no create verb): rollup column (metadata add-attribute has no rollup/calculated kind; rollups recalc via async jobs, 10/entity·100/org cap), approval business process flow (workflow category 4), Power Automate flow (category 5), dashboard/chart (no verb at all). Correct move on a trap: one-line flag naming the manual step + why the CLI can't do it; faking or silently skipping is worse. HOW M12 WORKS: a runbook, not a reading — from L02 you drive Claude Code against agent-cloud. Per-step loop: dry-run preview (read method/url/body) → commit → read-back verify the component landed → paste the envelope for checking → next link. verify≠trust. agent-cloud is mutate-safe; whoami before the first write; full teardown at L06. crm v1.0.0.",
+  "order": 1,
+  "status": "published" }
+</script>
+</body>
+</html>

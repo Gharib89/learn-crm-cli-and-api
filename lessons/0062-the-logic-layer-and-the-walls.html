@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M12 · L04 — The logic layer &amp; the walls</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-sizing:border-box}0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-false{color:#ff8f7a}.c-num{color:#ffd479}.c-meth{color:#ffd479;font-weight:700}.c-ann{color:#7fb0c9}
+  .c-xtag{color:#8cc0ff}.c-xattr{color:#ffd479}.c-xval{color:#a7e6a0}
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+  table.ops{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--card);
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.ops th,table.ops td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.ops th{background:var(--guid-soft);color:var(--guid);font-family:"Roboto Mono",monospace;
+    font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  table.ops tr:last-child td{border-bottom:none}
+  table.ops code{font-size:12.5px}
+  table.ops .pk{color:var(--teal-deep);font-weight:700}
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-false,pre .c-num,pre .c-meth,pre .c-flag,pre .c-ann,pre .c-xtag,pre .c-xattr,pre .c-xval{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/runbook.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+<header class="top reveal">
+  <p class="eyebrow">Milestone 12 <span class="dot">·</span> Capstone <span class="dot">·</span> Lesson 04</p>
+  <h1>The logic layer,<br><em>and the walls</em></h1>
+  <p class="sub">Register a plug-in step on Opportunity Update — assembly first, then the step bound to it. And learn the harder skill: spotting the four things a Deal Desk will ask for that the CLI <em>cannot</em> build, and handing them back cleanly.</p>
+  <div class="livechip"><span class="led"></span> live on <b>agent-cloud</b> &nbsp;·&nbsp; <span class="pill">writes</span> <span class="pill t">detect &amp; escalate</span></div>
+  <div class="rule"></div>
+  <div class="why">
+    <b>Why this matters:</b> Real requirements are never 100% automatable. The mission asks you to judge <em>what is automatable and what is not</em> — and a senior agent's value is as much in the clean "this part is GUI-only, here's why" as in the build. This lesson does both: the plug-in step that <em>is</em> automatable, and the four walls you must detect instead of fake.
+  </div>
+</header>
+
+<p class="lead reveal">A plug-in is two things, not one: <em>code</em> (a signed .NET assembly you compile elsewhere) and <em>registration</em> (telling Dataverse when to run it). The CLI owns the second. It can't write your C# — so the assembly is a <em>prerequisite</em>, not a step.</p>
+
+<!-- ─── SECTION 01 ─── -->
+<section class="reveal">
+  <h2><span class="n">01</span> The runbook</h2>
+  <p>Prerequisite: a built, signed <code>DealDesk.Plugins.dll</code> (authored in Visual Studio / <code>dotnet</code> — outside crm's scope). With that in hand, registration is two ordered writes.</p>
+
+  <div class="runbook reveal">
+    <p class="rb-goal"><span class="rb-flag">GOAL</span> A plug-in step firing on <code>opportunity Update</code>, registered inside DealDesk.</p>
+    <p class="rb-sub">target: agent-cloud · prerequisite: a signed assembly DLL on disk</p>
+    <ol class="rb-steps">
+
+      <li class="rb-step">
+        <button class="rb-check" aria-label="mark step done"></button>
+        <div class="rb-body">
+          <p class="rb-do"><b>1. Register the assembly.</b> Upload the DLL, sandboxed. The path is validated — a missing file fails fast, before any write.</p>
+          <pre class="term"><span class="tag">step 1 · upload assembly</span><code>crm plugin register-assembly ./DealDesk.Plugins.dll <span class="c-comment">\</span>
+  --isolation-mode sandbox --solution DealDesk</code></pre>
+          <p class="rb-verify"><b>✓ verify:</b> <code>crm plugin list-types --assembly DealDesk.Plugins</code> lists your plug-in type(s).</p>
+        </div>
+      </li>
+
+      <li class="rb-step">
+        <button class="rb-check" aria-label="mark step done"></button>
+        <div class="rb-body">
+          <p class="rb-do"><b>2. Register the step.</b> Bind a plug-in type to the <code>Update</code> message on <code>opportunity</code>. <code>postoperation</code> + <code>async</code> suits "after the deal is saved, create a review" without blocking the user.</p>
+          <pre class="term"><span class="tag">step 2 · register step</span><code>crm plugin register-step --message Update --entity opportunity <span class="c-comment">\</span>
+  --plugin-type <span class="c-str">"DealDesk.Plugins.DealReviewCreator"</span> <span class="c-comment">\</span>
+  --stage postoperation --mode async <span class="c-comment">\</span>
+  --filtering-attributes estimatedvalue,statuscode <span class="c-comment">\</span>
+  --solution DealDesk</code></pre>
+          <p class="rb-verify"><b>✓ verify:</b> the result returns a <code>sdkmessageprocessingstepid</code>; the step shows under the plug-in type.</p>
+        </div>
+      </li>
+
+      <li class="rb-step">
+        <button class="rb-check" aria-label="mark step done"></button>
+        <div class="rb-body">
+          <p class="rb-do"><b>3. Confirm it's enabled.</b> A registered step defaults to enabled; confirm, and know how to pause it without unregistering.</p>
+          <pre class="term"><span class="tag">step 3 · state check</span><code>crm plugin set-step-state &lt;step-id&gt; --enable <span class="c-comment"># or --disable to pause</span></code></pre>
+          <p class="rb-verify"><b>✓ verify:</b> updating an Opportunity's <code>estimatedvalue</code> now triggers the step (watch <code>crm async</code> for the async job).</p>
+        </div>
+      </li>
+
+    </ol>
+    <p class="rb-foot">▸ 0/3 steps checked</p>
+  </div>
+
+  <div class="callout tip">
+    <span class="ic">WHY ASSEMBLY FIRST</span>
+    <div><code>register-step --plugin-type</code> resolves the type <em>out of a registered assembly</em>. Run step 2 before step 1 and there's no type to bind to — the same dependency-ordering rule as the schema chain, one layer up. <code>--filtering-attributes</code> keeps the step from firing on every unrelated field change.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 02 ─── -->
+<section class="reveal">
+  <h2><span class="n">02</span> The four walls</h2>
+  <p>Now the harder skill. A stakeholder describing a Deal Desk will casually name four things the <code>crm</code> CLI / Web API <strong>cannot create</strong> in v1.0.0. Your job is to recognize them on sight and not waste commands trying:</p>
+
+  <table class="ops">
+    <thead><tr><th>The ask</th><th>The wall</th><th>How you know</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Rollup column</strong><br>"sum of open deal value on the account"</td><td>No rollup/calculated column type</td><td><code>metadata add-attribute --kind</code> offers <code>string…lookup,customer,image,file</code> — no <em>rollup</em>, no <em>calculated</em>.</td></tr>
+      <tr><td><strong>Approval BPF</strong><br>"a guided stage bar"</td><td>Business process flow = workflow <em>category 4</em></td><td>The <code>workflow</code> group only lists / activates / imports — there is no <code>workflow create</code>.</td></tr>
+      <tr><td><strong>Power Automate flow</strong><br>"email the manager on submit"</td><td>Modern flow = <em>category 5</em></td><td>Same: authored in the Power Automate maker portal, not creatable through the CLI.</td></tr>
+      <tr><td><strong>Dashboard / chart</strong><br>"a deals overview screen"</td><td>No verb exists at all</td><td>There is no <code>dashboard</code> or <code>chart</code> command group in <code>crm describe</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout tip">
+    <span class="ic">PROVE IT, DON'T GUESS IT</span>
+    <div>The agent doesn't <em>assume</em> a wall — it confirms one. <code>crm describe</code> is the source of truth for what verbs exist; <code>crm metadata add-attribute --help</code> shows the exact <code>--kind</code> choices. When a kind or a verb isn't there, that's your evidence the ask is GUI-only — not a memory, a check.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 03 ─── -->
+<section class="reveal">
+  <h2><span class="n">03</span> How to hand a wall back</h2>
+  <p>Detecting the wall is half the skill; <em>escalating</em> it well is the other half. A good hand-back has three parts — and never a silent skip or a fake substitute:</p>
+
+  <ol class="steps">
+    <li><strong>Name it precisely.</strong> "The 'total deal value' field is a <em>rollup column</em> — not creatable via the CLI in v1.0.0."</li>
+    <li><strong>Say why.</strong> "<code>add-attribute</code> has no rollup kind; rollups recalc via async system jobs, capped 10 per table / 100 per org." <sup><a href="#r2">2</a></sup></li>
+    <li><strong>Give the manual path.</strong> "Create it in the maker portal → table → New → Rollup column, then I'll fold it into the DealDesk solution and it promotes with everything else."</li>
+  </ol>
+
+  <div class="callout warn">
+    <span class="ic">NEVER FAKE</span>
+    <div>The worst move is approximating a rollup with a plug-in that writes a number, or quietly dropping the BPF and reporting "done". Both hide a gap the stakeholder is counting on. A capstone is "done" only when the automatable part is built <em>and</em> the manual remainder is named — that honesty is the deliverable.</div>
+  </div>
+</section>
+
+<!-- ─── QUIZ ─── -->
+<section class="reveal">
+  <div class="quiz">
+    <p class="qh">Lesson check</p>
+    <p class="qhs">4 questions · click to reveal</p>
+
+    <div class="q" data-correct="1">
+      <p class="stem">1. Why must <code>register-assembly</code> run before <code>register-step</code>?</p>
+      <button class="opt"><span class="mk">A</span> Steps publish faster after an assembly</button>
+      <button class="opt"><span class="mk">B</span> The step's <code>--plugin-type</code> resolves out of a registered assembly</button>
+      <button class="opt"><span class="mk">C</span> Assemblies require a step to exist</button>
+      <button class="opt"><span class="mk">D</span> Both must be in different solutions</button>
+      <div class="fb ok">Correct. The step binds to a plug-in <em>type</em>, and the type only exists once its assembly is registered. No assembly → nothing to bind → no step. Same ordering discipline as the schema chain.</div>
+      <div class="fb no">The step binds to a type living inside a registered assembly, so the assembly must come first. It's not about publish speed, a reverse dependency, or separate solutions.</div>
+    </div>
+
+    <div class="q" data-correct="2">
+      <p class="stem">2. A stakeholder asks for a <b>rollup column</b>. The honest, correct response is to…</p>
+      <button class="opt"><span class="mk">A</span> Write a plug-in that computes and stores the number</button>
+      <button class="opt"><span class="mk">B</span> Add it with <code>--kind rollup</code></button>
+      <button class="opt"><span class="mk">C</span> Name it as GUI-only, say why, and give the manual path</button>
+      <button class="opt"><span class="mk">D</span> Leave it out and mark the capstone done</button>
+      <div class="fb ok">Correct. There's no rollup kind, so detect-and-escalate: name it, explain (async recalc, 10/table·100/org), hand over the maker-portal step, then fold it into the solution. Faking or silently dropping it both hide the gap.</div>
+      <div class="fb no">Name it, justify it, hand it back. There's no <code>--kind rollup</code>; a plug-in substitute or a silent omission misrepresents what was delivered.</div>
+    </div>
+
+    <div class="q" data-correct="0">
+      <p class="stem">3. How does the agent <b>confirm</b> the BPF is a wall rather than assume it?</p>
+      <button class="opt"><span class="mk">A</span> <code>crm describe</code> / <code>--help</code> show no <code>workflow create</code> verb</button>
+      <button class="opt"><span class="mk">B</span> It remembers BPFs are hard</button>
+      <button class="opt"><span class="mk">C</span> It tries the create and waits for a 500</button>
+      <button class="opt"><span class="mk">D</span> It asks the stakeholder to confirm</button>
+      <div class="fb ok">Correct. The verb surface is the evidence: the <code>workflow</code> group lists/activates/imports only — no create. Proving the wall from <code>describe</code> beats memory and beats trial-and-error against the live org.</div>
+      <div class="fb no">Check the verb surface — <code>describe</code> shows the <code>workflow</code> group has no create. That's confirmation, not memory, and you don't need to crash a live attempt to learn it.</div>
+    </div>
+
+    <div class="q" data-correct="3">
+      <p class="stem">4. Which stage/mode fits "after the deal is saved, create a review, without blocking the user"?</p>
+      <button class="opt"><span class="mk">A</span> <code>prevalidation</code> / <code>sync</code></button>
+      <button class="opt"><span class="mk">B</span> <code>preoperation</code> / <code>sync</code></button>
+      <button class="opt"><span class="mk">C</span> <code>prevalidation</code> / <code>async</code></button>
+      <button class="opt"><span class="mk">D</span> <code>postoperation</code> / <code>async</code></button>
+      <div class="fb ok">Correct. You act <em>after</em> the save (postoperation) and off the user's thread (async) — the review is created in the background. Pre-stages run before the write; sync would make the user wait.</div>
+      <div class="fb no">Post-save work that shouldn't block is <code>postoperation</code> + <code>async</code>. Pre-stages fire before the record is written, and sync holds up the user.</div>
+    </div>
+
+    <p class="score" id="score"></p>
+  </div>
+</section>
+
+<!-- ─── REFS ─── -->
+<section class="reveal">
+  <h3>Primary source</h3>
+  <p>The crm agent skill's <code>reference/plugins.md</code> covers <code>register-assembly</code>/<code>register-step</code>, stages, modes and images. For the walls, Microsoft's rollup-attribute and workflow-category docs are canonical.</p>
+  <ol class="refs">
+    <li id="r1">crm agent skill — <code>reference/plugins.md</code> (<code>register-assembly --isolation-mode</code>, <code>register-step --message --stage --mode --filtering-attributes</code>). <a href="https://github.com/Gharib89/crm" target="_blank">github.com/Gharib89/crm</a></li>
+    <li id="r2"><a href="https://learn.microsoft.com/dynamics365/customerengagement/on-premises/developer/calculated-and-rollup-attributes" target="_blank">Calculated &amp; rollup attributes</a> — 1:N only, async recalc, 10/table · 100/org caps.</li>
+    <li id="r3">Revisit <a href="0045-the-event-pipeline.html">M08 — the event pipeline</a>, <a href="0046-webhooks-the-no-dll-step.html">M08 — webhooks</a>, and <a href="0054-what-the-agent-can-and-cant-do.html">M10 L02 — can &amp; can't</a>.</li>
+  </ol>
+</section>
+
+<!-- ─── ASK ─── -->
+<div class="ask reveal">
+  <p><b>Your teacher is one message away.</b> Ask me to:</p>
+  <ul class="tight">
+    <li>"Help me decide sync vs async for this Opportunity step."</li>
+    <li>"Prove the rollup wall with me using <code>add-attribute --help</code>."</li>
+    <li>"I don't have a DLL — can a webhook step replace the plug-in here?"</li>
+    <li>"Draft the GUI-only hand-back note for all four walls."</li>
+  </ul>
+</div>
+
+<!-- ─── NEXT ─── -->
+<div class="next reveal">
+  <span class="pill">up next</span>
+  <h2>Make it visible — the UI surface</h2>
+  <p>Everything works in the data layer, but a human still can't see it: a custom table is invisible until an app's sitemap points at it. L05 builds the model-driven app, a subarea that surfaces Deal Review, and drops the Status field onto the form — then one publish makes the whole feature usable. <span class="live-only">Just say <strong>'next lesson'</strong>.</span></p>
+</div>
+
+<footer>
+  <p>Milestone 12 — Capstone: requirement end-to-end · <a href="https://gharib89.github.io/learn-crm-cli-and-api/">course home</a></p>
+  <p class="ft">M12 · L04 · lessons/0062-the-logic-layer-and-the-walls.html · logic runbook + GUI-only wall detection. PLUGIN = code (signed .NET assembly, compiled OUTSIDE crm — prerequisite, not a step) + registration (CLI owns this). 3 steps: (1) plugin register-assembly ./DealDesk.Plugins.dll --isolation-mode sandbox --solution DealDesk (path validated, missing file fails fast); verify plugin list-types --assembly. (2) plugin register-step --message Update --entity opportunity --plugin-type 'DealDesk.Plugins.DealReviewCreator' --stage postoperation --mode async --filtering-attributes estimatedvalue,statuscode --solution DealDesk → returns sdkmessageprocessingstepid. (3) plugin set-step-state <id> --enable|--disable (pause without unregister); verify async job via crm async. WHY ASSEMBLY FIRST: register-step --plugin-type resolves the type OUT OF a registered assembly — no assembly→no type→no step (same dependency ordering, one layer up). stage choices=prevalidation|preoperation|postoperation, mode=sync|async; post+async = after save, off user thread. THE FOUR WALLS (GUI-only, not creatable in crm v1.0.0, DETECT+ESCALATE): (1) rollup/calculated column — add-attribute --kind has NO rollup/calculated (only string|memo|integer|bigint|decimal|double|money|boolean|datetime|picklist|multiselect|lookup|customer|image|file); rollups recalc async, 10/table·100/org. (2) approval BPF = workflow category 4 — workflow group only list/activate/import, no create. (3) Power Automate flow = category 5 — maker portal only. (4) dashboard/chart — no verb group at all. PROVE don't guess: crm describe = source of truth for verbs; add-attribute --help = --kind choices; absence = evidence. HAND-BACK = name it precisely + say why + give manual path; NEVER fake (plug-in faking a rollup, silently dropping a BPF) — capstone done only when automatable built AND manual remainder named. plugin also: register-image (--step --type pre|post|both --alias --attributes), register-webhook (--url --auth), unregister-*. URLs scrubbed orgexample. 2026-06-20, crm v1.0.0 (verbs verified live agent-cloud via describe + --dry-run; register-assembly validates file path, register-step resolves type from registered assembly).</p>
+</footer>
+
+</div><!-- /wrap -->
+
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 12, "name": "Capstone: requirement end-to-end"},
+  "lesson": 4,
+  "title": "The logic layer & the walls",
+  "slug": "the-logic-layer-and-the-walls",
+  "topics": ["capstone","plugin","register-assembly","register-step","gui-only","rollup","bpf","power-automate","detect-escalate","runbook"],
+  "summary": "Logic-layer runbook plus the harder skill: detecting what the CLI cannot build. A PLUG-IN is two things — code (a signed .NET assembly compiled OUTSIDE crm; a prerequisite, not a step) and registration (the CLI owns this). RUNBOOK (3 steps, assembly before step): (1) plugin register-assembly ./DealDesk.Plugins.dll --isolation-mode sandbox --solution DealDesk — path validated, missing file fails fast; verify plugin list-types --assembly DealDesk.Plugins. (2) plugin register-step --message Update --entity opportunity --plugin-type 'DealDesk.Plugins.DealReviewCreator' --stage postoperation --mode async --filtering-attributes estimatedvalue,statuscode --solution DealDesk → returns sdkmessageprocessingstepid. (3) plugin set-step-state <step-id> --enable (or --disable to pause without unregistering); verify via crm async watching the async job. WHY ASSEMBLY FIRST: register-step --plugin-type resolves the type out of a REGISTERED assembly — no assembly → no type → no step (same dependency ordering as the schema chain). stage = prevalidation|preoperation|postoperation; mode = sync|async; postoperation+async = act after the save, off the user's thread, non-blocking. --filtering-attributes stops the step firing on unrelated field changes. THE FOUR WALLS (GUI-only in crm v1.0.0, the agent must DETECT + ESCALATE, never fake): (1) rollup/calculated column — metadata add-attribute --kind has no rollup/calculated (only string|memo|integer|bigint|decimal|double|money|boolean|datetime|picklist|multiselect|lookup|customer|image|file); rollups recalc via async system jobs, capped 10/table·100/org. (2) approval business process flow = workflow category 4 — the workflow group only lists/activates/imports, no create. (3) Power Automate flow = category 5 — authored in the maker portal, no CLI path. (4) dashboard/chart — no verb group exists in describe at all. PROVE, DON'T GUESS: crm describe is the source of truth for which verbs exist; crm metadata add-attribute --help shows the exact --kind choices — an absent kind/verb is your evidence the ask is GUI-only, not a memory. HAND A WALL BACK in three parts: name it precisely, say why (cite the limit), give the manual maker-portal path (then fold the component into the DealDesk solution so it still promotes). NEVER fake — approximating a rollup with a plug-in or silently dropping a BPF hides a gap the stakeholder counts on; the capstone is done only when the automatable part is built AND the manual remainder is named. Related plugin verbs: register-image (--step --type pre|post|both --alias --attributes), register-webhook (--url --auth webhookkey|httpheader|httpquerystring), unregister-step/-assembly/-image. URLs scrubbed to orgexample; verbs verified live on agent-cloud via describe and --dry-run. crm v1.0.0.",
+  "order": 4,
+  "status": "published" }
+</script>
+</body>
+</html>

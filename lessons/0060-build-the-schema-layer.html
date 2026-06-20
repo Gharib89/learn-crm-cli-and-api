@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M12 · L02 — Build the schema layer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --card:#fffdf8;
+    --ink:#1d2128; --ink-soft:#586072; --ink-mute:#7c849a;
+    --line:#e3dccd; --line2:#d6cdba;
+    --teal:#0c7a64; --teal-deep:#08533f; --teal-soft:#e3f0ea;
+    --amber:#b4530a; --amber-soft:#f8ead4;
+    --guid:#6d28d9; --guid-soft:#efe8fb;
+    --term-bg:#10151d; --term-bg2:#161d27; --term-ink:#e7edf6;
+    --ok:#0c7a64; --bad:#b3261e;
+    --shadow:0 1px 2px rgba(18,21,107,.05),0 8px 24px -16px rgba(18,21,107,.25);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html.js .reveal{opacity:0;transform:translateY(16px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:"Roboto",ui-sans-serif,system-ui,sans-serif;
+    font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(120% 80% at 85% -10%, rgba(27,31,143,.10), transparent 60%),
+      radial-gradient(90% 60% at -10% 0%, rgba(200,52,40,.06), transparent 55%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(120,110,90,.045) 100%);
+    background-size:auto,auto,26px 26px,26px 26px;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:46px 26px 110px}
+  header.top{position:relative}
+  .eyebrow{font-family:"Roboto Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal-deep);font-weight:600}
+  .eyebrow .dot{color:var(--amber)}
+  h1{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:clamp(40px,8vw,62px);
+    line-height:.98;letter-spacing:-.025em;margin:.18em 0 .12em;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:500;color:var(--teal-deep)}
+  .sub{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:.2em 0 0}
+  .livechip{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+    background:var(--card);border:1px solid var(--line2);border-radius:999px;
+    padding:7px 15px 7px 13px;font-family:"Roboto Mono",monospace;font-size:13px;
+    color:var(--ink-soft);box-shadow:var(--shadow)}
+  .livechip b{color:var(--ink);font-weight:600}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(27,31,143,.55);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-sizing:border-box}0%{box-shadow:0 0 0 0 rgba(27,31,143,.5)}70%{box-shadow:0 0 0 8px rgba(27,31,143,0)}100%{box-shadow:0 0 0 0 rgba(27,31,143,0)}}
+  .rule{height:2px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,var(--line2) 38%,var(--line2) 100%);
+    margin:30px 0 6px}
+  .why{font-size:15.5px;color:var(--ink-soft);background:var(--teal-soft);
+    border-left:3px solid var(--teal);padding:13px 17px;border-radius:0 10px 10px 0;margin:22px 0 0}
+  .why b{color:var(--teal-deep)}
+  .lead{font-family:"Roboto",system-ui,sans-serif;font-size:23px;line-height:1.42;font-weight:400;
+    color:var(--ink);margin:40px 0 0;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--teal-deep)}
+  h2{font-family:"Roboto",system-ui,sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;
+    margin:56px 0 14px;display:flex;align-items:baseline;gap:14px}
+  h2 .n{font-family:"Roboto Mono",monospace;font-size:14px;font-weight:600;color:#fff;
+    background:var(--ink);border-radius:7px;padding:4px 9px;letter-spacing:0;transform:translateY(-4px)}
+  h3{font-family:"Roboto",sans-serif;font-size:17px;font-weight:700;margin:26px 0 8px;color:var(--ink)}
+  p{margin:.72em 0}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:italic}
+  a{color:var(--teal-deep);text-underline-offset:3px;text-decoration-thickness:1px}
+  code{font-family:"Roboto Mono",monospace;font-size:.85em;background:#ece5d6;
+    padding:.12em .42em;border-radius:5px;border:1px solid var(--line2);color:#33414b}
+  pre{position:relative;background:var(--term-bg);color:var(--term-ink);
+    padding:18px 20px;border-radius:13px;overflow:auto;
+    font-family:"Roboto Mono",monospace;font-size:13.5px;line-height:1.6;margin:16px 0;
+    box-shadow:0 18px 36px -22px rgba(16,21,29,.7);border:1px solid #232c38}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre.term{padding-top:40px}
+  pre.term::before{content:"● ● ●";position:absolute;top:12px;left:18px;
+    letter-spacing:4px;font-size:10px;color:#3a4656}
+  pre.term .tag{position:absolute;top:11px;right:16px;font-size:11px;color:#6a7689}
+  .c-key{color:#8cc0ff}.c-str{color:#a7e6a0}.c-punc{color:#8794a6}
+  .c-comment{color:#6a7689;font-style:italic}.c-guid{color:#c9a9ff}.c-true{color:#5fe3bd}.c-flag{color:#ffd479}
+  .c-false{color:#ff8f7a}.c-num{color:#ffd479}.c-meth{color:#ffd479;font-weight:700}.c-ann{color:#7fb0c9}
+  .c-xtag{color:#8cc0ff}.c-xattr{color:#ffd479}.c-xval{color:#a7e6a0}
+  .ginfo{display:grid;grid-template-columns:auto 1fr;gap:0;margin:8px 0;
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card)}
+  .ginfo dt{font-family:"Roboto Mono",monospace;font-size:13.5px;color:var(--guid);font-weight:600;
+    padding:12px 16px;background:var(--guid-soft);border-bottom:1px solid var(--line);white-space:nowrap;
+    display:flex;align-items:center}
+  .ginfo dd{margin:0;padding:12px 16px;font-size:15px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .ginfo dt:last-of-type,.ginfo dd:last-of-type{border-bottom:none}
+  .callout{display:flex;gap:13px;border-radius:0 11px 11px 0;padding:14px 18px;margin:20px 0;font-size:15.5px}
+  .callout .ic{font-family:"Roboto Mono",monospace;font-weight:700;flex:none}
+  .callout.tip{border-left:3px solid var(--teal);background:var(--teal-soft)}
+  .callout.tip .ic{color:var(--teal-deep)}
+  .callout.warn{border-left:3px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .ic{color:var(--amber)}
+  .callout b{color:var(--ink)}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"Roboto Mono",monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:var(--ink);color:var(--paper);vertical-align:middle}
+  .pill.t{background:var(--teal);color:#fff}
+  ul.tight li,ol.tight li{margin:.34em 0}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:40px;margin:.6em 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;
+    font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;
+    width:26px;height:26px;border-radius:50%;background:var(--card);border:1.5px solid var(--teal);
+    color:var(--teal-deep);display:grid;place-items:center}
+  table.ops{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--card);
+    border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+  table.ops th,table.ops td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.ops th{background:var(--guid-soft);color:var(--guid);font-family:"Roboto Mono",monospace;
+    font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  table.ops tr:last-child td{border-bottom:none}
+  table.ops code{font-size:12.5px}
+  table.ops .pk{color:var(--teal-deep);font-weight:700}
+  .quiz{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px;margin:22px 0;
+    box-shadow:var(--shadow)}
+  .quiz .qh{font-family:"Roboto",system-ui,sans-serif;font-size:22px;font-weight:600;margin:0 0 4px}
+  .quiz .qhs{color:var(--ink-mute);font-size:14px;margin:0 0 20px;font-family:"Roboto Mono",monospace}
+  .q{margin:0 0 24px;padding-bottom:22px;border-bottom:1px dashed var(--line2)}
+  .q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .q .stem{font-weight:600;margin-bottom:13px;font-size:16.5px}
+  .q .stem b{color:var(--teal-deep)}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#faf6ee;
+    border:1.5px solid var(--line2);border-radius:11px;padding:12px 15px;margin:8px 0;cursor:pointer;
+    font:inherit;font-size:15.5px;color:var(--ink);transition:border-color .14s,background .14s,transform .14s}
+  .opt .mk{font-family:"Roboto Mono",monospace;font-size:13px;font-weight:600;flex:none;
+    width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;color:var(--ink-mute)}
+  .opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+  .opt.correct{border-color:var(--ok);background:#e6f4ee}
+  .opt.correct .mk{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#fbeae8}
+  .opt.wrong .mk{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .opt:disabled{cursor:default}
+  .fb{display:none;margin-top:11px;font-size:14.5px;padding:12px 15px;border-radius:10px;line-height:1.5}
+  .fb.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .fb.ok{background:#e6f4ee;border:1px solid #bfe0d1;color:#0c4a3a}
+  .fb.no{background:#fbeae8;border:1px solid #f0c6c1;color:#7c1c15}
+  .score{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--teal-deep);margin-top:10px;font-size:14px}
+  .ask{background:linear-gradient(135deg,var(--teal-soft),#eef4ed);border:1px solid #cfe3da;
+    border-radius:14px;padding:20px 22px;margin:26px 0}
+  .ask b{color:var(--teal-deep)}
+  .next{border:1.5px dashed var(--line2);border-radius:14px;padding:18px 22px;margin:14px 0;background:var(--card)}
+  .next h2{font-size:18px;margin:0 0 4px;display:block}
+  .next .pill{margin-bottom:8px}
+  footer{margin-top:54px;border-top:2px solid var(--ink);padding-top:18px;font-size:14px;color:var(--ink-soft)}
+  footer .ft{font-family:"Roboto Mono",monospace;font-size:11.5px;color:var(--ink-mute);letter-spacing:.03em;margin-top:14px}
+  .refs{font-size:14px;line-height:1.65;padding-left:18px}
+  .refs li{margin:.3em 0}
+  sup a{font-family:"Roboto Mono",monospace;font-size:10px;text-decoration:none;color:var(--teal-deep);
+    background:var(--teal-soft);padding:1px 5px;border-radius:5px;font-weight:600}
+  @media print{
+    html.js .reveal{opacity:1 !important;transform:none !important}
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    .livechip,.led{box-shadow:none;animation:none}
+    pre{box-shadow:none;background:#f4f4f2;color:#111;border:1px solid #bbb}
+    pre .c-key,pre .c-str,pre .c-punc,pre .c-comment,pre .c-guid,pre .c-true,pre .c-false,pre .c-num,pre .c-meth,pre .c-flag,pre .c-ann,pre .c-xtag,pre .c-xattr,pre .c-xval{color:#111}
+    pre.term::before{color:#999}
+    .opt{display:none}
+    .quiz .stem::after{content:"  ▸ interactive on screen";font-weight:400;color:#888;font-style:italic;font-size:.85em}
+    a{color:#000} sup a{background:none}
+  }
+</style>
+<link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/runbook.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+<header class="top reveal">
+  <p class="eyebrow">Milestone 12 <span class="dot">·</span> Capstone <span class="dot">·</span> Lesson 02</p>
+  <h1>Build the<br><em>schema layer</em></h1>
+  <p class="sub">The first runbook. Five writes, in the one order the platform allows: publisher → solution → table → option set → status column. Preview each, commit it, read it back — then tick it off.</p>
+  <div class="livechip"><span class="led"></span> live on <b>agent-cloud</b> &nbsp;·&nbsp; <span class="pill">writes</span> <span class="pill t">your turn</span></div>
+  <div class="rule"></div>
+  <div class="why">
+    <b>Why this matters:</b> Schema is the foundation the whole Deal Desk stands on — relationships, logic and UI all attach to the table and column you build here. Build them <em>into the solution</em> from the first write (so they travel to test and prod), in dependency order (so each command has something to attach to), and verify each one — because a wrong schema name found three lessons later is expensive to unwind.
+  </div>
+</header>
+
+<p class="lead reveal">You've created tables, option sets and columns before — in M04. What's new is doing it as a <em>chain</em>: each write depends on the one before it, and each lands inside the same solution. So the order isn't a preference. It's the platform's.</p>
+
+<!-- ─── SECTION 01 ─── -->
+<section class="reveal">
+  <h2><span class="n">01</span> The runbook</h2>
+  <p>Work top to bottom. Each step is <strong>preview → commit → verify</strong>: run it with <code>--dry-run</code> first and read the <code>method</code>/<code>url</code>/<code>body</code>, then drop <code>--dry-run</code> to commit, then run the read-back. Paste me each envelope and tick the box.</p>
+
+  <div class="runbook reveal">
+    <p class="rb-goal"><span class="rb-flag">GOAL</span> A <code>DealDesk</code> solution holding a <code>Deal&nbsp;Review</code> table with an Approval-Status column.</p>
+    <p class="rb-sub">target: agent-cloud · whoami first · all names use the <code>itworx</code> prefix</p>
+    <ol class="rb-steps">
+
+      <li class="rb-step">
+        <button class="rb-check" aria-label="mark step done"></button>
+        <div class="rb-body">
+          <p class="rb-do"><b>1. Create the publisher.</b> The prefix (<code>itworx</code>) brands every component's logical name; the option-value prefix seeds option-set integers.</p>
+          <pre class="term"><span class="tag">step 1 · POST /publishers</span><code>crm solution create-publisher --name DealDeskPub <span class="c-comment">\</span>
+  --display <span class="c-str">"Deal Desk Publisher"</span> --prefix itworx --option-value-prefix 30000</code></pre>
+          <p class="rb-verify"><b>✓ verify:</b> <code>crm query odata publishers --filter "uniquename eq 'DealDeskPub'" --select uniquename,customizationprefix</code> returns one row.</p>
+        </div>
+      </li>
+
+      <li class="rb-step">
+        <button class="rb-check" aria-label="mark step done"></button>
+        <div class="rb-body">
+          <p class="rb-do"><b>2. Create the solution, bound to that publisher.</b> Everything after this carries <code>--solution DealDesk</code> so it lands inside this container.</p>
+          <pre class="term"><span class="tag">step 2 · POST /solutions</span><code>crm solution create --name DealDesk --display <span class="c-str">"Deal Desk"</span> <span class="c-comment">\</span>
+  --version 1.0.0.0 --publisher DealDeskPub</code></pre>
+          <p class="rb-verify"><b>✓ verify:</b> <code>crm solution list</code> shows <code>DealDesk</code> at <code>1.0.0.0</code>, unmanaged.</p>
+        </div>
+      </li>
+
+      <li class="rb-step">
+        <button class="rb-check" aria-label="mark step done"></button>
+        <div class="rb-body">
+          <p class="rb-do"><b>3. Create the Deal Review table.</b> <code>--primary-attr</code> is the required primary-name column; <code>--publish</code> makes the change live.</p>
+          <pre class="term"><span class="tag">step 3 · POST /EntityDefinitions</span><code>crm metadata create-entity --schema-name itworx_dealreview <span class="c-comment">\</span>
+  --display <span class="c-str">"Deal Review"</span> --display-collection <span class="c-str">"Deal Reviews"</span> <span class="c-comment">\</span>
+  --primary-attr itworx_name --primary-label <span class="c-str">"Name"</span> <span class="c-comment">\</span>
+  --ownership UserOwned --solution DealDesk --publish</code></pre>
+          <p class="rb-verify"><b>✓ verify:</b> <code>crm metadata entity itworx_dealreview</code> returns the definition (note its <code>EntitySetName</code>).</p>
+        </div>
+      </li>
+
+      <li class="rb-step">
+        <button class="rb-check" aria-label="mark step done"></button>
+        <div class="rb-body">
+          <p class="rb-do"><b>4. Create the global Approval Status option set.</b> <code>:Pending</code> = auto-assigned value, label "Pending". Global, so other components could reuse it.</p>
+          <pre class="term"><span class="tag">step 4 · POST /GlobalOptionSetDefinitions</span><code>crm metadata create-optionset --name itworx_approvalstatus <span class="c-comment">\</span>
+  --display <span class="c-str">"Approval Status"</span> <span class="c-comment">\</span>
+  --option <span class="c-str">":Pending"</span> --option <span class="c-str">":Approved"</span> --option <span class="c-str">":Rejected"</span> <span class="c-comment">\</span>
+  --solution DealDesk --publish</code></pre>
+          <p class="rb-verify"><b>✓ verify:</b> <code>crm metadata get-optionset itworx_approvalstatus</code> lists the three options + their values.</p>
+        </div>
+      </li>
+
+      <li class="rb-step">
+        <button class="rb-check" aria-label="mark step done"></button>
+        <div class="rb-body">
+          <p class="rb-do"><b>5. Add the status column, bound to that set.</b> A <code>picklist</code> column with <code>--optionset-name</code> binds to the <em>global</em> set from step 4 — which is exactly why step 4 came first.</p>
+          <pre class="term"><span class="tag">step 5 · POST …/Attributes</span><code>crm metadata add-attribute itworx_dealreview --kind picklist <span class="c-comment">\</span>
+  --schema-name itworx_status --display <span class="c-str">"Status"</span> <span class="c-comment">\</span>
+  --optionset-name itworx_approvalstatus --solution DealDesk --publish</code></pre>
+          <p class="rb-verify"><b>✓ verify:</b> <code>crm metadata entity itworx_dealreview</code> now lists <code>itworx_status</code> among its attributes.</p>
+        </div>
+      </li>
+
+    </ol>
+    <p class="rb-foot">▸ 0/5 steps checked</p>
+  </div>
+</section>
+
+<!-- ─── SECTION 02 ─── -->
+<section class="reveal">
+  <h2><span class="n">02</span> Read the preview before you commit</h2>
+  <p>Step 1 with <code>--dry-run</code> returns the exact HTTP request the commit <em>would</em> send — no write, but a real round-trip. Read it like a contract:</p>
+
+  <pre class="term"><span class="tag">live · crm --dry-run solution create-publisher …</span><code><span class="c-punc">{</span> <span class="c-key">"ok"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span> <span class="c-key">"data"</span><span class="c-punc">:</span> <span class="c-punc">{</span>
+  <span class="c-key">"_dry_run"</span><span class="c-punc">:</span> <span class="c-true">true</span><span class="c-punc">,</span>
+  <span class="c-key">"method"</span><span class="c-punc">:</span> <span class="c-meth">"POST"</span><span class="c-punc">,</span>
+  <span class="c-key">"url"</span><span class="c-punc">:</span> <span class="c-str">"https://orgexample.crm.dynamics.com/api/data/v9.2/publishers"</span><span class="c-punc">,</span>
+  <span class="c-key">"body"</span><span class="c-punc">:</span> <span class="c-punc">{</span>
+    <span class="c-key">"uniquename"</span><span class="c-punc">:</span> <span class="c-str">"DealDeskPub"</span><span class="c-punc">,</span>
+    <span class="c-key">"customizationprefix"</span><span class="c-punc">:</span> <span class="c-str">"itworx"</span><span class="c-punc">,</span>
+    <span class="c-key">"customizationoptionvalueprefix"</span><span class="c-punc">:</span> <span class="c-num">30000</span> <span class="c-punc">}</span><span class="c-punc">,</span>
+  <span class="c-key">"_exists"</span><span class="c-punc">:</span> <span class="c-false">false</span> <span class="c-punc">}</span> <span class="c-punc">}</span></code></pre>
+
+  <div class="callout tip">
+    <span class="ic">DRY-RUN IS LIVE</span>
+    <div><code>--dry-run</code> means "no <em>write</em>", not "no traffic" (M01 L04). Proof: try <code>--dry-run solution create</code> <em>before</em> the publisher exists and it fails <code>PublisherNotFound</code> — it really looked. That live lookup is your ordering guard: the dry-run won't let you bind a solution to a publisher that isn't there yet.</div>
+  </div>
+</section>
+
+<!-- ─── SECTION 03 ─── -->
+<section class="reveal">
+  <h2><span class="n">03</span> Two flags that make it travel</h2>
+  <p>Two flags appear on nearly every write in this milestone, and both are about getting the change downstream intact:</p>
+
+  <table class="ops">
+    <thead><tr><th>Flag</th><th>What it does · why it matters</th></tr></thead>
+    <tbody>
+      <tr><td><code>--solution DealDesk</code></td><td>Adds the new component to the solution as it's created. Omit it and the component lands in the <em>default</em> solution — orphaned from your package, and it won't export in L06. Bind from the first write.</td></tr>
+      <tr><td><code>--publish</code></td><td>Runs <code>PublishAllXml</code> after the change so it's live. Unpublished customizations don't appear in forms and <strong>don't travel in an export</strong> (M10 L05). Publish-per-step keeps your read-backs honest.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <span class="ic">VERIFY EACH</span>
+    <div>Don't batch all five then check once. A typo in <code>--schema-name</code> at step 3 makes step 5's <code>add-attribute</code> target the wrong table — and you won't know until the read-back. The chain only stays cheap if every link is proven before the next.</div>
+  </div>
+</section>
+
+<!-- ─── QUIZ ─── -->
+<section class="reveal">
+  <div class="quiz">
+    <p class="qh">Lesson check</p>
+    <p class="qhs">4 questions · click to reveal</p>
+
+    <div class="q" data-correct="1">
+      <p class="stem">1. Why does the <b>option set</b> get created before the <b>status column</b>?</p>
+      <button class="opt"><span class="mk">A</span> Option sets always publish slower</button>
+      <button class="opt"><span class="mk">B</span> The picklist column binds to the global set, which must already exist</button>
+      <button class="opt"><span class="mk">C</span> A column can't be added to an unpublished table</button>
+      <button class="opt"><span class="mk">D</span> The solution sorts components by type</button>
+      <div class="fb ok">Correct. <code>add-attribute --kind picklist --optionset-name …</code> binds the column to the global option set via <code>GlobalOptionSet@odata.bind</code> — the set has to exist first. That's the dependency fixing the order.</div>
+      <div class="fb no">The picklist column references the global set (<code>GlobalOptionSet@odata.bind</code>), so the set must exist first. It's not about publish speed, table publish state, or component sorting.</div>
+    </div>
+
+    <div class="q" data-correct="2">
+      <p class="stem">2. You forget <code>--solution DealDesk</code> on <code>create-entity</code>. What's the consequence?</p>
+      <button class="opt"><span class="mk">A</span> The command fails — solution is required</button>
+      <button class="opt"><span class="mk">B</span> The table is created but stays unpublished</button>
+      <button class="opt"><span class="mk">C</span> The table lands in the default solution and won't export with DealDesk</button>
+      <button class="opt"><span class="mk">D</span> The table is created twice</button>
+      <div class="fb ok">Correct. Without <code>--solution</code> the component goes to the default solution — it exists, but it's orphaned from your package and silently absent from the L06 managed export. Bind from the first write.</div>
+      <div class="fb no">It doesn't fail or duplicate — the component just lands in the default solution, orphaned from DealDesk, and won't be in the export. Always pass <code>--solution</code>.</div>
+    </div>
+
+    <div class="q" data-correct="0">
+      <p class="stem">3. <code>--dry-run solution create</code> returns <code>PublisherNotFound</code>. What does that tell you?</p>
+      <button class="opt"><span class="mk">A</span> Dry-run does a real lookup — create the publisher first</button>
+      <button class="opt"><span class="mk">B</span> Dry-run is broken for this verb</button>
+      <button class="opt"><span class="mk">C</span> The solution already exists</button>
+      <button class="opt"><span class="mk">D</span> You must pass <code>--yes</code></button>
+      <div class="fb ok">Correct. Dry-run means no <em>write</em>, not no traffic — it really resolved the publisher and found nothing. The fix is the chain order: publisher (step 1) before solution (step 2).</div>
+      <div class="fb no">Dry-run isn't broken — it performed a live lookup and the publisher genuinely doesn't exist yet. Create it first; that's the ordering guard working as intended.</div>
+    </div>
+
+    <div class="q" data-correct="3">
+      <p class="stem">4. Best practice for verifying the five writes?</p>
+      <button class="opt"><span class="mk">A</span> Run all five, then one <code>solution list</code></button>
+      <button class="opt"><span class="mk">B</span> Trust exit code 0 for each</button>
+      <button class="opt"><span class="mk">C</span> Check only the final column</button>
+      <button class="opt"><span class="mk">D</span> Read back after each step before doing the next</button>
+      <div class="fb ok">Correct. Verify each link before forging the next. A bad <code>--schema-name</code> at step 3 silently misaims step 5; per-step read-backs catch it immediately instead of three lessons later.</div>
+      <div class="fb no">Per-step read-backs are the point. Batching the check, trusting exit codes, or checking only the end lets an early typo propagate undetected down the chain.</div>
+    </div>
+
+    <p class="score" id="score"></p>
+  </div>
+</section>
+
+<!-- ─── REFS ─── -->
+<section class="reveal">
+  <h3>Primary source</h3>
+  <p>The crm agent skill's <code>reference/metadata.md</code> and <code>reference/solutions.md</code> are canonical for <code>create-entity</code>, <code>create-optionset</code>, <code>add-attribute</code>, and the <code>--solution</code>/<code>--publish</code> flags. Ground the metadata concepts in Microsoft's table/column docs.</p>
+  <ol class="refs">
+    <li id="r1">crm agent skill — <code>reference/metadata.md</code>, <code>reference/solutions.md</code> (<code>create-entity</code>, <code>create-optionset</code>, <code>add-attribute --kind picklist --optionset-name</code>). <a href="https://github.com/Gharib89/crm" target="_blank">github.com/Gharib89/crm</a></li>
+    <li id="r2"><a href="https://learn.microsoft.com/power-apps/maker/data-platform/create-edit-entities" target="_blank">Create and edit tables</a> · <a href="https://learn.microsoft.com/power-apps/maker/data-platform/create-edit-global-option-sets" target="_blank">global choices (option sets)</a>.</li>
+    <li id="r3">Revisit <a href="0025-scaffold-table.html">M04 — scaffold a table</a>, <a href="0020-option-sets-local-global.html">M03 — option sets, local &amp; global</a>, and <a href="0004-dry-run-preview-the-write.html">M01 L04 — dry-run</a> for the verb mechanics this runbook chains.</li>
+  </ol>
+</section>
+
+<!-- ─── ASK ─── -->
+<div class="ask reveal">
+  <p><b>Your teacher is one message away.</b> Paste me any step's envelope, or ask me to:</p>
+  <ul class="tight">
+    <li>"Check my step 3 dry-run body before I commit the table."</li>
+    <li>"Why is my column logical name <code>itworx_status</code> but display 'Status'?"</li>
+    <li>"Show the difference between a <em>global</em> and a <em>local</em> option set here."</li>
+    <li>"My <code>add-attribute</code> failed — read the error with me."</li>
+  </ul>
+</div>
+
+<!-- ─── NEXT ─── -->
+<div class="next reveal">
+  <span class="pill">up next</span>
+  <h2>Wire the relationships</h2>
+  <p>The table exists and has its status column. Next the Deal Desk needs structure: a <strong>1:N from Account to Deal Review</strong>, so every review points back at its account through a lookup. That command needs <em>both</em> tables present — which is exactly why it waited until now. <span class="live-only">Just say <strong>'next lesson'</strong>.</span></p>
+</div>
+
+<footer>
+  <p>Milestone 12 — Capstone: requirement end-to-end · <a href="https://gharib89.github.io/learn-crm-cli-and-api/">course home</a></p>
+  <p class="ft">M12 · L02 · lessons/0060-build-the-schema-layer.html · schema runbook, 5 writes in dependency order each preview→commit→verify: (1) solution create-publisher --name --display --prefix itworx --option-value-prefix 30000 → POST /publishers {uniquename,customizationprefix,customizationoptionvalueprefix}; (2) solution create --name DealDesk --display --version 1.0.0.0 --publisher DealDeskPub → POST /solutions {uniquename,friendlyname,version,publisherid@odata.bind}; (3) metadata create-entity --schema-name itworx_dealreview --display --display-collection --primary-attr itworx_name --primary-label --ownership UserOwned --solution DealDesk --publish → POST /EntityDefinitions (primary StringAttribute inline, IsPrimaryName); (4) metadata create-optionset --name itworx_approvalstatus --display --option ':Pending' --option ':Approved' --option ':Rejected' --solution DealDesk --publish → POST /GlobalOptionSetDefinitions (IsGlobal, ':Label'=auto value); (5) metadata add-attribute itworx_dealreview --kind picklist --schema-name itworx_status --display Status --optionset-name itworx_approvalstatus --solution DealDesk --publish → POST EntityDefinitions(LogicalName=)/Attributes with GlobalOptionSet@odata.bind=GlobalOptionSetDefinitions(Name='itworx_approvalstatus'). KEY BEATS: optionset before column (picklist binds to global set via @odata.bind); --dry-run is LIVE (no write, real traffic) — solution create dry-run before publisher exists fails PublisherNotFound (category validation) = ordering guard; --solution binds component into package (omit → default solution, orphaned, won't export); --publish runs PublishAllXml (unpublished=not exported); verify each link before next (bad schema-name at step3 misaims step5). verbs: metadata create-entity (table, no positional, --primary-attr), metadata create-optionset (global, no positional), metadata add-attribute <entity> --kind picklist|...|lookup|customer|image|file. URLs scrubbed to orgexample. 2026-06-20, crm v1.0.0 (verified live agent-cloud via --dry-run)</p>
+</footer>
+
+</div><!-- /wrap -->
+
+<script>
+  document.documentElement.classList.add('js');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el,i){
+    if(i<2) el.classList.add('in'); else io.observe(el);
+  });
+  (function(){
+    var total=document.querySelectorAll('.q').length, answered=0, right=0;
+    document.querySelectorAll('.q').forEach(function(q){
+      var correct=+q.dataset.correct, opts=q.querySelectorAll('.opt');
+      var fbOk=q.querySelector('.fb.ok'), fbNo=q.querySelector('.fb.no');
+      opts.forEach(function(btn,i){
+        btn.addEventListener('click',function(){
+          if(q.dataset.done) return;
+          q.dataset.done=1; answered++;
+          opts.forEach(function(b){b.disabled=true;});
+          opts[correct].classList.add('correct');
+          if(i===correct){ right++; fbOk.classList.add('show'); }
+          else { btn.classList.add('wrong'); fbNo.classList.add('show'); }
+          var s=document.getElementById('score');
+          s.textContent='▸ '+answered+'/'+total+' answered · '+right+' correct'+(answered===total?'   ✓ lesson check complete':'');
+        });
+      });
+    });
+  })();
+</script>
+<script type="application/json" id="lesson-meta">
+{ "milestone": {"num": 12, "name": "Capstone: requirement end-to-end"},
+  "lesson": 2,
+  "title": "Build the schema layer",
+  "slug": "build-the-schema-layer",
+  "topics": ["capstone","schema","runbook","solution","publisher","table","optionset","picklist","metadata","dry-run","dependency-order"],
+  "summary": "The first M12 runbook: build the Deal Desk schema as a five-write chain on agent-cloud, each step preview (--dry-run) → commit → read-back verify → tick. ORDER (forced by the platform, not preference): (1) solution create-publisher --name DealDeskPub --display 'Deal Desk Publisher' --prefix itworx --option-value-prefix 30000 → POST /publishers; verify via query odata publishers --filter uniquename eq. (2) solution create --name DealDesk --display 'Deal Desk' --version 1.0.0.0 --publisher DealDeskPub → POST /solutions {uniquename,friendlyname,version,publisherid@odata.bind}; verify solution list. (3) metadata create-entity --schema-name itworx_dealreview --display 'Deal Review' --display-collection 'Deal Reviews' --primary-attr itworx_name --primary-label Name --ownership UserOwned --solution DealDesk --publish → POST /EntityDefinitions (primary name StringAttribute inline, IsPrimaryName true); verify metadata entity itworx_dealreview. (4) metadata create-optionset --name itworx_approvalstatus --display 'Approval Status' --option ':Pending' --option ':Approved' --option ':Rejected' --solution DealDesk --publish → POST /GlobalOptionSetDefinitions (IsGlobal true; ':Label' = auto-assigned value); verify metadata get-optionset. (5) metadata add-attribute itworx_dealreview --kind picklist --schema-name itworx_status --display Status --optionset-name itworx_approvalstatus --solution DealDesk --publish → POST EntityDefinitions(LogicalName='itworx_dealreview')/Attributes with GlobalOptionSet@odata.bind=GlobalOptionSetDefinitions(Name='itworx_approvalstatus'); verify metadata entity lists itworx_status. WHY OPTIONSET BEFORE COLUMN: the picklist column binds to the global set via @odata.bind, so the set must exist first. DRY-RUN IS LIVE: --dry-run = no write, not no traffic; solution create dry-run BEFORE the publisher exists fails PublisherNotFound (category validation) — proof it does a real lookup, and your ordering guard. TWO TRAVEL FLAGS on every write: --solution DealDesk binds the new component INTO the package (omit it → component lands in the DEFAULT solution, orphaned, silently absent from the L06 managed export); --publish runs PublishAllXml so the change is live (unpublished customizations don't show in forms and don't travel in an export, per M10 L05). VERIFY EACH link before the next — a typo in --schema-name at step 3 misaims step 5's add-attribute at the wrong table and you won't know until the read-back. add-attribute --kind choices: string|memo|integer|bigint|decimal|double|money|boolean|datetime|picklist|multiselect|lookup|customer|image|file. URLs scrubbed to orgexample; live-verified against agent-cloud via --dry-run. crm v1.0.0.",
+  "order": 2,
+  "status": "published" }
+</script>
+</body>
+</html>

@@ -118,3 +118,35 @@ a{color:var(--indigo-royal)}
 .next-go-x{margin-left:auto;font-size:20px;color:#fff}
 
 @media(max-width:640px){.intro{grid-template-columns:1fr}.site-nav{flex-wrap:wrap;gap:10px}}
+
+/* ---- runbook component (M12 capstone "your-turn" checklists) ---- */
+.runbook{background:#fff;border:1px solid var(--line2);border-left:4px solid var(--indigo);
+  border-radius:14px;padding:22px 24px;margin:26px 0;box-shadow:var(--shadow)}
+.rb-goal{font-family:"Roboto",system-ui,sans-serif;font-size:16px;font-weight:600;color:var(--ink);
+  display:flex;gap:11px;align-items:baseline;margin:0 0 6px;line-height:1.4}
+.rb-flag{font-family:"Roboto Mono",monospace;font-size:10px;font-weight:700;letter-spacing:.12em;
+  color:#fff;background:var(--indigo);border-radius:6px;padding:3px 8px;flex:none}
+.rb-sub{font-size:14px;color:var(--ink-mute);font-family:"Roboto Mono",monospace;margin:0 0 14px}
+.rb-steps{counter-reset:rb;list-style:none;padding:0;margin:0}
+.rb-step{counter-increment:rb;display:flex;gap:14px;padding:16px 0;border-top:1px dashed var(--line2)}
+.rb-step:first-child{border-top:none}
+.rb-check{flex:none;width:26px;height:26px;border-radius:8px;border:2px solid var(--line2);
+  background:#fff;cursor:pointer;display:grid;place-items:center;padding:0;margin-top:2px;
+  font-family:"Roboto Mono",monospace;font-size:13px;color:transparent;transition:all .15s}
+.rb-check::before{content:"✓"}
+.rb-check:hover{border-color:var(--indigo)}
+.rb-step.done .rb-check{background:var(--indigo);border-color:var(--indigo);color:#fff}
+.rb-body{flex:1;min-width:0}
+.rb-do{margin:0 0 2px;font-size:15.5px;line-height:1.5}
+.rb-do b{color:var(--indigo-dark)}
+.rb-step.done .rb-do b{text-decoration:line-through;color:var(--ink-mute)}
+.rb-verify{margin:8px 0 0;font-size:13.5px;color:var(--ink-soft);
+  background:var(--surface2);border-radius:8px;padding:8px 12px}
+.rb-verify b{color:var(--indigo-dark)}
+.rb-foot{font-family:"Roboto Mono",monospace;font-weight:600;color:var(--indigo-dark);
+  font-size:13px;margin:16px 0 0;border-top:2px solid var(--line2);padding-top:12px}
+@media print{
+  .runbook{box-shadow:none;break-inside:avoid}
+  .rb-check{border-color:#888}
+  .rb-foot::after{content:"  ▸ interactive checklist on screen";font-weight:400;color:#888;font-style:italic}
+}

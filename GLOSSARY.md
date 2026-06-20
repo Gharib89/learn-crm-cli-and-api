@@ -685,3 +685,52 @@ de-risk → promote → feedback**. Read every command in `--json` (L01), judge 
 dependencies before mutating (L04), promote a managed solution across environments (L05), and file
 genuine defects upstream (L06). This loop is what the mission means by "shift D365 work to an agentic
 workflow." _Met: M10 L01–L06._
+
+## Capstone — requirement end-to-end — *M12*
+
+**The Deal Desk (the capstone requirement)**
+The single real requirement M12 delivers end-to-end: a lightweight deal-approval system on
+**Opportunity**. Pieces: a **Deal Review** custom table (`itworx_dealreview`), a global option set
+**Approval Status** (Pending/Approved/Rejected) + a status column bound to it, a **1:N
+Account→Deal Review** + lookup, a **plug-in step** on Opportunity Update, a **model-driven app**
+(sitemap subarea + form field), all inside one **DealDesk** solution that exports managed and
+promotes dev→test→prod. Splits cleanly into an automatable chain and GUI-only remainder.
+_Met: M12 L01._
+
+**The dependency chain (capstone build order)**
+The platform-forced order every link sits in: publisher+solution → table → global option set →
+status column *(needs the set first — picklist binds via `GlobalOptionSet@odata.bind`)* → 1:N +
+lookup *(needs both tables)* → plug-in assembly → register step *(needs the assembly — `--plugin-type`
+resolves out of it)* → app + sitemap subarea → form field → publish → export managed → promote.
+Macro-order **schema → solution-bound → logic → UI → ship**. _Met: M12 L01–L06._
+
+**`--dry-run` is a live lookup (the ordering guard)**
+`--dry-run` means no *write*, not no *traffic*. It performs real reads: `solution create --dry-run`
+**before** the publisher exists fails `PublisherNotFound` (`category: validation`). That live
+resolution is the guard that enforces chain order — you can't even preview binding to something
+absent. _Met: M12 L02._
+
+**Verb-name reality (vs older drafts) — verified crm v1.0.0**
+The table verb is **`metadata create-entity`** (not `create-table`); the global set is **`metadata
+create-optionset`**; a bound picklist column is **`metadata add-attribute <entity> --kind picklist
+--optionset-name <global>`**. `scaffold table --column …` is the shorthand alternative. Names drift
+between releases — **`crm describe` is the source of truth**, not prose or memory. _Met: M12 L02._
+
+**Invisible until the sitemap subarea**
+Existence ≠ visibility. A custom table can exist, be published, and hold data yet appear in **no**
+app until an app's **sitemap subarea** binds it (`build-sitemap --subarea
+'area/group:entity=<logical>:Title'`). Two independent maps: the **subarea** decides nav presence;
+the **form** decides which fields show on a record (`form add-field`). Need both. _Met: M12 L05._
+
+**The four walls (detect & escalate)**
+The asks inside a Deal Desk with **no create verb** in v1.0.0 — the agent confirms each via
+`describe`/`--help` and hands it back, never fakes it: **rollup/calculated column** (`add-attribute
+--kind` has neither), **approval BPF** (workflow cat 4), **Power Automate flow** (cat 5, maker portal),
+**dashboard/chart** (no verb group). Hand-back = name it + say why + give the manual path; a capstone
+is done only when the automatable part is built **and** the manual remainder is named. (Finer
+API-vs-verb nuance: M10 L02.) _Met: M12 L04._
+
+**Runbook (the "your-turn" lesson shape)**
+M12's lesson form: a tick-off checklist (`assets/runbook.js` + `.runbook` in `site.css`) the learner
+drives against `agent-cloud`, each step **preview (`--dry-run`) → commit → read-back verify → paste
+the envelope**. verify ≠ trust (exit 0 ≠ done). _Met: M12 L02–L06._
